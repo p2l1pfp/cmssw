@@ -5,6 +5,11 @@
 <use name="FastSimulation/BaseParticlePropagator"/>
 <use name="FastSimulation/Particle"/>
 <use name="DataFormats/ParticleFlowReco"/>
+<use name="DataFormats/L1TVertex"/>
+<use name="L1Trigger/VertexFinder"/>
+<!-- below two are requrements for TFileService -->
+<use name="PhysicsTools/UtilAlgos"/>
+<use name="FWCore/ServiceRegistry"/>
 <export>
   <lib name="1"/>
 </export>

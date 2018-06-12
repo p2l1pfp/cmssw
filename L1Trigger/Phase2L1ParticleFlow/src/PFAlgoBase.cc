@@ -150,20 +150,31 @@ void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pv
             h_dz->Fill( p.floatDZ(), std::min(p.floatPt(), 50.f) );
         }
     }
-    switch(algo) {
-        case OldVtxAlgo: {
-                             int imaxbin = h_dz->GetMaximumBin();
-                             pvdz = h_dz->GetXaxis()->GetBinCenter(imaxbin);
-                         }; break;
-        case TPVtxAlgo: {
-                            float max = 0; int bmax = -1;
-                            for (int b = 1; b <= lNBins; ++b) {
-                                float sum3 = h_dz->GetBinContent(b) + h_dz->GetBinContent(b+1) + h_dz->GetBinContent(b-1);
-                                if (bmax == -1 || sum3 > max) { max = sum3; bmax = b; }
-                            }
-                            pvdz = h_dz->GetXaxis()->GetBinCenter(bmax); 
-                        }; break;
-    }
+    // switch(algo) {
+    //     case OldVtxAlgo: {
+    //                          int imaxbin = h_dz->GetMaximumBin();
+    //                          pvdz = h_dz->GetXaxis()->GetBinCenter(imaxbin);
+    //                      }; break;
+    //     case TPVtxAlgo: {
+    //                         float max = 0; int bmax = -1;
+    //                         for (int b = 1; b <= lNBins; ++b) {
+    //                             float sum3 = h_dz->GetBinContent(b) + h_dz->GetBinContent(b+1) + h_dz->GetBinContent(b-1);
+    //                             if (bmax == -1 || sum3 > max) { max = sum3; bmax = b; }
+    //                         }
+    //                         pvdz = h_dz->GetXaxis()->GetBinCenter(bmax); 
+    //                     }; break;
+    //     case StandaloneVtxProd: {
+    //       // extract the vertex information from the edm file
+    //       // 
+    //                             }; break;
+
+    // }
+
+    // std::cout << "Calculated z0 is " << pvdz
+    //           << std::endl;
+
+    // extract vertex from edm file
+
     int16_t iZ0 = round(pvdz * InputTrack::Z0_SCALE);
     int16_t iDZ  = round(1.5 * vtxRes_ * InputTrack::Z0_SCALE);
     int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;

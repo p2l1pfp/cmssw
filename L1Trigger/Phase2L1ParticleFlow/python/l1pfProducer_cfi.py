@@ -3,6 +3,7 @@ import FWCore.ParameterSet.Config as cms
 from math import sqrt
 
 l1pfProducer = cms.EDProducer("L1TPFProducer",
+     vertices = cms.InputTag('VertexProducer','l1vertextdr'),
      tracks = cms.InputTag('pfTracksFromL1Tracks'),
      muons = cms.InputTag('simGmtStage2Digis',),
      emClusters = cms.VInputTag(cms.InputTag('pfClustersFromHGC3DClustersEM'), cms.InputTag('pfClustersFromL1EGClusters')),
