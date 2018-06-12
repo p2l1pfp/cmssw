@@ -84,7 +84,7 @@ void PFAlgoBase::runPuppi(Region &r, float npu, float alphaCMed, float alphaCRms
 
 void PFAlgoBase::runChargedPV(Region &r, float z0) const {
     int16_t iZ0 = round(z0 * InputTrack::Z0_SCALE);
-    int16_t iDZ  = round(1.5 * vtxRes_ * InputTrack::Z0_SCALE);
+    int16_t iDZ  = round(1 * vtxRes_ * InputTrack::Z0_SCALE);
     int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
     for (PFParticle & p : r.pf) {
         bool barrel = std::abs(p.track.hwVtxEta) < InputTrack::VTX_ETA_1p3;
@@ -176,7 +176,7 @@ void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pv
     // extract vertex from edm file
 
     int16_t iZ0 = round(pvdz * InputTrack::Z0_SCALE);
-    int16_t iDZ  = round(1.5 * vtxRes_ * InputTrack::Z0_SCALE);
+    int16_t iDZ  = round(1 * vtxRes_ * InputTrack::Z0_SCALE);
     int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
     for (Region & r : rs) {
         for (PropagatedTrack & p : r.track) {
