@@ -21,7 +21,7 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
      puppiPtCutsPhotons = cms.vdouble(0.0, 3.0, 6.0, 8.0),
      vtxRes      = cms.double(0.15),
      vtxAlgo     = cms.string("TP"),
-     vtxAdaptiveCut = cms.bool(True),
+     vtxAdaptiveCut = cms.bool(False),
      linking = cms.PSet(
         algo = cms.string("PFAlgo3"),
         # track -> mu linking configurables
