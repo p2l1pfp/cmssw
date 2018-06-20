@@ -175,17 +175,39 @@ void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pv
 
     // extract vertex from edm file
 
+    // -------------------------------------------------------------------------
+
+    // std::cout << "meh attaching tracks to tdr vertex - PUPPI" << std::endl;
+
+    // int vtx_tracks = 0;
+    // int n_tracks = 0;
+
     int16_t iZ0 = round(pvdz * InputTrack::Z0_SCALE);
     int16_t iDZ  = round(1 * vtxRes_ * InputTrack::Z0_SCALE);
     int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
+
+    // std::cout << "meh: iDZ = " << iDZ << ", iDZ2 = " << iDZ2 << ", scale = "
+    //           << InputTrack::Z0_SCALE << std::endl;
+
     for (Region & r : rs) {
         for (PropagatedTrack & p : r.track) {
             bool central = std::abs(p.hwVtxEta) < InputTrack::VTX_ETA_1p3;
             if (r.relativeCoordinates) central = (std::abs(r.globalAbsEta(p.floatVtxEta())) < 1.3); // FIXME could make a better integer implementation
             p.fromPV = (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2));
+            // if (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2)) {
+            //   std::cout << "meh: attaching track to tdr vertex - "
+            //             << "pT = " << p.hwPt
+            //             << ", hwEta = " << p.hwEta << ", hwPhi = " << p.hwPhi
+            //             << std::endl;
+            //   vtx_tracks++;
+            // }
+            // n_tracks++;
         }
     }
 
+    // std::cout << "no tracks attached = " << vtx_tracks
+    //           << "/" << n_tracks
+    //           << std::endl;
 }
 
 void PFAlgoBase::computePuppiMedRMS(const std::vector<Region> &rs, float &alphaCMed, float &alphaCRms, float &alphaFMed, float &alphaFRms) const {
