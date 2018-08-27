@@ -39,15 +39,20 @@ namespace l1t
       float getTrkIsol() const { return theIsolation; }
       float getTrkzVtx() const { return TrkzVtx_ ; }
 
+      float dR()  const { return dR_;}
+      int nTracksMatched() const { return nTracksMatch_;}
 
       unsigned int quality()  const {return quality_;}
 
       void setTrkPtr(const edm::Ptr< L1TTTrackType >& p) {trkPtr_ = p;}
 
       void setTrkzVtx(float TrkzVtx) { TrkzVtx_ = TrkzVtx ; }
-      void setTrkIsol(float TrkIsol) { theIsolation = TrkIsol ; }
+      void setTrkIsol(float TrkIsol) { theIsolation = TrkIsol ; }   // this is not filled
 
-      void setQuality(unsigned int q){ quality_ = q;}
+      void setdR(float dR) { dR_=dR;}
+      void setNTracksMatched(int nTracksMatch) { nTracksMatch_=nTracksMatch;}
+
+      void setQuality(unsigned int q){ quality_ = q;}  // this is not filled
 
     private:
 
@@ -59,7 +64,11 @@ namespace l1t
 
       float theIsolation;
       float TrkzVtx_ ;
+      float dR_;
+      int nTracksMatch_;
       unsigned int quality_;
+
+
   };
 }
 
