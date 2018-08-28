@@ -16,6 +16,12 @@ Vertex::Vertex(float z0, const std::vector<edm::Ptr<Track_t>>& tracks) :
 {
 }
 
+Vertex::Vertex(float z0, const std::vector<edm::Ptr<Track_t>>& tracks,  const std::vector<edm::Ptr<Track_t>>& matchedTracks) :
+  z0_(z0),
+  tracks_(tracks),
+  matchedTracks_(matchedTracks)
+{
+}
 
 Vertex::~Vertex()
 {
@@ -31,6 +37,11 @@ float Vertex::z0() const
 const std::vector<edm::Ptr<Vertex::Track_t>>& Vertex::tracks() const
 {
   return tracks_;
+}
+
+const std::vector<edm::Ptr<Vertex::Track_t>>& Vertex::matchedTracks() const
+{
+  return matchedTracks_;
 }
 
 }

@@ -20,17 +20,26 @@ public:
   typedef TTTrack<Ref_Phase2TrackerDigi_> Track_t;
 
   Vertex();
+
   Vertex(float z0, const std::vector<edm::Ptr<Track_t>>& tracks);
+  Vertex(float z0, const std::vector<edm::Ptr<Track_t>>& matchedTracks, const std::vector<edm::Ptr<Track_t>>& tracks);
   ~Vertex();
 
   float z0() const;
 
+  // tracks used for fitting
   const std::vector<edm::Ptr<Track_t>>& tracks() const;
+
+  // tracks associated with the vertex
+  const std::vector<edm::Ptr<Track_t>>& matchedTracks() const;
 
 private:
 
   float z0_;
+  // tracks used for fit
   std::vector<edm::Ptr<Track_t>> tracks_;
+  // tracks judged by vertex reconstruction aglo to belong to vertex
+  std::vector<edm::Ptr<Track_t>> matchedTracks_;
 };
 
 }
