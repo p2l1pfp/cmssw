@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 from math import sqrt
 
 l1pfProducer = cms.EDProducer("L1TPFProducer",
-     vertices = cms.InputTag('VertexProducer','l1vertextdr'),
+     vertices = cms.InputTag('VertexProducer','l1vertices'),
      tracks = cms.InputTag('pfTracksFromL1Tracks'),
      muons = cms.InputTag('simGmtStage2Digis',),
      emClusters = cms.VInputTag(cms.InputTag('pfClustersFromHGC3DClustersEM'), cms.InputTag('pfClustersFromL1EGClusters')),
@@ -19,9 +19,9 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
      puppiEtaCuts       = cms.vdouble(1.5, 2.5, 3.0, 5.5), 
      puppiPtCuts        = cms.vdouble(0.0, 3.0, 6.0, 8.0),
      puppiPtCutsPhotons = cms.vdouble(0.0, 3.0, 6.0, 8.0),
-     vtxRes      = cms.double(0.15),
+     vtxRes      = cms.double(0.33),
      vtxAlgo     = cms.string("TP"),
-     vtxAdaptiveCut = cms.bool(False),
+     vtxAdaptiveCut = cms.bool(True),
      linking = cms.PSet(
         algo = cms.string("PFAlgo3"),
         # track -> mu linking configurables

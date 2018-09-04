@@ -6,7 +6,7 @@
 #include "Math/ProbFunc.h"
 #include <TH1F.h>
 
-namespace { 
+namespace {
     std::vector<float> vd2vf(const std::vector<double> & vd) {
         std::vector<float> ret;
         ret.insert(ret.end(), vd.begin(), vd.end());
@@ -84,7 +84,7 @@ void PFAlgoBase::runPuppi(Region &r, float npu, float alphaCMed, float alphaCRms
 
 void PFAlgoBase::runChargedPV(Region &r, float z0) const {
     int16_t iZ0 = round(z0 * InputTrack::Z0_SCALE);
-    int16_t iDZ  = round(1 * vtxRes_ * InputTrack::Z0_SCALE);
+    int16_t iDZ  = round(1.5 * vtxRes_ * InputTrack::Z0_SCALE);
     int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
     for (PFParticle & p : r.pf) {
         bool barrel = std::abs(p.track.hwVtxEta) < InputTrack::VTX_ETA_1p3;
@@ -138,7 +138,7 @@ void PFAlgoBase::computePuppiWeights(Region &r, float alphaCMed, float alphaCRms
     }
 }
 
-void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pvdz) const {
+void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pvdz, const l1t::Vertex vtx) const {
     int lNBins = int(40./vtxRes_);
     if (algo == TPVtxAlgo) lNBins *= 3;
     std::unique_ptr<TH1F> h_dz(new TH1F("h_dz","h_dz",lNBins,-20,20));
@@ -150,6 +150,7 @@ void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pv
             h_dz->Fill( p.floatDZ(), std::min(p.floatPt(), 50.f) );
         }
     }
+
     // switch(algo) {
     //     case OldVtxAlgo: {
     //                          int imaxbin = h_dz->GetMaximumBin();
@@ -167,46 +168,130 @@ void PFAlgoBase::doVertexing(std::vector<Region> &rs, VertexAlgo algo, float &pv
     //       // extract the vertex information from the edm file
     //       // 
     //                             }; break;
-
     // }
 
-    // std::cout << "Calculated z0 is " << pvdz
-    //           << std::endl;
+    // int16_t iZ0 = round(pvdz * InputTrack::Z0_SCALE);
+    // int16_t iDZ  = round(1.5 * vtxRes_ * InputTrack::Z0_SCALE);
+    // int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
 
-    // extract vertex from edm file
+    int pv_tracks = 0;
+    bool use_vf_association = true;
+    int b_tracks = 0;
+    int e_tracks = 0;
+    // int count = 0;
 
-    // -------------------------------------------------------------------------
+    // std::cout << "pf: ---- new event --------------------------------- " << std::endl;
+    // std::cout << "pf: idz = " << iDZ << ", idz2 = " << iDZ2 << std::endl;
+    int iters = 0;
 
-    // std::cout << "meh attaching tracks to tdr vertex - PUPPI" << std::endl;
-
-    // int vtx_tracks = 0;
-    // int n_tracks = 0;
-
-    int16_t iZ0 = round(pvdz * InputTrack::Z0_SCALE);
-    int16_t iDZ  = round(1 * vtxRes_ * InputTrack::Z0_SCALE);
-    int16_t iDZ2 = vtxAdaptiveCut_ ? round(4.0 * vtxRes_ * InputTrack::Z0_SCALE) : iDZ;
-
-    // std::cout << "meh: iDZ = " << iDZ << ", iDZ2 = " << iDZ2 << ", scale = "
-    //           << InputTrack::Z0_SCALE << std::endl;
-
+    // std::cout << "no matched tracks in vertices = "
+    //           << vtx.matchedTracks().size() << std::endl;
+    // std::cout << "no regions = " << rs.size() << std::endl;
     for (Region & r : rs) {
+      // std::cout << "no tracks in region = " << r.track.size() << std::endl;
         for (PropagatedTrack & p : r.track) {
+          //std::cout << "pf: ================================== started processing track" << std::endl;
+            bool matched = false;
             bool central = std::abs(p.hwVtxEta) < InputTrack::VTX_ETA_1p3;
             if (r.relativeCoordinates) central = (std::abs(r.globalAbsEta(p.floatVtxEta())) < 1.3); // FIXME could make a better integer implementation
-            p.fromPV = (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2));
-            // if (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2)) {
-            //   std::cout << "meh: attaching track to tdr vertex - "
-            //             << "pT = " << p.hwPt
-            //             << ", hwEta = " << p.hwEta << ", hwPhi = " << p.hwPhi
-            //             << std::endl;
-            //   vtx_tracks++;
-            // }
-            // n_tracks++;
-        }
-    }
+            // p.fromPV = (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2));
+            // matched = (std::abs(p.hwZ0 - iZ0) < (central ? iDZ : iDZ2));
 
-    // std::cout << "no tracks attached = " << vtx_tracks
-    //           << "/" << n_tracks
+            // std::cout << "pf: ---- from pv default: " << matched << std::endl;
+
+            if (use_vf_association) {
+              // int i = 0;
+              // std::cout << "pf: looping over vertex tracks ("
+              //           << vtx.matchedTracks().size() << ")"
+              //           << std::endl;
+
+              unsigned int no_reg_track_stubs = p.src->track()->getStubRefs().size();
+              for ( const auto & t : vtx.matchedTracks() ) {
+                iters++;
+                // region track found in vertex (preliminary check)
+                // if (p.src->track()->isTheSameAs(*t)) matched = true;
+                unsigned int matched_stubs = 0;
+
+                if ((*t).getStubRefs().size() == no_reg_track_stubs) {
+                  for (const auto & reg_track_stub : p.src->track()->getStubRefs()) {
+                    for (const auto & vtx_track_stub : (*t).getStubRefs()) {
+                      if (reg_track_stub == vtx_track_stub) {
+                        matched_stubs++;
+                      }
+                    }
+                  }
+
+                  if (matched && (matched_stubs == no_reg_track_stubs)) {
+                    // std::cout << "++++++++++++++++++++++++++ matched again"
+                    //           << std::endl;
+                  } else {
+                    if (matched_stubs == no_reg_track_stubs) {
+                      matched = true;
+                      // std::cout << "++++++++++++++++++++++++++ matched"
+                      //           << std::endl;
+                    }
+                  }
+                }
+
+                p.fromPV = matched;
+                // matched = p.src->track()->isTheSameAs(*t); //found;
+                // if (i > 1) {
+                //   std::cout << "meh: found again, i = " << i
+                //             << ", no stubs = " << p.src->track()->getStubRefs().size()
+                //             << std::endl;
+                // }
+
+                if (p.fromPV) {
+                  // std::cout << "pf: vertex track matched (total: " << pv_tracks
+                  //           << ")" << std::endl;
+                  // ++i;
+                  // ++pv_tracks;
+                  // if (central) {
+                  //   ++b_tracks;
+                  // } else {
+                  //   ++e_tracks;
+                  // }
+                  // break;
+                } // end of fromPV check for current track
+              } // end of loop over vertex tracks
+
+              // std::cout << "vtx tracks same no stubs = " << no_tracks_same_no_stubs
+              //           << ", vtx tracks diff no stubs = " << no_tracks_diff_no_stubs
+              //           << std::endl;
+            } // end of vertex association check
+
+            if (p.fromPV) {
+              // count++;
+
+              ++pv_tracks;
+              if (central) {
+                ++b_tracks;
+              } else {
+                ++e_tracks;
+              }
+              // ++pv_tracks;
+              // std::cout << "pf: track "
+              //           << "z0 = " << p.hwZ0
+              //           << "\tdz = " << (central ? iDZ : iDZ2)
+              //           << "\tz0_vtx = " << iZ0
+              //           << std::endl;
+
+              // std::cout << p.hwZ0 << "\t"
+              //           << p.hwVtxEta << "\t"
+              //           << 1.0/p.hwInvpt << "\t"
+              //           << (std::abs(p.hwZ0 - iZ0) - (central ? iDZ : iDZ2)) << "\t"
+              //           << (central ? iDZ : iDZ2) << "\t"
+              //           << iZ0 << "\t"
+              //           << std::endl;
+            }
+
+            // std::cout << "pf: ---- from pv after: " << matched << std::endl;
+            // std::cout << "pf: ================================== finished processing track" << std::endl;
+        } // end of loop over tracks
+    } // end of loop over regions 
+
+    // std::cout << "pf: " << pv_tracks << " pv tracks found (barrel "
+    //           << b_tracks << ", endcap " << e_tracks << ")"
     //           << std::endl;
 }
 

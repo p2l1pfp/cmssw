@@ -35,9 +35,6 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
 
         edm::EDGetTokenT<l1t::MuonBxCollection> muCands_;
         edm::EDGetTokenT<l1t::VertexCollection> l1Vertices_;
-        //edm::EDGetTokenT<l1t::Vertex> l1Vertex_;
-
-  //const edm::EDGetTokenT<std::vector<l1t::Vertex>> l1VerticesToken_
 
         std::vector<edm::EDGetTokenT<l1t::PFClusterCollection>> emCands_;
         std::vector<edm::EDGetTokenT<l1t::PFClusterCollection>> hadCands_;
@@ -64,7 +61,6 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     trkMinStubs_(iConfig.getParameter<unsigned>("trkMinStubs")),
     muCands_(consumes<l1t::MuonBxCollection>(iConfig.getParameter<edm::InputTag>("muons"))),
     l1Vertices_(consumes<l1t::VertexCollection>(iConfig.getParameter<edm::InputTag>("vertices"))),
-    //l1Vertex_(consumes<l1t::Vertex>(iConfig.getParameter<edm::InputTag>("vertices"))),
     emPtCut_(iConfig.getParameter<double>("emPtCut")),
     hadPtCut_(iConfig.getParameter<double>("hadPtCut")),
     l1regions_(iConfig),
@@ -116,32 +112,29 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     /// ------ READ TRACKS ----
     edm::Handle<l1t::PFTrackCollection> htracks;
     iEvent.getByToken(tkCands_, htracks);
+
     const auto & tracks = *htracks;
     for (unsigned int itk = 0, ntk = tracks.size(); itk < ntk; ++itk) {
         const auto & tk = tracks[itk];
         // adding objects to PF
         if (debugR_ > 0 && deltaR(tk.eta(),tk.phi(),debugEta_,debugPhi_) > debugR_) continue;
         if (tk.pt() > trkPt_ && tk.nStubs() >= trkMinStubs_ && tk.normalizedChi2() < trkMaxChi2_) {
-            l1regions_.addTrack(tk, l1t::PFTrackRef(htracks,itk)); 
+            l1regions_.addTrack(tk, l1t::PFTrackRef(htracks,itk));
         }
     }
 
     /// ------ READ VERTICES ---
-    // when multiple vertices are being sent from vertex finder
-
+    // when multiple vertices are being sent from vertex finder (currently
+    // implemented as a selector in VF codebase)
     edm::Handle<l1t::VertexCollection> hvertices;
     iEvent.getByToken(l1Vertices_, hvertices);
-    // std::cout << "Number of vertices found: " << hvertices->size() << std::endl;
 
-    // for (const auto & vertex : hvertices) {
     float vtxpt = 0;
-    float currpt = 0; 
-    // l1t::Vertex & pv ;
-    // const auto & vertices = *hvertices;
+    float currpt = 0;
+
     l1t::Vertex pv = hvertices->at(0);
     for (unsigned int i = 0; i < (*hvertices).size(); ++i) {
       currpt = 0;
-      // const auto & vtx = hvertices->at(i);
 
       for (const auto & track : hvertices->at(i).tracks()) {
         currpt += track->getMomentum().transverse();
@@ -150,12 +143,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         pv = hvertices->at(i);
         vtxpt = currpt;
       }
-      // std::cout << "vertex z0,pt = "
-      //           << hvertices->at(i).z0() << ", "
-      //           << currpt
-      //           << std::endl;
     }
-    // std::cout << "pv z0 = " << pv.z0() << std::endl;
 
     float z0 = pv.z0();
     /// ------ READ MUONS ----
@@ -196,7 +184,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
     // Then do the vertexing, and save it out
     // float z0;
-    l1pfalgo_->doVertexing(l1regions_.regions(), vtxAlgo_, z0);
+    l1pfalgo_->doVertexing(l1regions_.regions(), vtxAlgo_, z0, pv);
     iEvent.put(std::make_unique<float>(z0), "z0");
 
     // Then also save the tracks with a vertex cut
