@@ -20,7 +20,6 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
      puppiPtCuts        = cms.vdouble(0.0, 3.0, 6.0, 8.0),
      puppiPtCutsPhotons = cms.vdouble(0.0, 3.0, 6.0, 8.0),
      vtxRes      = cms.double(0.33),
-     vtxAlgo     = cms.string("TP"),
      vtxAdaptiveCut = cms.bool(True),
      linking = cms.PSet(
         algo = cms.string("PFAlgo3"),

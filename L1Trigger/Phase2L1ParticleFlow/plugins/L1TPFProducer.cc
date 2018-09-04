@@ -145,7 +145,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
       }
     }
 
-    float z0 = pv.z0();
+    const float & z0 = pv.z0();
     /// ------ READ MUONS ----
     edm::Handle<l1t::MuonBxCollection> muons;
     iEvent.getByToken(muCands_, muons);
@@ -183,8 +183,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     iEvent.put(l1regions_.fetchTracks(/*ptmin=*/0.0, /*fromPV=*/false), "TK");
 
     // Then do the vertexing, and save it out
-    // float z0;
-    l1pfalgo_->doVertexing(l1regions_.regions(), vtxAlgo_, z0, pv);
+    l1pfalgo_->assignTracksToPV(l1regions_.regions(), vtxAlgo_, z0, pv);
     iEvent.put(std::make_unique<float>(z0), "z0");
 
     // Then also save the tracks with a vertex cut
