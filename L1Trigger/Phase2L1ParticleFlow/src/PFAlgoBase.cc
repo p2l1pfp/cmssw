@@ -138,7 +138,7 @@ void PFAlgoBase::computePuppiWeights(Region &r, float alphaCMed, float alphaCRms
     }
 }
 
-void PFAlgoBase::assignTracksToPV(std::vector<Region> &rs, VertexAlgo algo, const float &pvdz, const l1t::Vertex vtx) const {
+void PFAlgoBase::assignTracksToPV(std::vector<Region> &rs, const float &pvdz, const l1t::Vertex vtx) const {
   for (Region & r : rs) {
     for (PropagatedTrack & p : r.track) {
       bool matched = false;

@@ -31,7 +31,6 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         edm::EDGetTokenT<l1t::PFTrackCollection> tkCands_;
         float trkPt_, trkMaxChi2_;
         unsigned trkMinStubs_;
-        l1tpf_impl::PFAlgoBase::VertexAlgo vtxAlgo_;  
 
         edm::EDGetTokenT<l1t::MuonBxCollection> muCands_;
         edm::EDGetTokenT<l1t::VertexCollection> l1Vertices_;
@@ -98,12 +97,6 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     } else if (algo == "BitwisePF") { // FIXME add back
         throw cms::Exception("Configuration", "FIXME: recover Bitwise PF");
     } else throw cms::Exception("Configuration", "Unsupported PFAlgo");
-
-    std::string vtxAlgo = iConfig.getParameter<std::string>("vtxAlgo");
-    if      (vtxAlgo == "TP")  vtxAlgo_ = l1tpf_impl::PFAlgoBase::TPVtxAlgo;
-    else if (vtxAlgo == "old") vtxAlgo_ = l1tpf_impl::PFAlgoBase::OldVtxAlgo;
-    else throw cms::Exception("Configuration") << "Unsupported vtxAlgo " << vtxAlgo << "\n";
-
 }
 
 // ------------ method called to produce the data  ------------
@@ -183,7 +176,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     iEvent.put(l1regions_.fetchTracks(/*ptmin=*/0.0, /*fromPV=*/false), "TK");
 
     // Then do the vertexing, and save it out
-    l1pfalgo_->assignTracksToPV(l1regions_.regions(), vtxAlgo_, z0, pv);
+    l1pfalgo_->assignTracksToPV(l1regions_.regions(), z0, pv);
     iEvent.put(std::make_unique<float>(z0), "z0");
 
     // Then also save the tracks with a vertex cut
