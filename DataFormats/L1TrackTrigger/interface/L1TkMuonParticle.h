@@ -7,6 +7,7 @@
 #include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
 #include "DataFormats/L1TMuon/interface/RegionalMuonCand.h"
 #include "DataFormats/L1TMuon/interface/RegionalMuonCandFwd.h"
+#include "DataFormats/L1TMuon/interface/L1MuKBMTCombinedStub.h"
 
 namespace l1t
 {
@@ -24,6 +25,12 @@ namespace l1t
 		        const edm::Ptr< L1TTTrackType >& trkPtr,
 		        float tkisol = -999. );
 
+      //One more constructor for Tracker+ Stubs algorithm not requiring the Muon candidate
+      L1TkMuonParticle( const LorentzVector& p4,
+		        const edm::Ptr< L1TTTrackType >& trkPtr,
+		        float tkisol = -999. );
+
+      
       //! more basic constructor, in case refs/ptrs can't be set or to be set separately
       L1TkMuonParticle(const L1Candidate& cand) : L1Candidate(cand), theIsolation(-999.), TrkzVtx_(999.), quality_(999) {}
 
@@ -39,9 +46,12 @@ namespace l1t
       float getTrkIsol() const { return theIsolation; }
       float getTrkzVtx() const { return TrkzVtx_ ; }
 
+
       float dR()  const { return dR_;}
       int nTracksMatched() const { return nTracksMatch_;}
 
+
+      const L1MuKBMTCombinedStubRefVector& getBarrelStubs() const { return barrelStubs_; }
       unsigned int quality()  const {return quality_;}
 
       void setTrkPtr(const edm::Ptr< L1TTTrackType >& p) {trkPtr_ = p;}
@@ -53,12 +63,17 @@ namespace l1t
       void setNTracksMatched(int nTracksMatch) { nTracksMatch_=nTracksMatch;}
 
       void setQuality(unsigned int q){ quality_ = q;}  // this is not filled
+      void addBarrelStub(const L1MuKBMTCombinedStubRef&);
+
 
     private:
 
 
 	// used for the Naive producer
       edm::Ref< l1t::RegionalMuonCandBxCollection > muRef_ ;
+
+      //Used for Tracker + Stubs algorithm
+      L1MuKBMTCombinedStubRefVector barrelStubs_;
 
       edm::Ptr< L1TTTrackType > trkPtr_ ;
 

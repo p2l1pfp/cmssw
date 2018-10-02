@@ -167,6 +167,15 @@ def DropOutputProducts(process):
     print "drop TrackingParticles_mix_MergedTrackTruth_*"
     print "drop PixelDigiSimLinkedmDetSetVector_simSiPixelDigis_Tracker_*"
     print "drop TrackingVertexs_mix_MergedTrackTruth_*"
+    print "drop HGCalDetIdHGCSampleHGCDataFramesSorted_mix_HGCDigisEE_HLT"
+    print "drop l1tHGCalTriggerCellBXVector_hgcalTriggerPrimitiveDigiProducer_calibratedTriggerCellsTower_L1"
+    print "drop PixelDigiSimLinkedmDetSetVector_simSiPixelDigis_Pixel_HLT"
+    print "drop l1tHGCalTowerMapBXVector_hgcalTriggerPrimitiveDigiProducer_towerMap_L1"
+    print "drop SimClusters_mix_MergedCaloTruth_HLT"
+    print "drop Phase2TrackerDigiedmDetSetVectorPhase2TrackerDigiPhase2TrackerDigiedmrefhelperFindForDetSetVectoredmRefTTClusteredmNewDetSetVector_TTClustersFromPhase2TrackerDigis_ClusterInclusive_HLT"
+    print "drop Phase2TrackerDigiedmDetSetVectorPhase2TrackerDigiPhase2TrackerDigiedmrefhelperFindForDetSetVectoredmRefTTClusterAssociationMap_TTClusterAssociatorFromPixelDigis_ClusterInclusive_HLT"
+    print "drop PixelDigiedmDetSetVector_simSiPixelDigis_Pixel_HLT"
+    print "drop Phase2TrackerDigiedmDetSetVector_mix_Tracker_HLT"
     process.FEVTDEBUGHLToutput.outputCommands = cms.untracked.vstring('keep *' 
               ,'drop TrackingParticles_mix_MergedTrackTruth_*'
               ,'drop PixelDigiSimLinkedmDetSetVector_simSiPixelDigis_Tracker_*'
@@ -192,13 +201,18 @@ def L1TrackTriggerTracklet(process):
 
 def L1TrackTriggerTMTT(process):
     print "L1T INFO:  run the L1TrackStep with TMTT."
-    process.load('TMTrackTrigger.TMTrackFinder.TMTrackProducer_Ultimate_cff')
+    process.load('L1Trigger.TrackFindingTMTT.TMTrackProducer_Ultimate_cff')
     process.TMTrackProducer.EnableMCtruth = cms.bool(False)
     process.TMTrackProducer.EnableHistos    = cms.bool(False)
     process.L1TrackTriggerTMTT_step = cms.Path(process.TMTrackProducer)
     process.schedule.insert(2,process.L1TrackTriggerTMTT_step)
     return process
 
+def L1TTurnOffHGCalTPs(process):
+    cutlist=['hgcalTriggerPrimitiveDigiProducer']
+    for b in cutlist:
+        process.SimL1Emulator.remove(getattr(process,b))
+    return process
 
 def appendDTChamberAgingAtL1Trigger(process):
 # #############################################################################

@@ -25,7 +25,8 @@ SimL1TMuonCommon = cms.Sequence(simDtTriggerPrimitiveDigis + simCscTriggerPrimit
 # Legacy Trigger:
 #
 from Configuration.Eras.Modifier_stage2L1Trigger_cff import stage2L1Trigger
-if not (stage2L1Trigger.isChosen()):
+from Configuration.Eras.Modifier_phase2_trigger_cff import phase2_trigger
+if not (stage2L1Trigger.isChosen() or phase2_trigger.isChosen()):
 #
 # - CSC Track Finder emulator
 #
@@ -67,7 +68,7 @@ if not (stage2L1Trigger.isChosen()):
 #
 # Stage-2 Trigger
 #
-if stage2L1Trigger.isChosen():
+if (stage2L1Trigger.isChosen() or phase2_trigger.isChosen()):
     from L1Trigger.L1TTwinMux.simTwinMuxDigis_cfi import *
     from L1Trigger.L1TMuonBarrel.simBmtfDigis_cfi import *
     from L1Trigger.L1TMuonEndCap.simEmtfDigis_cfi import *
