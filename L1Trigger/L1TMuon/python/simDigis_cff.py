@@ -75,9 +75,12 @@ if (stage2L1Trigger.isChosen() or phase2_trigger.isChosen()):
     from L1Trigger.L1TMuonOverlap.simOmtfDigis_cfi import *
     from L1Trigger.L1TMuon.simGmtCaloSumDigis_cfi import *
     from L1Trigger.L1TMuon.simGmtStage2Digis_cfi import *
+    from L1Trigger.L1TMuonBarrel.simKBmtfStubs_cfi import *
+    from L1Trigger.L1TMuonBarrel.simKBmtfDigis_cfi import *
+
 #
 #
-    SimL1TMuon = cms.Sequence(SimL1TMuonCommon + simTwinMuxDigis + simBmtfDigis + simEmtfDigis + simOmtfDigis + simGmtCaloSumDigis + simGmtStage2Digis)
+    SimL1TMuon = cms.Sequence(SimL1TMuonCommon + simTwinMuxDigis + simBmtfDigis + simKBmtfStubs + simKBmtfDigis + simEmtfDigis + simOmtfDigis + simGmtCaloSumDigis + simGmtStage2Digis)
 
     from L1Trigger.ME0Trigger.me0TriggerPseudoDigis_cff import *
     from L1Trigger.L1TMuon.simDisplacedGmtStage2Digis_cfi import *
