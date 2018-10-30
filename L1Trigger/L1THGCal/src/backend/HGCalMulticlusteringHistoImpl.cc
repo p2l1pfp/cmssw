@@ -2,6 +2,7 @@
 #include "L1Trigger/L1THGCal/interface/backend/HGCalShowerShape.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
+#include <cstdio>
 
 HGCalMulticlusteringHistoImpl::HGCalMulticlusteringHistoImpl( const edm::ParameterSet& conf ) :
     dr_(conf.getParameter<double>("dR_multicluster")),
@@ -157,9 +158,9 @@ HGCalMulticlusteringHistoImpl::Histogram HGCalMulticlusteringHistoImpl::fillSmoo
 
 
 
-std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeMaxSeeds( const Histogram & histoClusters ){
+std::vector<HGCalMulticlusteringHistoImpl::Seed> HGCalMulticlusteringHistoImpl::computeMaxSeeds( const Histogram & histoClusters ){
 
-    std::vector<GlobalPoint> seedPositions;
+    std::vector<HGCalMulticlusteringHistoImpl::Seed> seedPositions;
 
     for(int z_side : {-1,1}){
 
@@ -168,7 +169,8 @@ std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeMaxSeeds( const H
             for(int bin_phi = 0; bin_phi<int(nBinsPhiHisto_); bin_phi++){
 
                 float MIPT_seed = histoClusters.at({{z_side,bin_R,bin_phi}});
-                bool isMax = MIPT_seed>0;
+                bool isMax = MIPT_seed > histoThreshold_;
+                if (!isMax) continue;
 
                 float MIPT_S = bin_R<(int(nBinsRHisto_)-1) ? histoClusters.at({{z_side,bin_R+1,bin_phi}}) : 0;
                 float MIPT_N = bin_R>0 ? histoClusters.at({{z_side,bin_R-1,bin_phi}}) : 0;
@@ -199,7 +201,11 @@ std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeMaxSeeds( const H
                     float phi_seed = -M_PI + (bin_phi+0.5) * 2*M_PI/nBinsPhiHisto_;
                     float x_seed = ROverZ_seed*cos(phi_seed);
                     float y_seed = ROverZ_seed*sin(phi_seed);
-                    seedPositions.emplace_back(x_seed,y_seed,z_side);
+                    seedPositions.emplace_back(x_seed,y_seed,z_side, MIPT_seed);
+                    //if (MIPT_seed > 10) {
+                    //printf("Seed at x/z = %+7.4f, y/z = %+7.4f   eta = %+6.3f phi = %+6.3f     mipT %8.1f\n", 
+                    //            x_seed/z_side, y_seed/z_side,  seedPositions.back().pos.eta(), float(seedPositions.back().pos.phi()), MIPT_seed);
+                    //}
                 }
 
             }
@@ -216,9 +222,9 @@ std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeMaxSeeds( const H
 
 
 
-std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeThresholdSeeds( const Histogram & histoClusters ){
+std::vector<HGCalMulticlusteringHistoImpl::Seed> HGCalMulticlusteringHistoImpl::computeThresholdSeeds( const Histogram & histoClusters ){
 
-    std::vector<GlobalPoint> seedPositions;
+    std::vector<HGCalMulticlusteringHistoImpl::Seed> seedPositions;
 
     for(int z_side : {-1,1}){
 
@@ -234,7 +240,7 @@ std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeThresholdSeeds( c
                     float phi_seed = -M_PI + (bin_phi+0.5) * 2*M_PI/nBinsPhiHisto_;
                     float x_seed = ROverZ_seed*cos(phi_seed);
                     float y_seed = ROverZ_seed*sin(phi_seed);
-                    seedPositions.emplace_back(x_seed,y_seed,z_side);
+                    seedPositions.emplace_back(x_seed,y_seed,z_side, MIPT_seed);
                 }
 
             }
@@ -250,7 +256,7 @@ std::vector<GlobalPoint> HGCalMulticlusteringHistoImpl::computeThresholdSeeds( c
 
 
 std::vector<l1t::HGCalMulticluster> HGCalMulticlusteringHistoImpl::clusterSeedMulticluster(const std::vector<edm::Ptr<l1t::HGCalCluster>> & clustersPtrs,
-											   const std::vector<GlobalPoint> & seeds){
+											   const std::vector<HGCalMulticlusteringHistoImpl::Seed> & seeds){
 
 
     std::map<int,l1t::HGCalMulticluster> mapSeedMulticluster;
@@ -269,7 +275,7 @@ std::vector<l1t::HGCalMulticluster> HGCalMulticlusteringHistoImpl::clusterSeedMu
 
             if( z_side*seeds[iseed].z()<0) continue;
 
-            double d = this->dR(*clu, seeds[iseed]);
+            double d = this->dR(*clu, seeds[iseed].pos);
 
             if(d<minDist){
                 minDist = d;
@@ -309,7 +315,7 @@ void HGCalMulticlusteringHistoImpl::clusterizeHisto( const std::vector<edm::Ptr<
     Histogram smoothRPhiHistoCluster = fillSmoothRPhiHistoClusters(histoCluster);
 
     /* seeds determined with local maximum criteria */
-    std::vector<GlobalPoint> seedPositions;
+    std::vector<HGCalMulticlusteringHistoImpl::Seed> seedPositions;
     if(multiclusterAlgoType_ == "HistoMaxC3d") seedPositions = computeMaxSeeds(smoothRPhiHistoCluster);
     else if(multiclusterAlgoType_ == "HistoThresholdC3d") seedPositions = computeThresholdSeeds(smoothRPhiHistoCluster);
 
