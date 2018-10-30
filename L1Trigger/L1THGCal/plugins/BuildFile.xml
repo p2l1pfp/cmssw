@@ -44,3 +44,10 @@
   <use name="heppdt"/>
   <flags   EDM_PLUGIN="1"/>
 </library>
+
+<library   name="L1TriggerL1THGCalPlugins_utils" file="utilities/*.cc">
+  <use   name="L1Trigger/L1THGCal"/>
+  <use   name="CommonTools/Utils"/>
+  <use   name="tmva"/>
+  <flags   EDM_PLUGIN="1"/>
+</library>
