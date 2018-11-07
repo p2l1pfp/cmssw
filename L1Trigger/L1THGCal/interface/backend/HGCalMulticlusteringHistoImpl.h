@@ -64,6 +64,7 @@ private:
             const HGCalTriggerGeometryBase&);
     
     double dr_;
+    std::vector<double> dr_byLayer_;
     double ptC3dThreshold_;
     std::string multiclusterAlgoType_;
     unsigned nBinsRHisto_ = 36;

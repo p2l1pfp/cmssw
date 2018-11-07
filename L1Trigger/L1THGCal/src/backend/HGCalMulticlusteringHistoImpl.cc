@@ -6,6 +6,7 @@
 
 HGCalMulticlusteringHistoImpl::HGCalMulticlusteringHistoImpl( const edm::ParameterSet& conf ) :
     dr_(conf.getParameter<double>("dR_multicluster")),
+    dr_byLayer_(conf.existsAs<std::vector<double>>("dR_multicluster_byLayer") ? conf.getParameter<std::vector<double>>("dR_multicluster_byLayer") : std::vector<double>()),
     ptC3dThreshold_(conf.getParameter<double>("minPt_multicluster")),
     multiclusterAlgoType_(conf.getParameter<string>("type_multicluster")),    
     nBinsRHisto_(conf.getParameter<unsigned>("nBins_R_histo_multicluster")),
@@ -22,6 +23,8 @@ HGCalMulticlusteringHistoImpl::HGCalMulticlusteringHistoImpl( const edm::Paramet
     id_.reset( HGCalTriggerClusterIdentificationFactory::get()->create("HGCalTriggerClusterIdentificationBDT") );
     id_->initialize(conf.getParameter<edm::ParameterSet>("EGIdentification"));
     if(multiclusterAlgoType_.find("Histo")!=std::string::npos && nBinsRHisto_!=binsSumsHisto_.size()) throw cms::Exception("Inconsistent nBins_R_histo_multicluster and binSumsHisto size in HGCalMulticlustering");
+    if(dr_byLayer_.empty()) printf("Configured with a single dR for all layers: %.3f\n", dr_);
+    else printf("Configured with %d different dR for each layer\n", int(dr_byLayer_.size()));
 }
 
 
@@ -268,7 +271,7 @@ std::vector<l1t::HGCalMulticluster> HGCalMulticlusteringHistoImpl::clusterSeedMu
         HGCalDetId cluDetId( clu->detId() );
         int z_side = cluDetId.zside();
 
-        double minDist = dr_;
+        double minDist = dr_byLayer_.empty() ? dr_ : dr_byLayer_.at(triggerTools_.layerWithOffset(clu->detId())); // use at() to get the assert, for the moment
         int targetSeed = -1;
 
         for( unsigned int iseed=0; iseed<seeds.size(); iseed++ ){
