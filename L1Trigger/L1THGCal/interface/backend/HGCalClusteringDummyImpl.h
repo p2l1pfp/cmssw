@@ -30,6 +30,8 @@ public:
 
 private:
     
+    double siliconTriggerCellThreshold_;
+    double scintillatorTriggerCellThreshold_;
     double calibSF_;
     std::vector<double> layerWeights_;
     bool applyLayerWeights_;

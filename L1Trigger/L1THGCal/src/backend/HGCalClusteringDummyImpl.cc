@@ -6,11 +6,15 @@
 
 //class constructor
 HGCalClusteringDummyImpl::HGCalClusteringDummyImpl(const edm::ParameterSet & conf):
+    siliconTriggerCellThreshold_(conf.getParameter<double>("threshold_silicon")),
+    scintillatorTriggerCellThreshold_(conf.getParameter<double>("threshold_scintillator")),
     calibSF_(conf.getParameter<double>("calibSF_cluster")),
     layerWeights_(conf.getParameter< std::vector<double> >("layerWeights")),
     applyLayerWeights_(conf.getParameter< bool >("applyLayerCalibration"))
 {     
     edm::LogInfo("HGCalClusterParameters") << "C2d global calibration factor: " << calibSF_;
+    edm::LogInfo("HGCalClusterParameters") << "C2d silicon Thr: " << siliconTriggerCellThreshold_ ;
+    edm::LogInfo("HGCalClusterParameters") << "C2d scintillator Thr: " << scintillatorTriggerCellThreshold_ ;
 }
 
 
@@ -22,7 +26,8 @@ void HGCalClusteringDummyImpl::clusterizeDummy( const std::vector<edm::Ptr<l1t::
 
   std::vector<l1t::HGCalCluster> clustersTmp;
   for( std::vector<edm::Ptr<l1t::HGCalTriggerCell>>::const_iterator tc = triggerCellsPtrs.begin(); tc != triggerCellsPtrs.end(); ++tc ){
-    clustersTmp.emplace_back( *tc );
+    double threshold = ((*tc)->subdetId()==HGCHEB ? scintillatorTriggerCellThreshold_ : siliconTriggerCellThreshold_);
+    if ((*tc)->mipPt() >= threshold) clustersTmp.emplace_back( *tc );
   }
 
   /* store clusters in the persistent collection */
