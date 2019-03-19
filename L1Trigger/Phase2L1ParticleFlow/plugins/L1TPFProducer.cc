@@ -23,6 +23,8 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PuppiAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/LinearizedPuppiAlgo.h"
 
+#include "DataFormats/L1TrackTrigger/interface/L1TkMuonParticle.h"    
+#include "DataFormats/L1TrackTrigger/interface/L1TkMuonParticleFwd.h" 
 //--------------------------------------------------------------------------------------------------
 class L1TPFProducer : public edm::stream::EDProducer<> {
     public:
@@ -31,6 +33,9 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
     private:
         int debug_;
 
+        bool useStandaloneMuons_;
+        bool useTrackerMuons_;
+
         bool hasTracks_;
         edm::EDGetTokenT<l1t::PFTrackCollection> tkCands_;
         float trkPt_, trkMaxChi2_;
@@ -38,7 +43,8 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         l1tpf_impl::PUAlgoBase::VertexAlgo vtxAlgo_;  
         edm::EDGetTokenT<std::vector<l1t::Vertex>> extVtx_;
 
-        edm::EDGetTokenT<l1t::MuonBxCollection> muCands_;
+        edm::EDGetTokenT<l1t::MuonBxCollection> muCands_; // standalone muons
+        edm::EDGetTokenT<l1t::L1TkMuonParticleCollection> tkMuCands_;         // tk muons
 
         std::vector<edm::EDGetTokenT<l1t::PFClusterCollection>> emCands_;
         std::vector<edm::EDGetTokenT<l1t::PFClusterCollection>> hadCands_;
@@ -48,6 +54,7 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         l1tpf_impl::RegionMapper l1regions_;
         std::unique_ptr<l1tpf_impl::PFAlgoBase> l1pfalgo_;
         std::unique_ptr<l1tpf_impl::PUAlgoBase> l1pualgo_;
+
 
         // region of interest debugging
         float debugEta_, debugPhi_, debugR_;
@@ -60,12 +67,15 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
 //
 L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     debug_(iConfig.getUntrackedParameter<int>("debug",0)),
+    useStandaloneMuons_(iConfig.getParameter<bool>("useStandaloneMuons")),
+    useTrackerMuons_(iConfig.getParameter<bool>("useTrackerMuons")),
     hasTracks_(!iConfig.getParameter<edm::InputTag>("tracks").label().empty()),
     tkCands_(hasTracks_ ? consumes<l1t::PFTrackCollection>(iConfig.getParameter<edm::InputTag>("tracks")) : edm::EDGetTokenT<l1t::PFTrackCollection>()),
     trkPt_(iConfig.getParameter<double>("trkPtCut")),
     trkMaxChi2_(iConfig.getParameter<double>("trkMaxChi2")),
     trkMinStubs_(iConfig.getParameter<unsigned>("trkMinStubs")),
     muCands_(consumes<l1t::MuonBxCollection>(iConfig.getParameter<edm::InputTag>("muons"))),
+    tkMuCands_(consumes<l1t::L1TkMuonParticleCollection>(iConfig.getParameter<edm::InputTag>("tkMuons"))),
     emPtCut_(iConfig.getParameter<double>("emPtCut")),
     hadPtCut_(iConfig.getParameter<double>("hadPtCut")),
     l1regions_(iConfig),
@@ -144,12 +154,27 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     }
 
     /// ------ READ MUONS ----
-    edm::Handle<l1t::MuonBxCollection> muons;
-    iEvent.getByToken(muCands_, muons);
-    for (auto it = muons->begin(0), ed = muons->end(0); it != ed; ++it) {
-        const l1t::Muon & mu = *it;
-        if (debugR_ > 0 && deltaR(mu.eta(),mu.phi(),debugEta_,debugPhi_) > debugR_) continue;
-        l1regions_.addMuon(mu, l1t::PFCandidate::MuonRef(muons, muons->key(it)));
+    if(useStandaloneMuons_ && !useTrackerMuons_) {
+	edm::Handle<l1t::MuonBxCollection> muons;
+    	iEvent.getByToken(muCands_, muons);
+    	for (auto it = muons->begin(0), ed = muons->end(0); it != ed; ++it) {
+    	    const l1t::Muon & mu = *it;
+    	    if (debugR_ > 0 && deltaR(mu.eta(),mu.phi(),debugEta_,debugPhi_) > debugR_) continue;
+    	    l1regions_.addMuon(mu, l1t::PFCandidate::MuonRef(muons, muons->key(it)));
+    	}
+    }
+
+    // typedef std::vector< L1TkMuonParticle > L1TkMuonParticleCollection ; 
+
+
+    if(!useStandaloneMuons_ && useTrackerMuons_) {
+        edm::Handle<l1t::L1TkMuonParticleCollection> muons;
+    	iEvent.getByToken(tkMuCands_, muons);
+    	for (auto it = muons->begin(), ed = muons->end(); it != ed; ++it) {
+    	    const l1t::L1TkMuonParticle & mu = *it;
+    	    if (debugR_ > 0 && deltaR(mu.eta(),mu.phi(),debugEta_,debugPhi_) > debugR_) continue;
+    	    l1regions_.addMuon(mu);  // FIXME add a l1t::PFCandidate::MuonRef
+    	}
     }
 
     // ------ READ CALOS -----

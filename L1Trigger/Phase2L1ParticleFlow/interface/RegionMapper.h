@@ -6,6 +6,10 @@
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+
+#include "DataFormats/L1TrackTrigger/interface/L1TkMuonParticle.h"    
+#include "DataFormats/L1TrackTrigger/interface/L1TkMuonParticleFwd.h" 
+
 #include <unordered_map>
 
 namespace l1tpf_impl { 
@@ -17,6 +21,7 @@ namespace l1tpf_impl {
         // add object, without tracking references
         void addTrack( const l1t::PFTrack & t ) ;
         void addMuon( const l1t::Muon & t );
+        void addMuon( const l1t::L1TkMuonParticle & t );
         void addCalo( const l1t::PFCluster & t ); 
         void addEmCalo( const l1t::PFCluster & t ); 
 

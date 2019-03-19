@@ -89,6 +89,21 @@ void RegionMapper::addMuon( const l1t::Muon &mu ) {
         }
     } 
 }
+
+
+void RegionMapper::addMuon( const l1t::L1TkMuonParticle &mu) {
+    // now let's be optimistic and make things very simple
+    // we don't propagate anything
+    for (Region &r : regions_) {
+        if (r.contains(mu.eta(), mu.phi())) {
+            Muon prop;
+            prop.fill(mu.pt(), r.localEta(mu.eta()), r.localPhi(mu.phi()), mu.charge(), mu.hwQual());
+            r.muon.push_back(prop);
+        }
+    } 
+}
+
+
 void RegionMapper::addMuon( const l1t::Muon &mu, l1t::PFCandidate::MuonRef ref ) {
     addMuon(mu);
     muonRefMap_[&mu] = ref;
