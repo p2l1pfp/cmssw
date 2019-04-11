@@ -53,6 +53,7 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         float debugEta_, debugPhi_, debugR_;
 
         virtual void produce(edm::Event&, const edm::EventSetup&) override;
+        void addUInt(unsigned int value,std::string iLabel,edm::Event& iEvent);
 };
 
 //
@@ -122,6 +123,16 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
 
     for (const std::string & label : l1pualgo_->puGlobalNames()) {
         produces<float>(label); 
+    }
+
+    for (int tot = 0; tot <= 1; ++tot) {
+      for (int i = 0; i < l1tpf_impl::Region::n_input_types; ++i) {
+	produces<unsigned int>(std::string(tot ? "totNL1" : "maxNL1")+l1tpf_impl::Region::inputTypeName(i));
+      }
+      for (int i = 0; i < l1tpf_impl::Region::n_output_types; ++i) {
+	produces<unsigned int>(std::string(tot ? "totNL1PF"    : "maxNL1PF"   )+l1tpf_impl::Region::outputTypeName(i));
+	produces<unsigned int>(std::string(tot ? "totNL1Puppi" : "maxNL1Puppi")+l1tpf_impl::Region::outputTypeName(i));
+      }
     }
 }
 
@@ -224,7 +235,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
     // Then go do the multiplicities
     // FIXME: recover
-    /*
+    
     for (int i = 0; i < l1tpf_impl::Region::n_input_types; ++i) {
         auto totAndMax = l1regions_.totAndMaxInput(i);
         addUInt(totAndMax.first,  std::string("totNL1")+l1tpf_impl::Region::inputTypeName(i), iEvent);
@@ -238,10 +249,14 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         addUInt(totAndMaxPuppi.first,  std::string("totNL1Puppi")+l1tpf_impl::Region::outputTypeName(i), iEvent);
         addUInt(totAndMaxPuppi.second, std::string("maxNL1Puppi")+l1tpf_impl::Region::outputTypeName(i), iEvent);
     }
-    */
+    
 
     // finall clear the regions
     l1regions_.clear();
+}
+
+void L1TPFProducer::addUInt(unsigned int value,std::string iLabel,edm::Event& iEvent) { 
+  iEvent.put(std::make_unique<unsigned>(value), iLabel);
 }
 
 //define this as a plug-in
