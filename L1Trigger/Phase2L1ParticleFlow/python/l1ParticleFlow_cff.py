@@ -162,7 +162,7 @@ l1pfProducerHGCalNoTK = l1pfProducerHGCal.clone(regions = cms.VPSet(
 
 l1ParticleFlow_pf_hgcal = cms.Sequence(
     pfTracksFromL1TracksHGCal +   
-    l1pfProducerHGCal +
+    l1pfProducerHGCal + 
     l1pfProducerHGCalNoTK
 )
 
