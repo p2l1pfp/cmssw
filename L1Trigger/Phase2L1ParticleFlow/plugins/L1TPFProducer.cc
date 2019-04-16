@@ -134,6 +134,13 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
 	produces<unsigned int>(std::string(tot ? "totNL1Puppi" : "maxNL1Puppi")+l1tpf_impl::Region::outputTypeName(i));
       }
     }
+    for (int i = 0; i < l1tpf_impl::Region::n_input_types; ++i) {
+      produces<std::vector<unsigned>>(std::string("vecNL1"      )+l1tpf_impl::Region::inputTypeName(i));
+    }
+    for (int i = 0; i < l1tpf_impl::Region::n_output_types; ++i) {
+      produces<std::vector<unsigned>>(std::string("vecNL1PF"   )+l1tpf_impl::Region::outputTypeName(i));
+      produces<std::vector<unsigned>>(std::string("vecNL1Puppi")+l1tpf_impl::Region::outputTypeName(i));
+    }
 }
 
 // ------------ method called to produce the data  ------------
@@ -240,6 +247,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         auto totAndMax = l1regions_.totAndMaxInput(i);
         addUInt(totAndMax.first,  std::string("totNL1")+l1tpf_impl::Region::inputTypeName(i), iEvent);
         addUInt(totAndMax.second, std::string("maxNL1")+l1tpf_impl::Region::inputTypeName(i), iEvent);
+	iEvent.put(l1regions_.vecInput(i), std::string("vecNL1")+l1tpf_impl::Region::inputTypeName(i));
     }
     for (int i = 0; i < l1tpf_impl::Region::n_output_types; ++i) {
         auto totAndMaxPF = l1regions_.totAndMaxOutput(i,false);
@@ -248,8 +256,9 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         addUInt(totAndMaxPF.second, std::string("maxNL1PF")+l1tpf_impl::Region::outputTypeName(i), iEvent);
         addUInt(totAndMaxPuppi.first,  std::string("totNL1Puppi")+l1tpf_impl::Region::outputTypeName(i), iEvent);
         addUInt(totAndMaxPuppi.second, std::string("maxNL1Puppi")+l1tpf_impl::Region::outputTypeName(i), iEvent);
+	iEvent.put(l1regions_.vecOutput(i,false), std::string("vecNL1PF")+l1tpf_impl::Region::outputTypeName(i));
+	iEvent.put(l1regions_.vecOutput(i,true), std::string("vecNL1Puppi")+l1tpf_impl::Region::outputTypeName(i));
     }
-    
 
     // finall clear the regions
     l1regions_.clear();

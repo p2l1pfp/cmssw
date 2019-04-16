@@ -35,6 +35,8 @@ namespace l1tpf_impl {
 
         std::pair<unsigned,unsigned> totAndMaxInput(/*Region::InputType*/int type) const ;
         std::pair<unsigned,unsigned> totAndMaxOutput(/*Region::OutputType*/int type, bool puppi) const ;
+	std::unique_ptr<std::vector<unsigned>> vecInput(int type) const ;
+	std::unique_ptr<std::vector<unsigned>> vecOutput(int type, bool puppi) const ;
 
     protected:
         std::vector<Region> regions_;
