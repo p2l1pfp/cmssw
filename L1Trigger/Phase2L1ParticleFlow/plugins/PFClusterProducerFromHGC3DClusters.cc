@@ -7,6 +7,7 @@
 #include "DataFormats/Phase2L1ParticleFlow/interface/PFCluster.h"
 #include "L1Trigger/Phase2L1ParticleFlow/src/corrector.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/ParametricResolution.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/HGC3DClusterEgID.h"
 #include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 #include "CommonTools/Utils/interface/StringCutObjectSelector.h"
 
@@ -21,8 +22,9 @@ namespace l1tpf {
             edm::EDGetTokenT<l1t::HGCalMulticlusterBxCollection> src_;
             bool emOnly_;
             double etCut_;
+            StringCutObjectSelector<l1t::HGCalMulticluster> preEmId_;
+            l1tpf::HGC3DClusterEgID emVsPionID_, emVsPUID_;
             bool hasEmId_;
-            StringCutObjectSelector<l1t::HGCalMulticluster> emId_;
             l1tpf::corrector corrector_;
             l1tpf::ParametricResolution resol_;
 
@@ -35,12 +37,21 @@ l1tpf::PFClusterProducerFromHGC3DClusters::PFClusterProducerFromHGC3DClusters(co
     src_(consumes<l1t::HGCalMulticlusterBxCollection>(iConfig.getParameter<edm::InputTag>("src"))),
     emOnly_(iConfig.getParameter<bool>("emOnly")),
     etCut_(iConfig.getParameter<double>("etMin")),
-    hasEmId_(iConfig.existsAs<std::string>("emId") && !iConfig.getParameter<std::string>("emId").empty()),
-    emId_(hasEmId_ ? iConfig.getParameter<std::string>("emId") : ""),
+    preEmId_(iConfig.getParameter<std::string>("preEmId")),
+    emVsPionID_(iConfig.getParameter<edm::ParameterSet>("emVsPionID")),
+    emVsPUID_(iConfig.getParameter<edm::ParameterSet>("emVsPUID")),
+    hasEmId_( (iConfig.existsAs<std::string>("preEmId") && !iConfig.getParameter<std::string>("preEmId").empty()) || emVsPionID_.method() != ""),
     corrector_(iConfig.getParameter<std::string>("corrector"), 
                emOnly_ || iConfig.getParameter<std::string>("corrector").empty() ? -1 : iConfig.getParameter<double>("correctorEmfMax")),
     resol_(iConfig.getParameter<edm::ParameterSet>("resol"))
 {
+    if(emVsPionID_.method() != "") {
+        emVsPionID_.prepareTMVA();
+    }
+    if(emVsPUID_.method() != "") {
+        emVsPUID_.prepareTMVA();
+    }
+    
     produces<l1t::PFClusterCollection>();
     if (hasEmId_) {
         produces<l1t::PFClusterCollection>("em");
@@ -62,7 +73,7 @@ l1tpf::PFClusterProducerFromHGC3DClusters::produce(edm::Event & iEvent, const ed
 
   for(auto it = multiclusters->begin(0), ed = multiclusters->end(0); it != ed; ++it) {
       float pt = it->pt(), hoe = it->hOverE();
-      bool isEM = hasEmId_ ? emId_(*it) : emOnly_;
+      bool isEM = hasEmId_ ? preEmId_(*it) : emOnly_;
       if (emOnly_) { 
           if (hoe == -1) continue;
           pt /= (1 + hoe);
@@ -71,6 +82,14 @@ l1tpf::PFClusterProducerFromHGC3DClusters::produce(edm::Event & iEvent, const ed
       if (pt <= etCut_) continue;
 
       l1t::PFCluster cluster(pt, it->eta(), it->phi(), hoe, /*isEM=*/isEM);
+      if(emVsPUID_.method() != "") {
+          if( !emVsPUID_.passID(*it, cluster) ){
+              continue;
+          }
+      }
+      if(emVsPionID_.method() != "") {
+          cluster.setIsEM(emVsPionID_.passID(*it, cluster));
+      }
       if (corrector_.valid()) corrector_.correctPt(cluster);
       cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
 

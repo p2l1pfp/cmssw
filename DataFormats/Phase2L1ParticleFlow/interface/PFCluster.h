@@ -50,8 +50,14 @@ namespace l1t
           bool isEM() const { return hwQual() == 1; }
           void setIsEM(bool isEM) { setHwQual(isEM ? 1 : 0); }
 
+          float egVsPionMVAOut() const { return egVsPionMVAOut_; }
+          void setEgVsPionMVAOut(float egVsPionMVAOut) { egVsPionMVAOut_ = egVsPionMVAOut; }
+          
+          float egVsPUMVAOut() const { return egVsPUMVAOut_; }
+          void setEgVsPUMVAOut(float egVsPUMVAOut) { egVsPUMVAOut_ = egVsPUMVAOut; }
+
       private:
-          float hOverE_, ptError_;
+          float hOverE_, ptError_, egVsPionMVAOut_, egVsPUMVAOut_;
           ConstituentsAndFractions constituents_;
   };
   
