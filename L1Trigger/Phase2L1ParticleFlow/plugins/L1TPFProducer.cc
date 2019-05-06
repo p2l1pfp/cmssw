@@ -153,8 +153,16 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         }
     }
 
+    
     /// ------ READ MUONS ----
-    if(useStandaloneMuons_ && !useTrackerMuons_) {
+
+    /// ------- first check that not more than one version of muons (standaloneMu or trackerMu) is set to be used in l1pflow
+    if (useStandaloneMuons_ && useTrackerMuons_) {
+        throw cms::Exception("Configuration", "setting useStandaloneMuons=True && useTrackerMuons=True is not to be done, as it would duplicate all muons\n");
+    }
+
+
+    if(useStandaloneMuons_) {
 	edm::Handle<l1t::MuonBxCollection> muons;
     	iEvent.getByToken(muCands_, muons);
     	for (auto it = muons->begin(0), ed = muons->end(0); it != ed; ++it) {
@@ -164,10 +172,8 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     	}
     }
 
-    // typedef std::vector< L1TkMuonParticle > L1TkMuonParticleCollection ; 
 
-
-    if(!useStandaloneMuons_ && useTrackerMuons_) {
+    if(useTrackerMuons_) {
         edm::Handle<l1t::L1TkMuonParticleCollection> muons;
     	iEvent.getByToken(tkMuCands_, muons);
     	for (auto it = muons->begin(), ed = muons->end(); it != ed; ++it) {

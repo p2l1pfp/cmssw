@@ -6,7 +6,7 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
      tracks = cms.InputTag('pfTracksFromL1Tracks'),
      muons = cms.InputTag('simGmtStage2Digis',),
      tkMuons = cms.InputTag('L1TkMuons'),
-     # type of muons to be used in PF (if both are set to true, none will be used)
+     # type of muons to be used in PF (enable only one at a time)
      useStandaloneMuons = cms.bool(True), 
      useTrackerMuons = cms.bool(False),
      emClusters = cms.VInputTag(cms.InputTag('pfClustersFromHGC3DClustersEM'), cms.InputTag('pfClustersFromL1EGClusters')),
