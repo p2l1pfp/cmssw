@@ -155,12 +155,10 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 
     
     /// ------ READ MUONS ----
-
     /// ------- first check that not more than one version of muons (standaloneMu or trackerMu) is set to be used in l1pflow
     if (useStandaloneMuons_ && useTrackerMuons_) {
         throw cms::Exception("Configuration", "setting useStandaloneMuons=True && useTrackerMuons=True is not to be done, as it would duplicate all muons\n");
     }
-
 
     if(useStandaloneMuons_) {
 	edm::Handle<l1t::MuonBxCollection> muons;
@@ -171,7 +169,6 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     	    l1regions_.addMuon(mu, l1t::PFCandidate::MuonRef(muons, muons->key(it)));
     	}
     }
-
 
     if(useTrackerMuons_) {
         edm::Handle<l1t::L1TkMuonParticleCollection> muons;
