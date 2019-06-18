@@ -327,7 +327,6 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     iEvent.put(l1regions_.fetch(true), "Puppi");
 
     // Then go do the multiplicities
-    // FIXME: recover
     
     for (int i = 0; i < l1tpf_impl::Region::n_input_types; ++i) {
         auto totAndMax = l1regions_.totAndMaxInput(i);
