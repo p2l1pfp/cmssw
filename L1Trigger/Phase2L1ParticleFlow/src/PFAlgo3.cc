@@ -275,7 +275,13 @@ void PFAlgo3::emcalo_algo(Region & r, const std::vector<int> & em2ntk, const std
             continue;
         } 
         float ptdiff = em.floatPt() - em2sumtkpt[iem];
-        float pterr  = trackEmUseAlsoTrackSigma_ ? std::max<float>(em2sumtkpterr[iem],em.floatPtErr()) : em.floatPtErr(); 
+        float pterr  = trackEmUseAlsoTrackSigma_ ? std::max<float>(em2sumtkpterr[iem],em.floatPtErr()) : em.floatPtErr();
+        // avoid "pt = inf +- inf" track to become an electron.
+        if (pterr > 2*em.floatPt()) {
+            pterr = 2*em.floatPt(); 
+            if (debug_) printf("PFAlgo3 \t EM    %3d (pt %7.2f)    ---> clamp pterr ---> new ptdiff %7.2f +- %7.2f\n", iem, em.floatPt(), ptdiff, pterr);
+        }
+
         if (ptdiff > -ptMatchLow_*pterr) {
             em.isEM = true;
             em.used = true;
