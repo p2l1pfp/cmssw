@@ -8,8 +8,6 @@
 <use   name="DataFormats/EcalDigi"/>
 <use   name="DataFormats/L1TrackTrigger"/>
 <use   name="Geometry/HcalTowerAlgo"/>
-<use   name="tensorflow-cc"/>
-<use   name="tensorflow"/>
 <use   name="PhysicsTools/TensorFlow"/>
 <export>
   <lib name="1"/>
