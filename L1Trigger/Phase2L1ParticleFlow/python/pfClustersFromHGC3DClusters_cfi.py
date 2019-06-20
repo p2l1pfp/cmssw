@@ -4,7 +4,7 @@ pfClustersFromHGC3DClusters = cms.EDProducer("PFClusterProducerFromHGC3DClusters
     src = cms.InputTag("hgcalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClustering"),
     corrector = cms.string("L1Trigger/Phase2L1ParticleFlow/data/hadcorr_HGCal3D_TC.root"),
     correctorEmfMax = cms.double(1.125),
-    preEmId  = cms.string("hOverE >= 0"),
+    preEmId  = cms.string("hOverE < 0.3 && hOverE >= 0"),
     emVsPionID = cms.PSet(
         isPUFilter = cms.bool(False),
         preselection = cms.string(""),
