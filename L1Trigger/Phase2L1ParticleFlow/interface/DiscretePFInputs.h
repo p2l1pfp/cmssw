@@ -3,6 +3,7 @@
 
 #if defined(__GXX_EXPERIMENTAL_CXX0X__) or defined(CMSSW)
 #include <cstdint>
+#include <limits>
 #define L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
 #else
 #include <stdint.h>
@@ -35,11 +36,15 @@ namespace l1tpf_impl {
       static constexpr float ETAPHI_SCALE = ETAPHI_FACTOR*(180./M_PI);  // M_PI/180 is the size of an ECal crystal; we make a grid that is 4 times that size
       static constexpr int16_t PHI_WRAP = 360*ETAPHI_FACTOR;            // what is 3.14 in integer
 
+      static int16_t ptToInt16(float pt) { // avoid overflows
+          return std::min<float>(round(pt * CaloCluster::PT_SCALE), std::numeric_limits<int16_t>::max());
+      }
+
       // filling from floating point
       void fill(float pt, float emPt, float ptErr, float eta, float phi, bool em, unsigned int flags, const l1t::PFCluster *source = nullptr) {
-          hwPt  = round(pt  * CaloCluster::PT_SCALE);
-          hwEmPt  = round(emPt  * CaloCluster::PT_SCALE);
-          hwPtErr = round(ptErr  * CaloCluster::PT_SCALE);
+          hwPt  = CaloCluster::ptToInt16(pt);
+          hwEmPt  = CaloCluster::ptToInt16(emPt);
+          hwPtErr = CaloCluster::ptToInt16(ptErr);
           hwEta = round(eta * CaloCluster::ETAPHI_SCALE);
           hwPhi = int16_t(round(phi * CaloCluster::ETAPHI_SCALE)) % CaloCluster::PHI_WRAP;
           isEM  = em;
@@ -79,7 +84,7 @@ namespace l1tpf_impl {
 
       // filling from floating point
       void fillInput(float pt, float eta, float phi, int charge, float dz, unsigned int flags, const l1t::PFTrack *source = nullptr) {
-          hwInvpt  = round(1/pt  * InputTrack::INVPT_SCALE);
+          hwInvpt  = std::min<double>(round(1/pt  * InputTrack::INVPT_SCALE), std::numeric_limits<uint16_t>::max());
           hwVtxEta = round(eta * InputTrack::VTX_ETA_SCALE);
           hwVtxPhi = round(phi * InputTrack::VTX_PHI_SCALE);
           hwCharge = (charge > 0);
@@ -112,9 +117,13 @@ namespace l1tpf_impl {
 
 #ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
       void fillPropagated(float pt, float ptErr, float caloPtErr, float caloEta, float caloPhi, unsigned int quality, bool isMuon) {
-          hwPt  = round(pt  * CaloCluster::PT_SCALE);
-          hwPtErr = round(ptErr  * CaloCluster::PT_SCALE);
-          hwCaloPtErr = round(caloPtErr  * CaloCluster::PT_SCALE);
+          hwPt  = CaloCluster::ptToInt16(pt);
+          hwPtErr = CaloCluster::ptToInt16(ptErr);
+          hwCaloPtErr = CaloCluster::ptToInt16(caloPtErr);
+          // saturation protection
+          if (hwPt == std::numeric_limits<int16_t>::max()) { 
+            hwCaloPtErr = hwPt / 4;
+          }
           hwEta = round(caloEta * CaloCluster::ETAPHI_SCALE);
           hwPhi = int16_t(round(caloPhi * CaloCluster::ETAPHI_SCALE)) % CaloCluster::PHI_WRAP;
           muonLink = isMuon;
