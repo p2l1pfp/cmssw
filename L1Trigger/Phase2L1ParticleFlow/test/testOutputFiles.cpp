@@ -29,13 +29,13 @@
 #include "DataFormats/FWLite/interface/Event.h"
 #include "DataFormats/Phase2L1ParticleFlow/interface/PFTrack.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/DiscretePFInputsIO.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/Region.h"
 
 #define NTEST 64
 #define REPORT_EVERY_N 50
 #define NTRACKS_PER_SECTOR 110
 #define NBITS_PER_TRACK 96
-static unsigned int N_IN_SECTORS(0);
-static std::vector<float> SECTOR_BOUNDARIES;
+static std::vector<l1tpf_impl::Region> regions_;
 
 typedef l1tpf_impl::InputRegion Region;
 typedef std::pair<int,int> SectorTrackIndex;
@@ -102,7 +102,10 @@ bool findAllInRegion(std::vector<K> & vec, std::map<K, V> mapOfElemen, T value) 
 }
 
 TrackMap get_tracks_from_root_file(fwlite::Event& ev, int entry = 0, bool print = false) {
-	TrackMap tracks_root, tracks_tmp;
+	TrackMap tracks_root;
+
+	// clear the tracks currently stored in the regions
+	for (l1tpf_impl::Region &r : regions_) { r.track.clear(); }
 
 	// go to the event under test
 	if (!ev.to(entry)) {
@@ -117,21 +120,30 @@ TrackMap get_tracks_from_root_file(fwlite::Event& ev, int entry = 0, bool print 
 	assert( h_track.isValid() );
 
 	int ntrackstotal(0);
-	auto kTrackEnd = h_track->end();
-	for (auto trackIter = h_track->begin(); trackIter != kTrackEnd; ++trackIter) {
-		if (trackIter->pt() <= 2.0 || trackIter->nStubs() < 4 || trackIter->normalizedChi2() >= 15.0) continue;
-		int sector_index = (std::lower_bound(SECTOR_BOUNDARIES.begin(), SECTOR_BOUNDARIES.end(), trackIter->phi())-SECTOR_BOUNDARIES.begin())-1;
-		tracks_tmp[std::make_pair(sector_index,ntrackstotal)] = makeTLorentzVectorPtEtaPhiE(trackIter->pt(),trackIter->eta(),trackIter->phi(),trackIter->pt());
-		//if (print) printf("\t\t Track %u (pT,eta,phi): (%.4f,%.4f,%.4f)\n", ntrackstotal, trackIter->pt(), trackIter->eta(), trackIter->phi());
+	const auto & tracks = *h_track;
+	for (unsigned int itk = 0, ntk = tracks.size(); itk < ntk; ++itk) {
+		const auto & tk = tracks[itk];
+		if (tk.pt() <= 2.0 || tk.nStubs() < 4 || tk.normalizedChi2() >= 15.0) continue;
+		for (l1tpf_impl::Region &r : regions_) {
+			bool inside = r.contains(tk.eta(), tk.phi());;
+			if (inside) {
+				l1tpf_impl::PropagatedTrack prop;
+				prop.fillInput(tk.pt(), r.localEta(tk.eta()), r.localPhi(tk.phi()), tk.charge(), tk.vertex().Z(), tk.quality(), &tk);
+				prop.fillPropagated(tk.pt(), tk.trkPtError(), tk.caloPtError(), r.localEta(tk.caloEta()), r.localPhi(tk.caloPhi()), tk.quality(), tk.isMuon());
+				prop.hwStubs = tk.nStubs();
+				prop.hwChi2  = round(tk.chi2()*10);
+				r.track.push_back(prop);
+			}
+		}
+		//if (print) printf("\t\t Track %u (pT,eta,phi): (%.4f,%.4f,%.4f)\n", ntrackstotal, tk.pt(), tk.eta(), tk.phi());
 		ntrackstotal++;
 	}
-	for (unsigned int is = 0; is < N_IN_SECTORS; ++is) {
-		std::vector<SectorTrackIndex> tracks_in_sector;
-		findAllInRegion<SectorTrackIndex,TLorentzVector*,int>(tracks_in_sector,tracks_tmp,is);
-		if (print) printf("\tFound region %u [%0.2f,%0.2f] with %lu tracks\n", is, SECTOR_BOUNDARIES[is], SECTOR_BOUNDARIES[is+1], tracks_in_sector.size());
-		for (unsigned int it=0; it<tracks_in_sector.size(); it++) {
-			if (print) printf("\t\t Track %u (pT,eta,phi): (%.4f,%.4f,%.4f)\n", it, tracks_tmp[tracks_in_sector[it]]->Pt(), tracks_tmp[tracks_in_sector[it]]->Eta(), tracks_tmp[tracks_in_sector[it]]->Phi());
-			tracks_root[std::make_pair(is,it)] = tracks_tmp[tracks_in_sector[it]];
+	for (unsigned int iregion = 0; iregion < regions_.size(); ++iregion) {
+		std::vector<l1tpf_impl::PropagatedTrack> tracks_in_region = regions_[iregion].track;
+		if (print) printf("\tFound region %u (eta=[%0.4f,%0.4f] phi=[%0.4f,%0.4f]) with %lu tracks\n", iregion, regions_[iregion].etaMin,regions_[iregion].etaMax, regions_[iregion].phiCenter-regions_[iregion].phiHalfWidth, regions_[iregion].phiCenter+regions_[iregion].phiHalfWidth, tracks_in_region.size());
+		for (unsigned int it=0; it<tracks_in_region.size(); it++) {
+			if (print) printf("\t\t Track %u (pT,eta,phi): (%.4f,%.4f,%.4f)\n", it, tracks_in_region[it].src->p4().pt(), tracks_in_region[it].src->p4().eta(), tracks_in_region[it].src->p4().phi());
+			tracks_root[std::make_pair(iregion,it)] = makeTLorentzVectorPtEtaPhiE(tracks_in_region[it].src->pt(),tracks_in_region[it].src->eta(),tracks_in_region[it].src->phi(),tracks_in_region[it].src->pt());
 		}
 	}
 	if (print) {
@@ -154,9 +166,9 @@ std::map<std::pair<int,int>,TLorentzVector*> get_tracks_from_dump_file(FILE *dfi
 		std::cerr << "ERROR::testDumpFile::get_tracks_from_dump_file Something went wrong reading from the dump file" << std::endl; 
 		assert(event_.readFromFile(dfile_));
 	}
-	if (event_.regions.size() != N_IN_SECTORS) {
+	if (event_.regions.size() != regions_.size()) {
 		printf("ERROR::testDumpFile::get_tracks_from_dump_file Mismatching number of input regions: %lu\n", event_.regions.size());
-		assert(event_.regions.size() == N_IN_SECTORS);
+		assert(event_.regions.size() == regions_.size());
 	}
 	if (print) printf("Dump::Run %u, lumi %u, event %lu, regions %lu \n", event_.run, event_.lumi, event_.event, event_.regions.size());
 
@@ -166,7 +178,7 @@ std::map<std::pair<int,int>,TLorentzVector*> get_tracks_from_dump_file(FILE *dfi
 	int pv_gen   = round(event_.genZ0 * l1tpf_impl::InputTrack::Z0_SCALE);
 	int pv_cmssw = round(event_.z0    * l1tpf_impl::InputTrack::Z0_SCALE);
 
-	for (unsigned int is = 0; is < N_IN_SECTORS; ++is) {
+	for (unsigned int is = 0; is < regions_.size(); ++is) {
 		const Region & r = event_.regions[is];
 		if (print) printf("\tRead region %u [%0.2f,%0.2f] with %lu tracks\n", is, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth, r.track.size());
 		ntrackstotal+=r.track.size();
@@ -204,12 +216,12 @@ std::map<std::pair<int,int>,TLorentzVector*> get_tracks_from_coe_file(std::ifstr
 		std::cerr << "ERROR::testDumpFile::get_tracks_from_coe_file We have already reached the end of the coe file" << std::endl;
 		assert(!cfile_.eof());
 	}
-	if (print) printf("COE::Run \"unknown\", lumi \"unknown\", event \"unknown\", regions %u? \n", N_IN_SECTORS);
+	if (print) printf("COE::Run \"unknown\", lumi \"unknown\", event \"unknown\", regions %lu? \n", regions_.size());
 
 	// read the lines one by one
 	for (unsigned int iline=0; iline<NTRACKS_PER_SECTOR; iline++) {
 		bset_string_.resize(NBITS_PER_TRACK);
-		for (unsigned int isector=0; isector<N_IN_SECTORS; isector++) {
+		for (unsigned int isector=0; isector<regions_.size(); isector++) {
 			cfile_.read(&bset_string_[0],96);
 			std::bitset<NBITS_PER_TRACK> bset_(bset_string_);
 			if (bset_.none()) {
@@ -259,10 +271,10 @@ std::map<std::pair<int,int>,TLorentzVector*> get_tracks_from_coe_file(std::ifstr
 		}
 
 	}
-	for (unsigned int is = 0; is < N_IN_SECTORS; ++is) {
+	for (unsigned int is = 0; is < regions_.size(); ++is) {
 		std::vector<SectorTrackIndex> tracks_in_sector;
 		findAllInRegion<SectorTrackIndex,TLorentzVector*,int>(tracks_in_sector,tracks_coe,is);
-		if (print) printf("\tRead region %u [%0.2f,%0.2f] with %lu tracks\n", is, SECTOR_BOUNDARIES[is], SECTOR_BOUNDARIES[is+1], tracks_in_sector.size());
+		if (print) printf("\tRead region %u (eta=[%0.4f,%0.4f] phi=[%0.4f,%0.4f]) with %lu tracks\n", is, regions_[is].etaMin,regions_[is].etaMax,regions_[is].phiCenter-regions_[is].phiHalfWidth,regions_[is].phiCenter+regions_[is].phiHalfWidth, tracks_in_sector.size());
 		for (unsigned int it=0; it<tracks_in_sector.size(); it++) {
 			if (print) printf("\t\t Track %u (pT,eta,phi): (%.4f,%.4f,%.4f)\n", it, tracks_coe[tracks_in_sector[it]]->Pt(), tracks_coe[tracks_in_sector[it]]->Eta(), tracks_coe[tracks_in_sector[it]]->Phi());
 		}
@@ -331,7 +343,7 @@ int main(int argc, char *argv[]) {
 
 	// store some programatic information
 	std::stringstream usage;
-	usage << "usage: " << argv[0] << " <filename>.root <filename>.dump <filename>.coe <nregions>";
+	usage << "usage: " << argv[0] << " <filename>.root <filename>.dump <filename>.coe <etaExtra> <phiExtra> <nRegionsPhi> <etaBoundaries>";
 
 	// load framework libraries
 	gSystem->Load("libFWCoreFWLite");
@@ -339,7 +351,7 @@ int main(int argc, char *argv[]) {
 
 	// argc should be 5 for correct execution
 	// We print argv[0] assuming it is the program name
-	if ( argc != 5 ) {
+	if ( argc < 9 ) {
 		std::cerr << "ERROR::testDumpFile " << argc << " arguments provided" << std::endl;
 		for (int i=0; i<argc; i++) {
 			std::cerr << "\tArgument " << i << ": " << argv[i] << std::endl;
@@ -348,30 +360,39 @@ int main(int argc, char *argv[]) {
 		return -1;
 	}
 
-	// assign the command-line parameters to variables
+	// assign the command-line parameters to variables and setup the regions
 	std::string filename_root = argv[1];
 	std::string filename_dump = argv[2];
 	std::string filename_coe = argv[3];
-	std::string sectors = argv[argc-1];
+	float etaExtra, phiExtra;
+	unsigned int nRegionsPhi;
+	std::vector<float> etaBoundaries;
 	try {
+		etaExtra = atof(argv[4]);
+		phiExtra = atof(argv[5]);
+		nRegionsPhi = atoi(argv[6]);
+		std::vector<std::string> etaBoundariesStrings(argv + 7, argv + argc);
 		std::size_t pos;
-		N_IN_SECTORS = std::stoi(sectors, &pos);
-		if (pos < sectors.size()) {
-			std::cerr << "Trailing characters after number: " << sectors << '\n';
+		for (unsigned int i=0; i<etaBoundariesStrings.size(); i++) {
+			etaBoundaries.push_back(std::stoi(etaBoundariesStrings[i], &pos));
+			if (pos < etaBoundariesStrings[i].size()) {
+				std::cerr << "Trailing characters after number: " << etaBoundariesStrings[i] << '\n';
+			}
+		}
+		float phiWidth = 2*M_PI/nRegionsPhi;
+		for (unsigned int ieta = 0, neta = etaBoundaries.size()-1; ieta < neta; ++ieta) {
+			for (unsigned int iphi = 0; iphi < nRegionsPhi; ++iphi) {
+				float phiCenter = (iphi+0.5)*phiWidth-M_PI;
+				regions_.push_back(l1tpf_impl::Region(etaBoundaries[ieta], etaBoundaries[ieta+1], phiCenter, phiWidth, phiExtra, etaExtra, false, 0, 0, 0, 0, 0, 0)); 
+			}
 		}
 	} catch (std::invalid_argument const &ex) {
-		std::cerr << "Invalid number: " << sectors << std::endl;
+		std::cerr << "Invalid number in one of the eta-phi arguments" << std::endl;
 		return -2;
 	} catch (std::out_of_range const &ex) {
-		std::cerr << "Number out of range: " << sectors << std::endl;
+		std::cerr << "Number out of range in one of the eta-phi arguments" << std::endl;
 		return -3;
 	}
-	// divide the detector into N_IN_SECTORS phi sectors from [-pi,pi]
-	float sector_size = 2.*M_PI/N_IN_SECTORS;
-	for (unsigned int isec=0; isec<N_IN_SECTORS; isec++) {
-		SECTOR_BOUNDARIES.push_back(-M_PI+(isec*sector_size));
-	}
-	SECTOR_BOUNDARIES.push_back(M_PI);
 
 	// check the filenames
 	if (filename_root.find(".root")==std::string::npos)	{
@@ -392,14 +413,11 @@ int main(int argc, char *argv[]) {
 			  << "==============" << std::endl
 			  << "Number of tests (events): " << NTEST << std::endl
 			  << "Report every N tests: " << REPORT_EVERY_N << std::endl
-			  << "Number of sectors (in phi): " << N_IN_SECTORS << std::endl
-			  << "Sector boundaries: [" << std::flush;
-	for (unsigned int isector=0; isector<SECTOR_BOUNDARIES.size(); isector++) {
-		std::cout << SECTOR_BOUNDARIES[isector] << std::flush;
-		if (isector<SECTOR_BOUNDARIES.size()-1) std::cout << "," << std::flush;
+			  << "Number of regions (in eta-phi): " << regions_.size() << std::endl;
+	for (unsigned int iregion=0; iregion<regions_.size(); iregion++) {
+		printf("\t%i : eta=[%0.4f,%0.4f] phi=[%0.4f,%0.4f]\n",iregion,regions_[iregion].etaMin,regions_[iregion].etaMax,regions_[iregion].phiCenter-regions_[iregion].phiHalfWidth,regions_[iregion].phiCenter+regions_[iregion].phiHalfWidth);
 	}
-	std::cout << "]" << std::endl
-			  << "Number of tracks per sector: " << NTRACKS_PER_SECTOR << std::endl
+	std::cout << "Number of tracks per sector: " << NTRACKS_PER_SECTOR << std::endl
 			  << "Number of bits per track: " << NBITS_PER_TRACK << std::endl
 			  << "==============" << std::endl << std::endl;
 

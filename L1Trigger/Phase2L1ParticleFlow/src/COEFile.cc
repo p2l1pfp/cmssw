@@ -68,6 +68,7 @@ void COEFile::writeTracksToFile(const std::vector<Region>& regions, bool print) 
 
 				// print some debugging information
 				if (debug_ && print && irow==0 && icol==0) {
+					printf("region: eta=[%f,%f] phi=%f+/-%f\n",regions[icol].etaMin,regions[icol].etaMax,regions[icol].phiCenter,regions[icol].phiHalfWidth);
 					printf("l1t::PFTrack (pT,eta,phi) [float] = (%f,%f,%f)\n",current_track.src->p4().Pt(),current_track.src->p4().Eta(),current_track.src->p4().Phi());
 					printf("l1t::PFTrack (pT,eta,phi) [int] = (%i,%i,%i)\n",current_track.src->hwPt(),current_track.src->hwEta(),current_track.src->hwPhi());
 					printf("l1tpf_impl::PropagatedTrack (1/pT,eta,phi) [int,10] = (%i,%i,%i)\n",current_track.hwPt,current_track.hwVtxEta,current_track.hwVtxPhi);
