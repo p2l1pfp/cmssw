@@ -76,10 +76,10 @@ namespace l1tpf_impl {
       const l1t::PFTrack *src;
 
 #ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
-      static constexpr float INVPT_SCALE   = 2E4;    // 1%/pt @ 100 GeV is 2 bits 
-      static constexpr float VTX_PHI_SCALE = 1/2.5E-6; // 5 micro rad is 2 bits
-      static constexpr float VTX_ETA_SCALE = 1/1E-5;   // no idea, but assume it's somewhat worse than phi
-      static constexpr float Z0_SCALE      = 20;     // 1mm is 2 bits
+      static constexpr float INVPT_SCALE   = 2E4;      // 1%/pt @ 100 GeV is 2 bits 
+      static constexpr float VTX_PHI_SCALE = 1/1.6E-3; // 5 micro rad is 2 bits
+      static constexpr float VTX_ETA_SCALE = 1/1E-4;   // no idea, but assume it's somewhat worse than phi
+      static constexpr float Z0_SCALE      = 20;       // 1mm is 2 bits
       static constexpr int32_t VTX_ETA_1p3 = 1.3 * InputTrack::VTX_ETA_SCALE;
 
       // filling from floating point

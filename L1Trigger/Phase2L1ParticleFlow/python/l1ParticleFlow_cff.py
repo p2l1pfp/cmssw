@@ -131,13 +131,13 @@ l1pfProducerHGCal = l1pfProducer.clone(
     trackRegionMode = cms.string("atCalo"),
     regions = cms.VPSet(
         cms.PSet(
-            etaBoundaries = cms.vdouble(-3,-1.5),
+            etaBoundaries = cms.vdouble(-2.5,-1.5),
             phiSlices = cms.uint32(1),
             etaExtra = cms.double(0.3),
             phiExtra = cms.double(0.0)
         ),
         cms.PSet(
-            etaBoundaries = cms.vdouble(1.5,3.0),
+            etaBoundaries = cms.vdouble(1.5,2.5),
             phiSlices = cms.uint32(1),
             etaExtra = cms.double(0.3),
             phiExtra = cms.double(0.0)
@@ -145,10 +145,25 @@ l1pfProducerHGCal = l1pfProducer.clone(
     ),
 )
 l1pfProducerHGCal.linking.trackCaloDR = 0.1 # more precise cluster positions
+l1pfProducerHGCalNoTK = l1pfProducerHGCal.clone(regions = cms.VPSet(
+    cms.PSet(
+        etaBoundaries = cms.vdouble(-3,-2.5),
+        phiSlices = cms.uint32(1),
+        etaExtra = cms.double(0.3),
+        phiExtra = cms.double(0.0)
+    ),
+    cms.PSet(
+        etaBoundaries = cms.vdouble(2.5,3),
+        phiSlices = cms.uint32(1),
+        etaExtra = cms.double(0.3),
+        phiExtra = cms.double(0.0)
+    ),
+))
 
 l1ParticleFlow_pf_hgcal = cms.Sequence(
     pfTracksFromL1TracksHGCal +   
-    l1pfProducerHGCal
+    l1pfProducerHGCal +
+    l1pfProducerHGCalNoTK
 )
 
 
@@ -204,11 +219,29 @@ l1ParticleFlow_pf_hf = cms.Sequence(
 )
 
 
+# PF in the TSA Region
+l1pfProducerTSA = l1pfProducerBarrel.clone(
+    trackRegionMode = cms.string("atVertex"),
+    regions = cms.VPSet(
+        cms.PSet(
+            etaBoundaries = cms.vdouble(-3,3),
+            phiSlices = cms.uint32(18),
+            etaExtra = cms.double(0.0),
+            phiExtra = cms.double(0.0)
+        ),
+    ),
+)
+l1ParticleFlow_pf_tsa = cms.Sequence(
+    pfTracksFromL1TracksBarrel +
+    l1pfProducerTSA
+)
+
 # Merging all outputs
 l1pfCandidates = cms.EDProducer("L1TPFCandMultiMerger",
     pfProducers = cms.VInputTag(
         cms.InputTag("l1pfProducerBarrel"), 
         cms.InputTag("l1pfProducerHGCal"),
+        cms.InputTag("l1pfProducerHGCalNoTK"),
         cms.InputTag("l1pfProducerHF")
     ),
     labelsToMerge = cms.vstring("Calo", "TK", "TKVtx", "PF", "Puppi"),

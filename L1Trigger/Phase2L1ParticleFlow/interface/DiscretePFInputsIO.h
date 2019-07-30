@@ -88,9 +88,16 @@ namespace l1tpf_impl {
         m.src = nullptr;
     }
 
+    void writeToFile(const float & pug, FILE * file) {
+        fwrite(&pug, sizeof(float), 1, file);
+    }
+    void readFromFile(float & pug, FILE *file) {
+        fread(&pug, sizeof(float), 1, file);
+    }
+
     template<typename T>
     void writeManyToFile(const std::vector<T> & objs, FILE *file) {
-        uint32_t number = objs.size(); 
+        uint32_t number = objs.size();
         fwrite(&number, 4, 1, file);
         for (uint32_t i = 0; i < number; ++i) writeToFile(objs[i], file);
     }
@@ -99,7 +106,7 @@ namespace l1tpf_impl {
     void readManyFromFile(std::vector<T> & objs, FILE *file) {
         uint32_t number;
         fread(&number, 4, 1, file);
-        objs.resize(number); 
+        objs.resize(number);
         for (uint32_t i = 0; i < number; ++i) readFromFile(objs[i], file);
     }
 
