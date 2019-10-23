@@ -23,7 +23,7 @@ static bool hourglassExtended=false; // turn on displaced tracking, also edit L1
 //Gemetry extensions -- used only by stand-alone code.
 static const std::string geomext=hourglassExtended?"hourglassExtended":"hourglass";  
 
-static const bool geomTDR=false; // false => newest T14 tracker, true => "TDR" (T5/T6 tracker, D21/D11/D17 CMS geometries)
+static const bool geomTkTDR=true; // false => newest T14 tracker, true => old "Tracker TDR" geometry (T5/T6 tracker, D21/D11/D17/D35 CMS geometries)
 
 //static const double cSpeed=2.99792458e10; // Speed of light (cm/s) => these are currently not used, comment out
 //static double bField=3.81120228767395;    // Assumed B-field
@@ -168,12 +168,12 @@ static const double rmaxdisk=120.0;
 // T5: http://cms-tklayout.web.cern.ch/cms-tklayout/layouts/recent-layouts/OT616_200_IT404/layout.html
 // T14: http://cms-tklayout.web.cern.ch/cms-tklayout/layouts/recent-layouts/OT616_200_IT404/layout.html
 
-static const double rmeanL1=geomTDR?(rmaxdisk*858)/4096:(rmaxdisk*851)/4096;
-static const double rmeanL2=geomTDR?(rmaxdisk*1279)/4096:(rmaxdisk*1269)/4096;
-static const double rmeanL3=geomTDR?(rmaxdisk*1795)/4096:(rmaxdisk*1784)/4096;
-static const double rmeanL4=geomTDR?(rmaxdisk*2347)/4096:(rmaxdisk*2347)/4096;
-static const double rmeanL5=geomTDR?(rmaxdisk*2937)/4096:(rmaxdisk*2936)/4096;
-static const double rmeanL6=geomTDR?(rmaxdisk*3783)/4096:(rmaxdisk*3697)/4096;
+static const double rmeanL1=geomTkTDR?(rmaxdisk*858)/4096:(rmaxdisk*851)/4096;
+static const double rmeanL2=geomTkTDR?(rmaxdisk*1279)/4096:(rmaxdisk*1269)/4096;
+static const double rmeanL3=geomTkTDR?(rmaxdisk*1795)/4096:(rmaxdisk*1784)/4096;
+static const double rmeanL4=geomTkTDR?(rmaxdisk*2347)/4096:(rmaxdisk*2347)/4096;
+static const double rmeanL5=geomTkTDR?(rmaxdisk*2937)/4096:(rmaxdisk*2936)/4096;
+static const double rmeanL6=geomTkTDR?(rmaxdisk*3783)/4096:(rmaxdisk*3697)/4096;
 
 static const double zmeanD1=(zlength*2239)/2048;
 static const double zmeanD2=(zlength*2645)/2048;
@@ -193,7 +193,7 @@ static const double half2SmoduleWidth=4.57;
 
 // need separate lookup values for inner two vs outer three disks for 2S modules
 
-// T5 tracker geometry (= D11, D17, D21, ... CMS geometry)!
+// T5/T6 tracker geometry (= D11, D17, D21, D35, ... CMS geometry)!
 // http://cms-tklayout.web.cern.ch/cms-tklayout/layouts/recent-layouts/OT616_200_IT404/layout.html
 //static const double rDSSinner[10] = {66.7728, 71.7967, 77.5409, 82.5584, 84.8736, 89.8953, 95.7791, 100.798, 102.495, 107.52};  // <=== these 10 are for inner 2 disks
 //static const double rDSSouter[10] = {65.1694, 70.1936, 75.6641, 80.6908, 83.9581, 88.9827, 94.6539, 99.6772, 102.494, 107.519}; // <=== these 10 are for outer 3 disks
@@ -203,17 +203,17 @@ static const double half2SmoduleWidth=4.57;
 //static const double rDSSinner[10] = {66.4391, 71.4391, 76.275, 81.275, 82.9550, 87.9550, 93.815, 98.815, 99.816, 104.816};
 //static const double rDSSouter[10] = {63.9903, 68.9903, 74.275, 79.275, 81.9562, 86.9562, 92.492, 97.492, 99.816, 104.816};
 
-static const double rDSSinner_mod1 = geomTDR?69.2345:68.9391;
-static const double rDSSinner_mod2 = geomTDR?80.0056:78.7750;
-static const double rDSSinner_mod3 = geomTDR?87.3444:85.4550;
-static const double rDSSinner_mod4 = geomTDR?98.2515:96.3150;
-static const double rDSSinner_mod5 = geomTDR?104.9750:102.3160;
+static const double rDSSinner_mod1 = geomTkTDR?69.2345:68.9391;
+static const double rDSSinner_mod2 = geomTkTDR?80.0056:78.7750;
+static const double rDSSinner_mod3 = geomTkTDR?87.3444:85.4550;
+static const double rDSSinner_mod4 = geomTkTDR?98.2515:96.3150;
+static const double rDSSinner_mod5 = geomTkTDR?104.9750:102.3160;
 
-static const double rDSSouter_mod1 = geomTDR?67.6317:66.4903;
-static const double rDSSouter_mod2 = geomTDR?78.1300:76.7750;
-static const double rDSSouter_mod3 = geomTDR?86.4293:84.4562;
-static const double rDSSouter_mod4 = geomTDR?97.1316:94.9920;
-static const double rDSSouter_mod5 = geomTDR?104.9750:102.3160;
+static const double rDSSouter_mod1 = geomTkTDR?67.6317:66.4903;
+static const double rDSSouter_mod2 = geomTkTDR?78.1300:76.7750;
+static const double rDSSouter_mod3 = geomTkTDR?86.4293:84.4562;
+static const double rDSSouter_mod4 = geomTkTDR?97.1316:94.9920;
+static const double rDSSouter_mod5 = geomTkTDR?104.9750:102.3160;
 
 static const double halfstrip = 2.5; //we want the center of the two strip positions in a module, not just the center of a module 
 
