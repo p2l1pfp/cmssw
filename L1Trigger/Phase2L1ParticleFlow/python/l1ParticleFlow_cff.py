@@ -76,7 +76,7 @@ l1pfProducerBarrel = l1pfProducer.clone(
     puppiDrMin = 0.07,
     puppiPtMax = 50.,
     vtxAlgo = "external",
-    vtxFormat = cms.string("L1TkPrimaryVertex"),
+    vtxFormat = cms.string("TkPrimaryVertex"),
     vtxCollection = cms.InputTag("L1TkPrimaryVertex",""),
     # puppi tuning
     puAlgo = "LinearizedPuppi",
@@ -131,7 +131,7 @@ l1pfProducerHGCal = l1pfProducer.clone(
     puppiPtMax = 50.,
     puppiUsingBareTracks = True,
     vtxAlgo = "external",
-    vtxFormat = cms.string("L1TkPrimaryVertex"),
+    vtxFormat = cms.string("TkPrimaryVertex"),
     vtxCollection = cms.InputTag("L1TkPrimaryVertex",""),
     # puppi tuning
     puAlgo = "LinearizedPuppi",
@@ -204,7 +204,7 @@ l1pfProducerHF = l1pfProducer.clone(
     puppiDrMin = 0.1,
     puppiPtMax = 100.,
     vtxAlgo = "external",
-    vtxFormat = cms.string("L1TkPrimaryVertex"),
+    vtxFormat = cms.string("TkPrimaryVertex"),
     vtxCollection = cms.InputTag("L1TkPrimaryVertex",""),
     # puppi tuning
     puAlgo = "LinearizedPuppi",

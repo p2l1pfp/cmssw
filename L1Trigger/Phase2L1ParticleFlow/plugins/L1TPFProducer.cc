@@ -145,7 +145,7 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
         const std::string & vtxFormat = iConfig.getParameter<std::string>("vtxFormat");
         if (vtxFormat == "Vertex") {
             extVtx_  = consumes<std::vector<l1t::Vertex>>(iConfig.getParameter<edm::InputTag>("vtxCollection"));
-        } else if (vtxFormat == "L1TkPrimaryVertex") {
+        } else if (vtxFormat == "TkPrimaryVertex") {
             extTkVtx_  = consumes<std::vector<l1t::TkPrimaryVertex>>(iConfig.getParameter<edm::InputTag>("vtxCollection"));
         } else throw cms::Exception("Configuration") << "Unsupported vtxFormat " << vtxFormat << "\n";
     } else throw cms::Exception("Configuration") << "Unsupported vtxAlgo " << vtxAlgo << "\n";
