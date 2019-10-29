@@ -183,12 +183,10 @@ phase2_SimL1Emulator += l1PFJets
 #l1PFMets = cms.Sequence(l1PFMetCalo + l1PFMetPF + l1PFMetPuppi)
 phase2_SimL1Emulator += l1PFMets
 
-# PFTaus(HPS)
+# Phase1 PF jets
 # ########################################################################
-from L1Trigger.L1CaloTrigger.Phase1L1TJetProducer_cfi import Phase1L1TJetProducer
-l1pfPhase1L1TJetProducer = Phase1L1TJetProducer.clone()
-phase2_SimL1Emulator += l1pfPhase1L1TJetProducer
-
+from L1Trigger.L1CaloTrigger.Phase1L1TJets_cff import *
+phase2_SimL1Emulator += Phase1L1TJetsSequence
 # PFTaus(HPS)
 # ########################################################################
 from L1Trigger.Phase2L1Taus.L1PFTauProducer_cff import L1PFTauProducer

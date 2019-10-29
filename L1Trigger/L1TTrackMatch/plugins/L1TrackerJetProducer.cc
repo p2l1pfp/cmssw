@@ -166,9 +166,9 @@ void L1TrackerJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iS
     if(fabs(iterL1Track->getPOCA(L1Tk_nPar).z())>TRK_ZMAX)continue;
     if(fabs(iterL1Track->getMomentum(L1Tk_nPar).eta())>TRK_ETAMAX)continue;
     if(iterL1Track->getMomentum(L1Tk_nPar).perp()<TRK_PTMIN)continue;
-    if(iterL1Track->getChi2()>TRK_CHI2MAX)continue;
     std::vector< edm::Ref< edmNew::DetSetVector< TTStub< Ref_Phase2TrackerDigi_ > >, TTStub< Ref_Phase2TrackerDigi_ > > >  theStubs = iterL1Track -> getStubRefs() ;	    if(theStubs.size()<TRK_NSTUBMIN)continue;
     float chi2ndof=(iterL1Track->getChi2()/(2*theStubs.size() - L1Tk_nPar));
+    if(chi2ndof>TRK_CHI2MAX)continue;
     float trk_bstubPt=StubPtConsistency::getConsistency(TTTrackHandle->at(this_l1track-1), theTrackerGeom, tTopo,mMagneticFieldStrength,4);//trkPtr->getStubPtConsis
     if(trk_bstubPt>BendConsistency)continue;
     if(doTightChi2 && (iterL1Track->getMomentum(L1Tk_nPar).perp()>20 && chi2ndof>5))continue;

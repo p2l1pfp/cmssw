@@ -15,6 +15,12 @@ public:
 
   float getPtFromGMTPt(int gmt_pt) const;
 
+  int getGMTPtDxy(float pt) const;
+
+  float getPtFromGMTPtDxy(int gmt_pt_dxy) const;
+
+  int getGMTDxy(float dxy) const;
+
   int getGMTPhi(int phi) const;
   int getGMTPhiV2(int phi) const;
 

@@ -18,6 +18,8 @@ void MicroGMTConverter::convert(
   int sector = in_track.Sector() - 1;
 
   out_cand.setHwPt            ( in_track.GMT_pt() );
+  out_cand.setHwPt2           ( in_track.GMT_pt_dxy() );
+  out_cand.setHwDXY           ( in_track.GMT_dxy() );
   out_cand.setHwPhi           ( in_track.GMT_phi() );
   out_cand.setHwEta           ( in_track.GMT_eta() );
   out_cand.setHwSign          ( in_track.GMT_charge() );

@@ -6,12 +6,12 @@ L1TrackerEtMiss = cms.EDProducer('L1TrackerEtMissProducer',
 
      maxZ0 = cms.double ( 15. ) ,    # in cm
      maxEta = cms.double ( 2.4 ) ,
-     chi2dofMax = cms.double( 50. ),
-     bendchi2Max = cms.double( 1.75 ),
+     chi2dofMax = cms.double( 40. ),
+     bendchi2Max = cms.double( 2.4 ),
      minPt = cms.double( 2. ),       # in GeV
      DeltaZ = cms.double( 3. ),      # in cm
      nStubsmin = cms.int32( 4 ),     # min number of stubs for the tracks to enter in TrkMET calculation
-     nStubsPSmin = cms.int32( 2 ),   # min number of stubs in the PS Modules
+     nStubsPSmin = cms.int32( -1 ),   # min number of stubs in the PS Modules
      maxPt = cms.double( 200. ),	 # in GeV. When maxPt > 0, tracks with PT above maxPt are considered as
                                      # mismeasured and are treated according to HighPtTracks below.
                                      # When maxPt < 0, no special treatment is done for high PT tracks.

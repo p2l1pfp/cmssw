@@ -132,16 +132,16 @@ void EMTFSubsystemCollector::extractPrimitives(
       // Encode fractional strip in 3 bits (4 including sign), which corresponds to 1/16-strip unit
       float frac_position = position - static_cast<float>(strip);
       int frac_strip = static_cast<int>(std::round(std::abs(frac_position) * 8));
-      frac_strip = std::min(std::max(frac_strip, 0), 7);
+      frac_strip = std::clamp(frac_strip, 0, 7);
       frac_strip = (frac_position >= 0) ? frac_strip : -frac_strip;
 
       // Encode bend in 6 bits, which corresponds to 1/32-strip unit
       int bend = static_cast<int>(std::round(res.slope * 16));
-      bend = std::min(std::max(bend, -32), 31);
+      bend = std::clamp(bend, -32, 31);
 
       //// Encode quality in 5 bits, which corresponds to 0.25 step from 0 to 8
       //int quality = static_cast<int>(std::round(res.chi2 * 4));
-      //quality = std::min(std::max(quality, 0), 31);
+      //quality = std::clamp(quality, 0, 31);
 
       // Jan 2019: Use number of hits as quality
       int quality = nhitlayers;

@@ -67,6 +67,11 @@ public:
       EMTFTrackCollection& out_tracks
   ) const;
 
+  void ghost_busting(
+      // Input & output
+      EMTFTrackCollection& best_emtf_tracks
+  ) const;
+
 private:
   void build_tracks(
       // Input

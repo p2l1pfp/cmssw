@@ -24,6 +24,32 @@ float PtAssignmentEngineAux::getPtFromGMTPt(int gmt_pt) const {
   return pt;
 }
 
+int PtAssignmentEngineAux::getGMTPtDxy(float pt) const {
+// compressed pt = pt*1 (scale) + 1 (pt = 0 is empty candidate)
+  int gmt_pt_dxy = (pt * 1) + 1;
+  gmt_pt_dxy = (gmt_pt_dxy > 255) ? 255 : gmt_pt_dxy;
+  return gmt_pt_dxy;
+}
+
+float PtAssignmentEngineAux::getPtFromGMTPtDxy(int gmt_pt_dxy) const {
+  float pt = (gmt_pt_dxy <= 0) ?  0 : 1.0 * (gmt_pt_dxy-1);
+  return pt;
+}
+
+int PtAssignmentEngineAux::getGMTDxy(float dxy) const {
+  int gmt_dxy = 0;
+  if (std::abs(dxy) < 20.) {
+    gmt_dxy = 0;
+  } else if (std::abs(dxy) < 50.) {
+    gmt_dxy = 1;
+  } else if (std::abs(dxy) < 80.) {
+    gmt_dxy = 2;
+  } else {
+    gmt_dxy = 3;
+  }
+  return gmt_dxy;
+}
+
 int PtAssignmentEngineAux::getGMTPhi(int phi) const {
   // convert phi into gmt scale according to DN15-017
   // full scale is -16 to 100, or 116 values, covers range -10 to 62.5 deg

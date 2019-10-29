@@ -116,7 +116,7 @@ struct maxzbin {
       typedef vector< L1TTTrackType > L1TTTrackCollectionType;
      
       static void fillDescriptions(ConfigurationDescriptions& descriptions);
-      bool TrackQualityCuts(float trk_pt,int trk_nstub, double trk_chi2,double trk_bconsist);
+      bool TrackQualityCuts(float trk_pt,int trk_nstub, float trk_chi2,float trk_bconsist,float trk_d0);
       //bool TrackQualityCuts(float trk_pt,int trk_nstub, double trk_chi2);
       //Clustering Steps
       void L2_cluster(vector< Ptr< L1TTTrackType > > L1TrackPtrs, vector<int>ttrk, vector<int>tdtrk,vector<int>ttdtrk, maxzbin &mzb);
@@ -150,9 +150,23 @@ struct maxzbin {
       float TRK_PTMIN;      // [GeV]
       float TRK_ETAMAX;     // [rad]
       int nPSMin;
-       double minTrkJetpT=5.;
-       int LowpTJetMinTrackMultiplicity=2;
-       int HighpTJetMinTrackMultiplicity=3;
+      double minTrkJetpT=5.;
+      int LowpTJetMinTrackMultiplicity=2;
+      int HighpTJetMinTrackMultiplicity=3;
+      float CHI2_MAX=50;
+      float PromptBendConsistency=1.75;
+      int L1Tk_nPar=4; 
+      bool DisplacedAlgo=false;
+      float D0_CutNstubs4=0.15;
+      float D0_CutNstubs5=1.0;
+      float NStubs4DisplacedChi2_Loose=5; 
+      float NStubs5DisplacedChi2_Loose=3; 
+      float NStubs4Displacedbend_Loose=3; 
+      float NStubs5Displacedbend_Loose=3; 
+      float NStubs4DisplacedChi2_Tight=5; 
+      float NStubs5DisplacedChi2_Tight=3; 
+      float NStubs4Displacedbend_Tight=3; 
+      float NStubs5Displacedbend_Tight=3; 
       //virtual void beginRun(Run const&, EventSetup const&) override;
       //virtual void endRun(Run const&, EventSetup const&) override;
       //virtual void beginLuminosityBlock(LuminosityBlock const&, EventSetup const&) override;
@@ -178,6 +192,7 @@ trackToken(consumes< vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.getPar
 {
      produces<L1TkJetParticleCollection>("L1TwoLayerJets");
    //now do what ever other initialization is needed
+      L1Tk_nPar=(int)iConfig.getParameter<int>("L1Tk_nPar");
       maxz    = (float)iConfig.getParameter<double>("ZMAX"); 
       pTmax   =(float)iConfig.getParameter<double>("PTMAX");
       netabins=(int)iConfig.getParameter<int>("Etabins");
@@ -189,6 +204,19 @@ trackToken(consumes< vector<TTTrack< Ref_Phase2TrackerDigi_> > > (iConfig.getPar
       minTrkJetpT=iConfig.getParameter<double>("minTrkJetpT");
       LowpTJetMinTrackMultiplicity=(int)iConfig.getParameter<int>("LowpTJetMinTrackMultiplicity");
       HighpTJetMinTrackMultiplicity=(int)iConfig.getParameter<int>("HighpTJetMinTrackMultiplicity");
+      CHI2_MAX=(float)iConfig.getParameter<double>("CHI2_MAX");
+      PromptBendConsistency=(float)iConfig.getParameter<double>("PromptBendConsistency");
+      DisplacedAlgo=iConfig.getParameter<bool>("DisplacedAlgo");
+      D0_CutNstubs4=(float)iConfig.getParameter<double>("D0_CutNstubs4");
+      D0_CutNstubs5=(float)iConfig.getParameter<double>("D0_CutNstubs5");
+      NStubs4DisplacedChi2_Loose=(float)iConfig.getParameter<double>("NStubs4DisplacedChi2_Loose");
+      NStubs5DisplacedChi2_Loose=(float)iConfig.getParameter<double>("NStubs5DisplacedChi2_Loose");
+      NStubs4Displacedbend_Loose=(float)iConfig.getParameter<double>("NStubs4Displacedbend_Loose");
+      NStubs5Displacedbend_Loose=(float)iConfig.getParameter<double>("NStubs5Displacedbend_Loose");
+      NStubs4DisplacedChi2_Tight=(float)iConfig.getParameter<double>("NStubs4DisplacedChi2_Tight");
+      NStubs5DisplacedChi2_Tight=(float)iConfig.getParameter<double>("NStubs5DisplacedChi2_Tight");
+      NStubs4Displacedbend_Tight=(float)iConfig.getParameter<double>("NStubs4Displacedbend_Tight");
+      NStubs5Displacedbend_Tight=(float)iConfig.getParameter<double>("NStubs5Displacedbend_Tight");
 
       zstep = 2.0 * maxz / Zbins;
 }
@@ -248,16 +276,15 @@ TwoLayerJets::produce(Event& iEvent, const EventSetup& iSetup)
 	//Quality Cuts
 	float trackpT=trkPtr->getMomentum().perp();
 	int tracknstubs=trkPtr->getStubRefs().size();
-	float trackchi2=trkPtr->getChi2(4);
-	float trackchi2z=trkPtr->getChi2(4);
-	float trk_x0   = trkPtr->getPOCA(5).x();
-        float trk_y0   = trkPtr->getPOCA(5).y();
+	float trackchi2=trkPtr->getChi2(L1Tk_nPar);
+	float trk_x0   = trkPtr->getPOCA(L1Tk_nPar).x();
+        float trk_y0   = trkPtr->getPOCA(L1Tk_nPar).y();
 	float trk_phi = trkPtr->getMomentum().phi();
         float trk_d0 = -trk_x0*sin(trk_phi) + trk_y0*cos(trk_phi);
 	
 	//check Trk Class
 	float trk_stubPt=StubPtConsistency::getConsistency(TTTrackHandle->at(this_l1track-1), theTrackerGeom, tTopo,mMagneticFieldStrength,4);//trkPtr->getStubPtConsistency(4)/tracknstubs;
-	float trk_bstubPt=trkPtr->getStubPtConsistency(4)/tracknstubs;
+	float trk_bstubPt=trkPtr->getStubPtConsistency(L1Tk_nPar)/tracknstubs;
         int nPS = 0.;     // number of stubs in PS modules
     // loop over the stubs
         for (unsigned int istub=0; istub<(unsigned int)tracknstubs; istub++) {
@@ -270,21 +297,21 @@ TwoLayerJets::produce(Event& iEvent, const EventSetup& iSetup)
 	if(nPS<nPSMin)continue;
 	//trk_stubPt=trk_stubPt/tracknstubs;
         //need min pT, eta, z cut
-	if(!TrackQualityCuts(trackpT,tracknstubs,trackchi2/(2*tracknstubs-4),trk_stubPt))continue;
-    	if(fabs(iterL1Track->getPOCA(4).z())>maxz)continue;
-    	if(fabs(iterL1Track->getMomentum(4).eta())>TRK_ETAMAX)continue;
-    	if(iterL1Track->getMomentum(4).perp()<TRK_PTMIN)continue;
+	if(!TrackQualityCuts(trackpT,tracknstubs,trackchi2/(2*tracknstubs-L1Tk_nPar),trk_stubPt, fabs(trk_d0)))continue;
+    	if(fabs(iterL1Track->getPOCA(L1Tk_nPar).z())>maxz)continue;
+    	if(fabs(iterL1Track->getMomentum(L1Tk_nPar).eta())>TRK_ETAMAX)continue;
+    	if(iterL1Track->getMomentum(L1Tk_nPar).perp()<TRK_PTMIN)continue;
 	L1TrackPtrs.push_back(trkPtr);	
 	zbincount.push_back(0);	
 	//flag as displaced tracks:NOTE Exclusive categories
 	//int whichcase=0;
 			
-	if ((abs(trk_d0)>0.2 && tracknstubs>=5)||(tracknstubs==4 && abs(trk_d0)>1.0))tdtrk.push_back(1);
+	if ((fabs(trk_d0)>D0_CutNstubs5 && tracknstubs>=5)||(tracknstubs==4 && fabs(trk_d0)>D0_CutNstubs4))tdtrk.push_back(1);
 	else tdtrk.push_back(0);//displaced track
-        if ( (trackchi2/(tracknstubs-3)) <0.7 && (trackchi2z/(tracknstubs-2))<0.5 && tracknstubs>=5 && trk_bstubPt<1.75)ttrk.push_back(1);
+	if((tracknstubs>=5 && trackchi2/(2*tracknstubs-L1Tk_nPar)< NStubs5DisplacedChi2_Tight && trk_stubPt<NStubs5Displacedbend_Tight ) || (tracknstubs==4 && trackchi2/(2*tracknstubs-L1Tk_nPar)< NStubs4DisplacedChi2_Tight && trk_stubPt<NStubs4Displacedbend_Tight )) ttrk.push_back(1);
 	else ttrk.push_back(0); 
-	if ( (trackchi2/(tracknstubs-3)) <0.7 && (trackchi2z/(tracknstubs-2))<0.5 && tracknstubs>=5 && trk_bstubPt<1.75 && ((abs(trk_d0)>0.2 && tracknstubs>=5)||(tracknstubs==4 && abs(trk_d0)>1.0)) )ttdtrk.push_back(1);
-	else ttdtrk.push_back(0);
+	if((tracknstubs>=5 && trackchi2/(2*tracknstubs-L1Tk_nPar)< NStubs5DisplacedChi2_Tight && trk_stubPt<NStubs5Displacedbend_Tight && fabs(trk_d0)>D0_CutNstubs5) || (tracknstubs==4 && trackchi2/(2*tracknstubs-L1Tk_nPar)< NStubs4DisplacedChi2_Tight && trk_stubPt<NStubs4Displacedbend_Tight  && fabs(trk_d0)>D0_CutNstubs4)) ttdtrk.push_back(1);
+	else ttdtrk.push_back(0); 
   } 
     if(L1TrackPtrs.size()>0){
     maxzbin mzb;
@@ -306,6 +333,10 @@ TwoLayerJets::produce(Event& iEvent, const EventSetup& iSetup)
 		float jetPy=jetPt*sin(jetPhi);
 		float jetPz=jetPt*sinh(jetEta);
 		float jetP=jetPt*cosh(jetEta);
+		int totalTighttrk=mzb.clusters[j].numttrks;
+                int totalDisptrk=mzb.clusters[j].numtdtrks;
+                int totalTightDisptrk=mzb.clusters[j].numttdtrks;
+
 		//if(mzb.clusters[j].numttdtrks>=2 && jetPt>5)std::cout<<"Tight Displaced "<<std::endl;
 		//std::cout<<"Jet Eta, phi, pt  "<<jetEta<<", "<<jetPhi<<", "<<jetPt<<std::endl;
 		//std::cout<<"ntracks "<<mzb.clusters[j].numtracks<<std::endl;
@@ -327,15 +358,6 @@ TwoLayerJets::produce(Event& iEvent, const EventSetup& iSetup)
 				L1TrackAssocJet.push_back(L1TrackPtrs[t]);
 			}
 		}
-    	//	if(mzb.clusters[j].numtracks!= (int)L1TrackAssocJet.size())std::cout<<"ntracks "<<mzb.clusters[j].numtracks<<" L1TrackAssocJet "<<L1TrackAssocJet.size()<<std::endl;
-		int totalTighttrk=0;
-		int totalDisptrk=0;
-		int totalTightDisptrk=0;
-		for(unsigned int t=0; t<ttrk.size(); ++t){
-			if(ttrk[t]>0)++totalTighttrk;
-			if(tdtrk[t]>0)++totalDisptrk;
-			if(ttdtrk[t]>0)++totalTightDisptrk;
-		}	
 		///L1TkJetParticleDisp DispCounters(mzb.clusters[j].numtracks,totalTighttrk, totalDisptrk, totalTightDisptrk);
 		L1TkJetParticle trkJet(jetP4,  L1TrackAssocJet, mzb.zbincenter,mzb.clusters[j].numtracks,totalTighttrk, totalDisptrk, totalTightDisptrk);
 		//trkJet.setDispCounters(DispCounters);
@@ -780,25 +802,16 @@ TwoLayerJets::endLuminosityBlock(LuminosityBlock const&, EventSetup const&)
 //}
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 
-bool TwoLayerJets::TrackQualityCuts(float trk_pt,int trk_nstub, double trk_chi2,double trk_bconsist){
+bool TwoLayerJets::TrackQualityCuts(float trk_pt,int trk_nstub, float trk_chi2,float trk_bconsist, float trk_d0){
 bool PassQuality=false;
 
-if(trk_bconsist<1.75 && trk_chi2<50 && trk_nstub>=4)PassQuality=true;
+if(trk_bconsist<PromptBendConsistency && trk_chi2<CHI2_MAX && trk_nstub>=4 && !DisplacedAlgo)PassQuality=true;
+if(DisplacedAlgo && trk_bconsist<NStubs4Displacedbend_Tight && trk_chi2<NStubs4DisplacedChi2_Tight  && trk_nstub==4 && trk_d0<=D0_CutNstubs4)PassQuality=true;
+if(DisplacedAlgo && trk_bconsist<NStubs4Displacedbend_Loose && trk_chi2<NStubs4DisplacedChi2_Loose  && trk_nstub==4 && trk_d0>D0_CutNstubs4)PassQuality=true;
+if(DisplacedAlgo && trk_bconsist<NStubs5Displacedbend_Loose && trk_chi2<NStubs5DisplacedChi2_Loose  && trk_nstub>4)PassQuality=true;
 //if(trk_chi2<50 && trk_nstub>=4)PassQuality=true;
 return PassQuality; 
 } 
-/*
-bool TwoLayerJets::TrackQualityCuts(float trk_pt,int trk_nstub, double trk_chi2){
-bool PassQuality=false;
-if(trk_nstub==4 && trk_chi2<15)PassQuality=true;
-if(trk_nstub==5 && trk_chi2<15 && trk_pt<10)PassQuality=true;
-if(trk_nstub==5 && trk_chi2<7 && trk_pt>=10 && trk_pt<40)PassQuality=true;
-if(trk_nstub==5 && trk_chi2<5 && trk_pt>40)PassQuality=true;
-if(trk_nstub==6 && trk_chi2<5 && trk_pt>50)PassQuality=true;
-if(trk_nstub==6 && trk_pt<=50)PassQuality=true;
-return PassQuality;
-}
-*/
 void
 TwoLayerJets::fillDescriptions(ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation

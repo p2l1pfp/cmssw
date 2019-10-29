@@ -225,6 +225,10 @@ void TrackFinder::process(
             out_hits,
             out_tracks
           );
+
+          if (endcap == 2 && sector == 6) {  // use the last sector processor to do ghost busting
+            expt_sp.ghost_busting(out_tracks);
+          }
         }
       }
     }
