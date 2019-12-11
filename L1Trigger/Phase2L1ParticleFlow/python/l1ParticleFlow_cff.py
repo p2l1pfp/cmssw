@@ -169,6 +169,7 @@ l1pfProducerHGCal = l1pfProducer.clone(
     ),
 )
 l1pfProducerHGCal.linking.trackCaloDR = 0.1 # more precise cluster positions
+l1pfProducerHGCal.linking.ecalPriority = False
 l1pfProducerHGCalNoTK = l1pfProducerHGCal.clone(regions = cms.VPSet(
     cms.PSet(
         etaBoundaries = cms.vdouble(-3,-2.5),
