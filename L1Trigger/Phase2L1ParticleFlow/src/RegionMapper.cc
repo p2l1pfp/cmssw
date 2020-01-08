@@ -25,7 +25,7 @@ RegionMapper::RegionMapper( const edm::ParameterSet& iConfig )  :
                     float phiCenter = (iphi+0.5)*phiWidth-M_PI;
                     regions_.push_back(Region(
                             etaBoundaries[ieta], etaBoundaries[ieta+1], phiCenter, phiWidth, 
-                            phiExtra, etaExtra, useRelativeRegionalCoordinates_,
+                            etaExtra, phiExtra, useRelativeRegionalCoordinates_,
                             ncalomax, nemcalomax, ntrackmax, nmuonmax, npfmax, npuppimax)); 
                 }
             }
@@ -143,15 +143,13 @@ std::unique_ptr<l1t::PFCandidateCollection> RegionMapper::fetch(bool puppi, floa
     auto ret = std::make_unique<l1t::PFCandidateCollection>();
     for (const Region &r : regions_) {
         for (const PFParticle & p : (puppi ? r.puppi : r.pf )) {
-            if (regions_.size() > 1) {
-                bool inside = true;
-                switch (trackRegionMode_) {
-                    case atVertex: inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break;
-                    case atCalo  : inside = r.fiducialLocal(p.floatEta(), p.floatPhi()); break;
-                    case any     : inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break; // WARNING: this may not be the best choice
-                }
-                if (!inside) continue;
+            bool inside = true;
+            switch (trackRegionMode_) {
+                case atVertex: inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break;
+                case atCalo  : inside = r.fiducialLocal(p.floatEta(), p.floatPhi()); break;
+                case any     : inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break; // WARNING: this may not be the best choice
             }
+            if (!inside) continue;
             if (p.floatPt() > ptMin) {
                 reco::Particle::PolarLorentzVector p4(p.floatPt(), r.globalEta(p.floatVtxEta()), r.globalPhi(p.floatVtxPhi()), 0.13f);
                 ret->emplace_back( l1t::PFCandidate::Kind(p.hwId), p.intCharge(), p4, p.floatPuppiW() );
@@ -189,9 +187,7 @@ std::unique_ptr<l1t::PFCandidateCollection> RegionMapper::fetchCalo(float ptMin,
     auto ret = std::make_unique<l1t::PFCandidateCollection>();
     for (const Region &r : regions_) {
         for (const CaloCluster & p : (emcalo ? r.emcalo : r.calo)) {
-            if (regions_.size() > 1) {
-                if (!r.fiducialLocal(p.floatEta(), p.floatPhi())) continue;
-            }
+            if (!r.fiducialLocal(p.floatEta(), p.floatPhi())) continue;
             if (p.floatPt() > ptMin) {
                 reco::Particle::PolarLorentzVector p4(p.floatPt(), r.globalEta(p.floatEta()), r.globalPhi(p.floatPhi()), 0.13f);
                 l1t::PFCandidate::Kind kind = (p.isEM || emcalo) ? l1t::PFCandidate::Photon : l1t::PFCandidate::NeutralHadron;
@@ -207,15 +203,13 @@ std::unique_ptr<l1t::PFCandidateCollection> RegionMapper::fetchTracks(float ptMi
     for (const Region &r : regions_) {
         for (const PropagatedTrack & p : r.track) {
             if (fromPV && !p.fromPV) continue;
-            if (regions_.size() > 1) {
-                bool inside = true;
-                switch (trackRegionMode_) {
-                    case atVertex: inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break;
-                    case atCalo  : inside = r.fiducialLocal(p.floatEta(), p.floatPhi()); break;
-                    case any     : inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break; // WARNING: this may not be the best choice
-                }
-                if (!inside) continue;
+            bool inside = true;
+            switch (trackRegionMode_) {
+                case atVertex: inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break;
+                case atCalo  : inside = r.fiducialLocal(p.floatEta(), p.floatPhi()); break;
+                case any     : inside = r.fiducialLocal(p.floatVtxEta(), p.floatVtxPhi()); break; // WARNING: this may not be the best choice
             }
+            if (!inside) continue;
             if (p.floatPt() > ptMin) {
                 reco::Particle::PolarLorentzVector p4(p.floatVtxPt(), r.globalEta(p.floatVtxEta()), r.globalPhi(p.floatVtxPhi()), 0.13f);
                 l1t::PFCandidate::Kind kind = p.muonLink ? l1t::PFCandidate::Muon : l1t::PFCandidate::ChargedHadron;
