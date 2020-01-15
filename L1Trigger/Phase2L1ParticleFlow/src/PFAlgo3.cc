@@ -40,6 +40,7 @@ PFAlgo3::PFAlgo3( const edm::ParameterSet & iConfig ) :
 
     drMatchEm_ = linkcfg.getParameter<double>("trackEmDR");
     trackEmUseAlsoTrackSigma_ = linkcfg.getParameter<bool>("trackEmUseAlsoTrackSigma");
+    trackEmMayUseCaloMomenta_ = linkcfg.getParameter<bool>("trackEmMayUseCaloMomenta");
     emCaloUseAlsoCaloSigma_ = linkcfg.getParameter<bool>("emCaloUseAlsoCaloSigma");
     ptMinFracMatchEm_ = linkcfg.getParameter<double>("caloEmPtMinFrac");
     drMatchEmHad_ = linkcfg.getParameter<double>("emCaloDR");
@@ -62,27 +63,27 @@ void PFAlgo3::runPF(Region &r) const {
     /// ------------- first step (can all go in parallel) ----------------
 
     if (debug_) {
-        printf("PFAlgo3\nPFAlgo3 region Eta [ %+5.2f , %+5.2f ],  Phi [ %+5.2f , %+5.2f ] \n", r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth );
+        printf("PFAlgo3\nPFAlgo3 region eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ], fiducial eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ]\n", r.etaMin - r.etaExtra, r.etaMax + r.etaExtra, r.phiCenter-r.phiHalfWidth-r.phiExtra, r.phiCenter+r.phiHalfWidth+r.phiExtra, r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth);
         printf("PFAlgo3 \t N(track) %3lu   N(em) %3lu   N(calo) %3lu   N(mu) %3lu\n", r.track.size(), r.emcalo.size(), r.calo.size(), r.muon.size());
         for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
             const auto & tk = r.track[itk]; 
-            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
-                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
+            printf("PFAlgo3 \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d  calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
+                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), int(r.fiducialLocal(tk.floatEta(), tk.floatPhi())), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
         }
         for (int iem = 0, nem = r.emcalo.size(); iem < nem; ++iem) {
             const auto & em = r.emcalo[iem];
-            printf("PFAlgo3 \t EM    %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f\n", 
-                                iem, em.floatPt(), em.floatPtErr(), em.floatEta(), em.floatPhi(), em.floatEta(), em.floatPhi(), em.floatPtErr());
+            printf("PFAlgo3 \t EM    %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d  calo ptErr %7.2f\n", 
+                                iem, em.floatPt(), em.floatPtErr(), em.floatEta(), em.floatPhi(), em.floatEta(), em.floatPhi(), int(r.fiducialLocal(em.floatEta(), em.floatPhi())), em.floatPtErr());
         } 
         for (int ic = 0, nc = r.calo.size(); ic < nc; ++ic) {
             auto & calo = r.calo[ic]; 
-            printf("PFAlgo3 \t calo  %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f em pt %7.2f \n", 
-                                ic, calo.floatPt(), calo.floatPtErr(), calo.floatEta(), calo.floatPhi(), calo.floatEta(), calo.floatPhi(), calo.floatPtErr(), calo.floatEmPt());
+            printf("PFAlgo3 \t calo  %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d  calo ptErr %7.2f em pt %7.2f \n", 
+                                ic, calo.floatPt(), calo.floatPtErr(), calo.floatEta(), calo.floatPhi(), calo.floatEta(), calo.floatPhi(), int(r.fiducialLocal(calo.floatEta(), calo.floatPhi())), calo.floatPtErr(), calo.floatEmPt());
         }
         for (int im = 0, nm = r.muon.size(); im < nm; ++im) {
             auto & mu = r.muon[im]; 
-            printf("PFAlgo3 \t muon  %3d: pt %7.2f           vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f \n", 
-                                im, mu.floatPt(), mu.floatEta(), mu.floatPhi(), mu.floatEta(), mu.floatPhi());
+            printf("PFAlgo3 \t muon  %3d: pt %7.2f           vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d \n", 
+                                im, mu.floatPt(), mu.floatEta(), mu.floatPhi(), mu.floatEta(), mu.floatPhi(), int(r.fiducialLocal(mu.floatEta(), mu.floatPhi())));
         }
 
     }
@@ -313,7 +314,7 @@ void PFAlgo3::emtk_algo(Region & r, const std::vector<int> & tk2em, const std::v
             auto & p = addTrackToPF(r, tk);
             p.cluster.src = em.src;
             // FIXME to check if this is useful
-            if (em2ntk[tk2em[itk]] == 1 && em.hwFlags == 1) {
+            if (trackEmMayUseCaloMomenta_ && em2ntk[tk2em[itk]] == 1 && em.hwFlags == 1) {
                 if (em.floatPtErr() < em2sumtkpterr[tk2em[itk]]) {
                     p.setFloatPt(em.floatPt());
                 }
@@ -374,7 +375,7 @@ void PFAlgo3::link_tk2calo(Region & r, std::vector<int> & tk2calo) const {
         if (debug_) printf("PFAlgo3 \t track %3d (pt %7.2f) to be matched to calo, min pT %7.2f\n", itk, tk.floatPt(), minCaloPt );
         for (int ic = 0, nc = r.calo.size(); ic < nc; ++ic) {
             auto & calo = r.calo[ic]; 
-            if (calo.used || calo.floatPt() < minCaloPt) continue;
+            if (calo.used || calo.floatPt() <= minCaloPt) continue;
             float dr = floatDR(tk, calo), dq;
             switch (tkCaloLinkMetric_) {
                 case BestByDR:
@@ -431,7 +432,7 @@ void PFAlgo3::unlinkedtk_algo(Region & r, const std::vector<int> & tk2calo) cons
     for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
         auto & tk = r.track[itk]; 
         if (tk2calo[itk] != -1 || tk.muonLink || tk.used) continue;
-        float maxPt = (tk.hwStubs >= tightTrackMinStubs_ && tk.hwChi2 > 0.1*tightTrackMaxChi2_) ? tightTrackMaxInvisiblePt_ : maxInvisiblePt_;
+        float maxPt = (tk.hwStubs >= tightTrackMinStubs_ && tk.hwChi2 < 10*tightTrackMaxChi2_) ? tightTrackMaxInvisiblePt_ : maxInvisiblePt_;
         if (tk.floatPt() < maxPt) {
             if (debug_) printf("PFAlgo3 \t track %3d (pt %7.2f) not matched to calo, kept as charged hadron\n", itk, tk.floatPt());
             auto &p = addTrackToPF(r, tk);

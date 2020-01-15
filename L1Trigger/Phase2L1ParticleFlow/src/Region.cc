@@ -39,11 +39,11 @@ unsigned int l1tpf_impl::Region::nInput(InputType type) const {
     return 9999;
 }
 
-unsigned int l1tpf_impl::Region::nOutput(OutputType type, bool usePuppi) const {
+unsigned int l1tpf_impl::Region::nOutput(OutputType type, bool usePuppi, bool fiducial) const {
     unsigned int ret = 0;
     for (const auto &p : (usePuppi ? puppi : pf)) {
         if (p.hwPt <= 0) continue;
-        if (!fiducialLocal(p.floatEta(), p.floatPhi())) continue;
+        if (fiducial && !fiducialLocal(p.floatEta(), p.floatPhi())) continue;
         switch(type) {
             case any_type: ret++; break;
             case charged_type: if (p.intCharge() != 0) ret++; break;

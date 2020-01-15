@@ -56,22 +56,22 @@ void PFAlgo2HGC::runPF(Region &r) const {
     /// ------------- first step (can all go in parallel) ----------------
 
     if (debug_) {
-        printf("PFAlgo2HGC\nPFAlgo2HGC region Eta [ %+5.2f , %+5.2f ],  Phi [ %+5.2f , %+5.2f ] \n", r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth );
+        printf("PFAlgo2HGC\nPFAlgo2HGC region eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ], fiducial eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ]\n", r.etaMin - r.etaExtra, r.etaMax + r.etaExtra, r.phiCenter-r.phiHalfWidth-r.phiExtra, r.phiCenter+r.phiHalfWidth+r.phiExtra, r.etaMin, r.etaMax, r.phiCenter-r.phiHalfWidth, r.phiCenter+r.phiHalfWidth);
         printf("PFAlgo2HGC \t N(track) %3lu   N(calo) %3lu   N(mu) %3lu\n", r.track.size(), r.calo.size(), r.muon.size());
         for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
             const auto & tk = r.track[itk]; 
-            printf("PFAlgo2HGC \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
-                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
+            printf("PFAlgo2HGC \t track %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d  calo ptErr %7.2f stubs %2d chi2 %7.1f\n", 
+                                itk, tk.floatPt(), tk.floatPtErr(), tk.floatVtxEta(), tk.floatVtxPhi(), tk.floatEta(), tk.floatPhi(), int(r.fiducialLocal(tk.floatEta(), tk.floatPhi())), tk.floatCaloPtErr(), int(tk.hwStubs), tk.hwChi2*0.1f);
         }
         for (int ic = 0, nc = r.calo.size(); ic < nc; ++ic) {
             auto & calo = r.calo[ic]; 
-            printf("PFAlgo2HGC \t calo  %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f calo ptErr %7.2f em pt %7.2f isEM %1d \n", 
-                                ic, calo.floatPt(), calo.floatPtErr(), calo.floatEta(), calo.floatPhi(), calo.floatEta(), calo.floatPhi(), calo.floatPtErr(), calo.floatEmPt(), calo.isEM);
+            printf("PFAlgo2HGC \t calo  %3d: pt %7.2f +- %5.2f  vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d  calo ptErr %7.2f em pt %7.2f isEM %1d \n", 
+                                ic, calo.floatPt(), calo.floatPtErr(), calo.floatEta(), calo.floatPhi(), calo.floatEta(), calo.floatPhi(), int(r.fiducialLocal(calo.floatEta(), calo.floatPhi())), calo.floatPtErr(), calo.floatEmPt(), calo.isEM);
         }
         for (int im = 0, nm = r.muon.size(); im < nm; ++im) {
             auto & mu = r.muon[im]; 
-            printf("PFAlgo2HGC \t muon  %3d: pt %7.2f           vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f \n", 
-                                im, mu.floatPt(), mu.floatEta(), mu.floatPhi(), mu.floatEta(), mu.floatPhi());
+            printf("PFAlgo2HGC \t muon  %3d: pt %7.2f           vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  fid %1d\n", 
+                                im, mu.floatPt(), mu.floatEta(), mu.floatPhi(), mu.floatEta(), mu.floatPhi(), int(r.fiducialLocal(mu.floatEta(), mu.floatPhi())));
         }
 
     }
@@ -188,7 +188,7 @@ void PFAlgo2HGC::link_tk2calo(Region & r, std::vector<int> & tk2calo) const {
         if (debug_) printf("PFAlgo2HGC \t track %3d (pt %7.2f) to be matched to calo, min pT %7.2f\n", itk, tk.floatPt(), minCaloPt );
         for (int ic = 0, nc = r.calo.size(); ic < nc; ++ic) {
             auto & calo = r.calo[ic]; 
-            if (calo.used || calo.floatPt() < minCaloPt) continue;
+            if (calo.used || calo.floatPt() <= minCaloPt) continue;
             float dr = floatDR(tk, calo), dq;
             switch (tkCaloLinkMetric_) {
                 case BestByDR:
@@ -245,7 +245,7 @@ void PFAlgo2HGC::unlinkedtk_algo(Region & r, const std::vector<int> & tk2calo) c
     for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
         auto & tk = r.track[itk]; 
         if (tk2calo[itk] != -1 || tk.muonLink || tk.used) continue;
-        float maxPt = (tk.hwStubs >= tightTrackMinStubs_ && tk.hwChi2 > 0.1*tightTrackMaxChi2_) ? tightTrackMaxInvisiblePt_ : maxInvisiblePt_;
+        float maxPt = (tk.hwStubs >= tightTrackMinStubs_ && tk.hwChi2 < 10.*tightTrackMaxChi2_) ? tightTrackMaxInvisiblePt_ : maxInvisiblePt_;
         if (tk.floatPt() < maxPt) {
             if (debug_) printf("PFAlgo2HGC \t track %3d (pt %7.2f) not matched to calo, kept as charged hadron\n", itk, tk.floatPt());
             auto &p = addTrackToPF(r, tk);

@@ -192,7 +192,13 @@ std::unique_ptr<l1t::PFCandidateCollection> RegionMapper::fetchCalo(float ptMin,
                 reco::Particle::PolarLorentzVector p4(p.floatPt(), r.globalEta(p.floatEta()), r.globalPhi(p.floatPhi()), 0.13f);
                 l1t::PFCandidate::Kind kind = (p.isEM || emcalo) ? l1t::PFCandidate::Photon : l1t::PFCandidate::NeutralHadron;
                 ret->emplace_back( kind, 0, p4 );
-            }
+                if (p.src) {
+                    auto match = clusterRefMap_.find(p.src);
+                    if (match == clusterRefMap_.end()) {
+                        throw cms::Exception("CorruptData") << "Invalid cluster pointer in cluster pt " << p4.pt() << " eta " << p4.eta() << " phi " << p4.phi();
+                    }
+                    ret->back().setPFCluster(match->second);
+                }            }
         }
     }
     return ret;
