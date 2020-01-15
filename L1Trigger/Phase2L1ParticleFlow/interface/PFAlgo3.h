@@ -18,7 +18,7 @@ class PFAlgo3 : public PFAlgoBase {
         float emHadSubtractionPtSlope_;
         TkCaloLinkMetric tkCaloLinkMetric_;
         bool caloReLinkStep_; float caloReLinkDr_, caloReLinkThreshold_;
-        bool rescaleTracks_, sumTkCaloErr2_, ecalPriority_, trackEmUseAlsoTrackSigma_, emCaloUseAlsoCaloSigma_;
+        bool rescaleTracks_, sumTkCaloErr2_, ecalPriority_, trackEmUseAlsoTrackSigma_, trackEmMayUseCaloMomenta_, emCaloUseAlsoCaloSigma_;
         unsigned int tightTrackMinStubs_; float tightTrackMaxChi2_, tightTrackMaxInvisiblePt_;
         enum GoodTrackStatus { GoodTK_Calo_TkPt=0, GoodTK_Calo_TkCaloPt=1, GoodTk_Calo_CaloPt=2, GoodTK_NoCalo=3 };
         enum BadTrackStatus { BadTK_NoCalo=1 };

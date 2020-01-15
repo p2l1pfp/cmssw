@@ -22,6 +22,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PFAlgoBase.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PFAlgo3.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PFAlgo2HGC.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/BitwisePFAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PuppiAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/LinearizedPuppiAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/DiscretePFInputsIO.h"
@@ -126,8 +127,8 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
         l1pfalgo_.reset(new l1tpf_impl::PFAlgo3(iConfig));
     } else if (algo == "PFAlgo2HGC") {
         l1pfalgo_.reset(new l1tpf_impl::PFAlgo2HGC(iConfig));
-    } else if (algo == "BitwisePF") { // FIXME add back
-        throw cms::Exception("Configuration", "FIXME: recover Bitwise PF");
+    } else if (algo == "BitwisePFAlgo") {
+        l1pfalgo_.reset(new l1tpf_impl::BitwisePFAlgo(iConfig));
     } else throw cms::Exception("Configuration", "Unsupported PFAlgo");
 
     const std::string & pualgo = iConfig.getParameter<std::string>("puAlgo");

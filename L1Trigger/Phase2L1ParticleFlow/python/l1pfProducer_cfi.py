@@ -36,6 +36,7 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
         # track -> em linking configurables
         trackEmDR   = cms.double(0.04), # 1 Ecal crystal size is 0.02, and ~2 cm in HGCal is ~0.007
         trackEmUseAlsoTrackSigma = cms.bool(True), # also use the track uncertainty for electron linking
+        trackEmMayUseCaloMomenta = cms.bool(True), # use calo momenta for 1 emcalo to 1 track match electrons 
         # em -> calo linking configurables
         emCaloDR    = cms.double(0.10),    # 1 Hcal tower size is ~0.09
         caloEmPtMinFrac = cms.double(0.5), # Calo object must have an EM Et at least half of that of the EM cluster to allow linking
