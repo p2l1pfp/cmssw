@@ -24,7 +24,7 @@ namespace l1tpf_impl {
     static const char * outputTypeName(int outputType) ;
 
     unsigned int nInput(InputType type) const ;
-    unsigned int nOutput(OutputType type, bool puppi) const ;
+    unsigned int nOutput(OutputType type, bool puppi, bool fiducial=true) const ;
 
     // global coordinates
     bool contains(float eta, float phi) const { 
