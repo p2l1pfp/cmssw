@@ -39,6 +39,10 @@ class Eras (object):
                  'Phase2C8',
                  'Phase2C9',
                  'Phase2C10',
+                 'Phase2C4_trigger',
+                 'Phase2C8_trigger',
+                 'Phase2C9_trigger',
+                 'Phase2C10_trigger',
         ]
 
         internalUseMods = ['run2_common', 'run2_25ns_specific',
