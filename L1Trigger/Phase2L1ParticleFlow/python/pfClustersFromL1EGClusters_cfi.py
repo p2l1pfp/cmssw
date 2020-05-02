@@ -14,12 +14,24 @@ pfClustersFromL1EGClusters = cms.EDProducer("PFClusterProducerFromL1EGClusters",
 
 # use phase2_hgcalV10 to customize for 106X L1TDR MC even in the barrel, since there's no other modifier for it
 from Configuration.Eras.Modifier_phase2_hgcalV10_cff import phase2_hgcalV10
+from Configuration.Eras.Modifier_phase2_hgcalV11_cff import phase2_hgcalV11
 phase2_hgcalV10.toModify(pfClustersFromL1EGClusters,
-    corrector  = "L1Trigger/Phase2L1ParticleFlow/data/emcorr_barrel_106X.root",
+    corrector  = "", # In this setup, TP's are already calibrated correctly :-) 
+                     # L1Trigger/Phase2L1ParticleFlow/data/emcorr_barrel_106X.root",
     resol = cms.PSet(
         etaBins = cms.vdouble( 0.700,  1.200,  1.600),
-        offset  = cms.vdouble( 1.047,  1.096,  1.633),
-        scale   = cms.vdouble( 0.014,  0.031,  0.019),
+        offset  = cms.vdouble( 0.946,  0.948,  1.171),
+        scale   = cms.vdouble( 0.011,  0.018,  0.019),
+        kind    = cms.string('calo')
+    )
+)
+phase2_hgcalV11.toModify(pfClustersFromL1EGClusters,
+    corrector  = "", # In this setup, TP's are already calibrated correctly :-) 
+                     # L1Trigger/Phase2L1ParticleFlow/data/emcorr_barrel_110X.root",
+    resol = cms.PSet(
+        etaBins = cms.vdouble( 0.700,  1.200,  1.600),
+        offset  = cms.vdouble( 0.838,  0.924,  1.101),
+        scale   = cms.vdouble( 0.012,  0.017,  0.018),
         kind    = cms.string('calo')
     )
 )

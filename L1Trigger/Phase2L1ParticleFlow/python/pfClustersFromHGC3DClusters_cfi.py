@@ -44,12 +44,22 @@ pfClustersFromHGC3DClusters = cms.EDProducer("PFClusterProducerFromHGC3DClusters
 
 
 from Configuration.Eras.Modifier_phase2_hgcalV10_cff import phase2_hgcalV10
+from Configuration.Eras.Modifier_phase2_hgcalV11_cff import phase2_hgcalV11
 phase2_hgcalV10.toModify(pfClustersFromHGC3DClusters,
     corrector = "L1Trigger/Phase2L1ParticleFlow/data/hadcorr_HGCal3D_TC_106X.root",
     resol = cms.PSet(
-        etaBins = cms.vdouble( 1.900,  2.200,  2.500,  2.800,  2.950),
-        offset  = cms.vdouble( 2.801,  2.735,  2.778,  2.986,  2.808),
-        scale   = cms.vdouble( 0.106,  0.101,  0.101,  0.097,  0.124),
+        etaBins = cms.vdouble( 1.700,  1.900,  2.200,  2.500,  2.800,  2.900),
+        offset  = cms.vdouble(-0.819,  0.900,  2.032,  2.841,  2.865,  1.237),
+        scale   = cms.vdouble( 0.320,  0.225,  0.156,  0.108,  0.119,  0.338),
+        kind    = cms.string('calo')
+    ),
+) 
+phase2_hgcalV11.toModify(pfClustersFromHGC3DClusters,
+    corrector = "L1Trigger/Phase2L1ParticleFlow/data/hadcorr_HGCal3D_TC_110X.root",
+    resol = cms.PSet(
+        etaBins = cms.vdouble( 1.700,  1.900,  2.200,  2.500,  2.800,  2.900),
+        offset  = cms.vdouble( 1.413,  1.631,  2.366,  2.768,  2.908,  1.434),
+        scale   = cms.vdouble( 0.169,  0.155,  0.132,  0.114,  0.137,  0.338),
         kind    = cms.string('calo')
     ),
 ) 
