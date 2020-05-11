@@ -23,6 +23,8 @@ _correctedJets = cms.EDProducer("L1TCorrectedPFJetProducer",
 # Using phase2_hgcalV10 to customize the config for all 106X samples, since there's no other modifier for it
 from Configuration.Eras.Modifier_phase2_hgcalV10_cff import phase2_hgcalV10
 phase2_hgcalV10.toModify(_correctedJets, correctorFile = "L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs.PU200_106X.root")
+from Configuration.Eras.Modifier_phase2_hgcalV11_cff import phase2_hgcalV11
+phase2_hgcalV11.toModify(_correctedJets, correctorFile = "L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs.PU200_110X.root")
         
 ak4PFL1CaloCorrected = _correctedJets.clone(jets = 'ak4PFL1Calo', correctorDir = 'L1CaloJets')
 ak4PFL1PFCorrected = _correctedJets.clone(jets = 'ak4PFL1PF', correctorDir = 'L1PFJets')
