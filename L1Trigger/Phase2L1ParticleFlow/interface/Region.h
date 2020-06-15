@@ -61,9 +61,9 @@ namespace l1tpf_impl {
         caloOverflow = 0; emcaloOverflow = 0; trackOverflow = 0; muonOverflow = 0; pfOverflow = 0; puppiOverflow = 0;
     }
 
-    void inputSort(bool doSort) ;
+    void inputCrop(bool doSort) ;
 
-    void outputSort(bool doSort) ;
+    void outputCrop(bool doSort) ;
 
   };
     

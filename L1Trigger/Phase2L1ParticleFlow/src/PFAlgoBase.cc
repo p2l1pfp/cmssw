@@ -13,7 +13,7 @@ PFAlgoBase::~PFAlgoBase() {
 }
 
 void PFAlgoBase::initRegion(Region &r) const {
-    r.inputSort(true);
+    r.inputCrop(true);
     r.pf.clear(); r.puppi.clear();
     for (auto & c : r.calo) c.used = false;
     for (auto & c : r.emcalo) c.used = false;
@@ -21,7 +21,7 @@ void PFAlgoBase::initRegion(Region &r) const {
 }
 
 void PFAlgoBase::initRegion(Region &r, bool doSort = true) const {
-    r.inputSort(doSort);
+    r.inputCrop(doSort);
     r.pf.clear(); r.puppi.clear();
     for (auto & c : r.calo) c.used = false;
     for (auto & c : r.emcalo) c.used = false;

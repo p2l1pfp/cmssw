@@ -59,7 +59,7 @@ unsigned int l1tpf_impl::Region::nOutput(OutputType type, bool usePuppi, bool fi
     return ret;
 }
 
-void l1tpf_impl::Region::inputSort(bool doSort) {
+void l1tpf_impl::Region::inputCrop(bool doSort) {
     if (doSort) {
         std::sort(calo.begin(),  calo.end());
         std::sort(emcalo.begin(),  emcalo.end());
@@ -72,7 +72,7 @@ void l1tpf_impl::Region::inputSort(bool doSort) {
     if (nmuonMax > 0 && muon.size() > nmuonMax) { muonOverflow = muon.size() - nmuonMax; muon.resize(nmuonMax); }
 }
 
-void l1tpf_impl::Region::outputSort(bool doSort) {
+void l1tpf_impl::Region::outputCrop(bool doSort) {
     if (doSort) {
         std::sort(puppi.begin(), puppi.end());
         std::sort(pf.begin(),    pf.end());

@@ -103,7 +103,7 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     debugEta_(iConfig.getUntrackedParameter<double>("debugEta",0)),
     debugPhi_(iConfig.getUntrackedParameter<double>("debugPhi",0)),
     debugR_(iConfig.getUntrackedParameter<double>("debugR",-1)),
-    sortOutputs_(iConfig.getUntrackedParameter<bool>("sortOutputs",true))
+    sortOutputs_(iConfig.getParameter<bool>("sortOutputs"))
 {
     produces<l1t::PFCandidateCollection>("PF");
     produces<l1t::PFCandidateCollection>("Puppi");
@@ -341,7 +341,7 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     // Then run puppi (regionally)
     for (auto & l1region : l1regions_.regions()) {
         l1pualgo_->runNeutralsPU(l1region, -1., puGlobals);
-        l1region.outputSort(sortOutputs_);
+        l1region.outputCrop(sortOutputs_);
     }
 
 
