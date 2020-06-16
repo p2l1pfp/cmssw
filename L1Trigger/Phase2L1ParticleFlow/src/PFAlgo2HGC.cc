@@ -48,10 +48,11 @@ PFAlgo2HGC::PFAlgo2HGC( const edm::ParameterSet & iConfig ) :
     tightTrackMinStubs_ = linkcfg.getParameter<unsigned>("tightTrackMinStubs");
     tightTrackMaxChi2_  = linkcfg.getParameter<double>("tightTrackMaxChi2");
     tightTrackMaxInvisiblePt_ = linkcfg.getParameter<double>("tightTrackMaxInvisiblePt");
+    sortInputs_ = iConfig.getParameter<bool>("sortInputs");
 }
 
 void PFAlgo2HGC::runPF(Region &r) const {
-    initRegion(r);
+    initRegion(r,sortInputs_);
 
     /// ------------- first step (can all go in parallel) ----------------
 

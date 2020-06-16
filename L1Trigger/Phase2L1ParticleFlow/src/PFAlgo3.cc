@@ -55,10 +55,11 @@ PFAlgo3::PFAlgo3( const edm::ParameterSet & iConfig ) :
     tightTrackMinStubs_ = linkcfg.getParameter<unsigned>("tightTrackMinStubs");
     tightTrackMaxChi2_  = linkcfg.getParameter<double>("tightTrackMaxChi2");
     tightTrackMaxInvisiblePt_ = linkcfg.getParameter<double>("tightTrackMaxInvisiblePt");
+    sortInputs_ = iConfig.getParameter<bool>("sortInputs");
 }
 
 void PFAlgo3::runPF(Region &r) const {
-    initRegion(r);
+    initRegion(r,sortInputs_);
 
     /// ------------- first step (can all go in parallel) ----------------
 

@@ -66,6 +66,8 @@ l1pfProducer = cms.EDProducer("L1TPFProducer",
         # other features not turned on: matching too high pt tracks to calo but rescaling track pt (not implemented in PFAlgo3)
         rescaleUnmatchedTrack = cms.bool(False),
      ),
+     sortOutputs = cms.bool(True),
+     sortInputs = cms.bool(True),
      debug = cms.untracked.int32(0),
 )
 
