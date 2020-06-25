@@ -25,6 +25,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/BitwisePFAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/PuppiAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/LinearizedPuppiAlgo.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/BitwisePuppiAlgo.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/DiscretePFInputsIO.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/COEFile.h"
 
@@ -136,6 +137,8 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
         l1pualgo_.reset(new l1tpf_impl::PuppiAlgo(iConfig));
     } else if (pualgo == "LinearizedPuppi") {
         l1pualgo_.reset(new l1tpf_impl::LinearizedPuppiAlgo(iConfig));
+    } else if (pualgo == "BitwisePuppiAlgo") {
+        l1pualgo_.reset(new l1tpf_impl::BitwisePuppiAlgo(iConfig));
     } else throw cms::Exception("Configuration", "Unsupported PUAlgo");
 
     std::string vtxAlgo = iConfig.getParameter<std::string>("vtxAlgo");
