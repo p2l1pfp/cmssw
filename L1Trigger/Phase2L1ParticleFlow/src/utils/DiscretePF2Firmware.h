@@ -48,14 +48,26 @@ namespace dpf2fw {
         pf.hwPt = src.hwPt;
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
-        pf.hwId = src.hwId;
+        switch(src.hwId) {
+            case 0: pf.hwId = PID_Charged; break;
+            case 1: pf.hwId = PID_Electron; break;
+            case 2: pf.hwId = PID_Neutral; break;
+            case 3: pf.hwId = PID_Photon; break;
+            case 4: pf.hwId = PID_Muon; break;
+        }
         pf.hwZ0 = src.track.hwZ0;
     }
     inline void convert(const l1tpf_impl::PFParticle &src, PFNeutralObj & pf, bool isPuppi=false) {
         pf.hwPt = src.hwPt;
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
-        pf.hwId = src.hwId;
+        switch(src.hwId) {
+            case 0: pf.hwId = PID_Charged; break;
+            case 1: pf.hwId = PID_Electron; break;
+            case 2: pf.hwId = PID_Neutral; break;
+            case 3: pf.hwId = PID_Photon; break;
+            case 4: pf.hwId = PID_Muon; break;
+        }
         pf.hwPtPuppi = isPuppi ? pt_t(src.hwPt) : pt_t(0);
     }
 

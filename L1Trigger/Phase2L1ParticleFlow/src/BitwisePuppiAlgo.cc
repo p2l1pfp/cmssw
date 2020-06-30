@@ -40,7 +40,7 @@ using namespace l1tpf_impl;
 BitwisePuppiAlgo::BitwisePuppiAlgo( const edm::ParameterSet & iConfig ) :
     PUAlgoBase(iConfig), 
     configs_(),
-    debug_(iConfig.getUntrackedParameter<int>("puppiDebug", debug_))
+    debug_(iConfig.getUntrackedParameter<int>("puppiDebug", 0))
 {
     const std::string & algo = iConfig.getParameter<std::string>("bitwisePUAlgo");
     if (algo == "linpuppi") algo_ = linpuppi_algo;
@@ -106,12 +106,23 @@ void BitwisePuppiAlgo::runChargedPV(Region &r, float z0) const {
         }
     }
     for (unsigned int i = indices.size(); i < cfg->nTrack; ++i) {
-        clear(out[i]);
+        clear(in[i]);
     }
 
-    z0_t hwZ0 = int(std::round(z0 / l1tpf_impl::InputTrack::Z0_SCALE));
+    z0_t hwZ0 = int(std::round(z0 * l1tpf_impl::InputTrack::Z0_SCALE));
 
-    linpuppi_chs_ref(*cfg, hwZ0, in.get(), out.get());
+    if (debug_ && !r.pf.empty()) {
+        printf("BitwisePuppiCharged\nBitwisePuppiCharged region eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ], algo = %d\n", r.etaMin - r.etaExtra, r.etaMax + r.etaExtra, r.phiCenter-r.phiHalfWidth-r.phiExtra, r.phiCenter+r.phiHalfWidth+r.phiExtra, int(algo_) );
+        printf("BitwisePuppiCharged \t N(pfch) %3lu [max %2u]\n", indices.size(), cfg->nTrack);
+        for (int ipf = 0, npf = indices.size(); ipf < npf; ++ipf) {
+            const auto & pf = r.pf[indices[ipf]]; 
+            printf("BitwisePuppiCharged \t pfch  %3d: pt %7.2f vtx eta %+5.2f  vtx phi %+5.2f  calo eta %+5.2f  calo phi %+5.2f  pid %d    vz %+6.3f  dz %+6.3f \n", 
+                    ipf, pf.floatPt(), pf.floatVtxEta(), pf.floatVtxPhi(), pf.floatEta(), pf.floatPhi(), int(pf.hwId), pf.floatDZ(), pf.floatDZ() - z0);
+        }
+    }
+
+
+    linpuppi_chs_ref(*cfg, hwZ0, in.get(), out.get(), debug_);
 
     for (unsigned int i = 0, n = indices.size(); i < n; ++i) {
         unsigned int ipf = indices[i];
@@ -119,7 +130,9 @@ void BitwisePuppiAlgo::runChargedPV(Region &r, float z0) const {
             r.pf[ipf].setPuppiW(1.0f);
             r.puppi.push_back(r.pf[ipf]);
             r.puppi.back().hwPt = int(out[i].hwPt);
-        }
+            if (debug_) printf("BitwisePuppiCharged \t charged pf %3u (index %3u) pt %7.2f accepted by Puppi\n", ipf, i, r.pf[ipf].floatPt());
+        } 
+        else if (debug_) printf("BitwisePuppiCharged \t charged pf %3u (index %3u) pt %7.2f discared by Puppi\n", ipf, i, r.pf[ipf].floatPt());
     }
 }
 
@@ -135,7 +148,7 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
         std::unique_ptr<TkObj[]> track(new TkObj[cfg->nTrack]);
         dpf2fw::convert(cfg->nTrack, r.track, track.get());
 
-        z0_t hwZ0 = int(std::round(z0 / l1tpf_impl::InputTrack::Z0_SCALE));
+        z0_t hwZ0 = int(std::round(z0 * l1tpf_impl::InputTrack::Z0_SCALE));
         std::unique_ptr<PFNeutralObj[]> in(new PFNeutralObj[cfg->nIn]);
         
         std::vector<unsigned int> indices; 
@@ -153,7 +166,7 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
             clear(in[i]);
         }
 
-        if (debug_) {
+        if (debug_ && !r.pf.empty()) {
             printf("BitwisePuppi\nBitwisePuppi region eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ], algo = %d\n", r.etaMin - r.etaExtra, r.etaMax + r.etaExtra, r.phiCenter-r.phiHalfWidth-r.phiExtra, r.phiCenter+r.phiHalfWidth+r.phiExtra, int(algo_) );
             printf("BitwisePuppi \t N(track) %3lu [max %2u]   N(pfne) %2lu [max %2u]    Nout %3u\n", r.track.size(), cfg->nTrack, indices.size(), cfg->nIn, cfg->nOut);
             for (int itk = 0, ntk = r.track.size(); itk < ntk; ++itk) {
@@ -163,7 +176,7 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
             }
             for (int ipf = 0, npf = indices.size(); ipf < npf; ++ipf) {
                 const auto & pf = r.pf[indices[ipf]]; 
-                printf("BitwisePuppi \t pfne  %3d: pt %7.2f                                 calo eta %+5.2f  calo phi %+5.2f  pid %d\n", 
+                printf("BitwisePuppi \t pfne  %3d: pt %7.2f                               calo eta %+5.2f  calo phi %+5.2f  pid %d\n", 
                         ipf, pf.floatPt(), pf.floatEta(), pf.floatPhi(), int(pf.hwId));
             }
         }
@@ -177,7 +190,10 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
             if (outallne[i].hwPtPuppi > 0) {
                 r.pf[ipf].setPuppiW( int(outallne[i].hwPtPuppi) / float(r.pf[ipf].hwPt) );
                 r.puppi.push_back(r.pf[ipf]);
-                r.puppi.back().hwPt = int(outallne[i].hwPt);
+                r.puppi.back().hwPt = int(outallne[i].hwPtPuppi);
+                if (debug_ ) printf("BitwisePuppi neutral %2u pt %7.2f [ %6d ] eta %+5.2f  phi %+5.2f --> pt %7.2f [ %6d, %6d ] \n",
+                                         i, r.pf[ipf].floatPt(), r.pf[ipf].hwPt, r.pf[ipf].floatEta(), r.pf[ipf].floatPhi(), 
+                                         r.puppi.back().floatPt(), r.puppi.back().hwPt, int(outallne[i].hwPtPuppi)); 
             }
         }
 
@@ -185,7 +201,7 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
         std::unique_ptr<HadCaloObj[]> calo(new HadCaloObj[cfg->nIn]);
         dpf2fw::convert(cfg->nIn, r.calo, calo.get());
 
-        if (debug_) {
+        if (debug_ && !r.calo.empty()) {
             printf("BitwisePuppi\nBitwisePuppi region eta [ %+5.2f , %+5.2f ], phi [ %+5.2f , %+5.2f ], algo = %d\n", r.etaMin - r.etaExtra, r.etaMax + r.etaExtra, r.phiCenter-r.phiHalfWidth-r.phiExtra, r.phiCenter+r.phiHalfWidth+r.phiExtra, int(algo_) );
             printf("BitwisePuppi \t N(calo) %3lu [max %2u]    Nout %3u\n", r.calo.size(), cfg->nIn, cfg->nOut);
             for (int ic = 0, nc = r.calo.size(); ic < nc; ++ic) {
@@ -202,7 +218,7 @@ void BitwisePuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::
         
     } 
 
-    if (debug_) {
+    if (debug_ && !((algo_ == linpuppi_algo || algo_ == linpuppi_flt_algo) ? r.pf.empty() :r.calo.empty())) {
         printf("BitwisePuppi \t Output N(ch) %3u/%3u   N(nh) %3u/%3u   N(ph) %3u/%u   [all/fiducial]\n", 
                 r.nOutput(l1tpf_impl::Region::charged_type,true,false), r.nOutput(l1tpf_impl::Region::charged_type,true,true), 
                 r.nOutput(l1tpf_impl::Region::neutral_hadron_type,true,false), r.nOutput(l1tpf_impl::Region::neutral_hadron_type,true,true), 

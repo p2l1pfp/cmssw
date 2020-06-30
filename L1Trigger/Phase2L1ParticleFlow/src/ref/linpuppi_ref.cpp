@@ -65,13 +65,17 @@ void puppisort_and_crop_ref(unsigned int nIn, unsigned int nOut, const T in[/*nI
 }
 
 
-void linpuppi_chs_ref(const linpuppi_config &cfg, z0_t pvZ0, const PFChargedObj pfch[/*cfg.nTrack*/], PFChargedObj outallch[/*cfg.nTrack*/]) {
+void linpuppi_chs_ref(const linpuppi_config &cfg, z0_t pvZ0, const PFChargedObj pfch[/*cfg.nTrack*/], PFChargedObj outallch[/*cfg.nTrack*/], bool debug) {
     for (unsigned int i = 0; i < cfg.nTrack; ++i) {
         int z0diff = pfch[i].hwZ0 - pvZ0;
         if (std::abs(z0diff) <= cfg.dzCut || pfch[i].hwId == PID_Muon) {
             outallch[i] = pfch[i];
+            if (debug && pfch[i].hwPt > 0) printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d) -> pass\n", i, 
+                                    int(pfch[i].hwPt)*LINPUPPI_ptLSB, int(pfch[i].hwId), int(pfch[i].hwZ0), z0diff, cfg.dzCut);
         } else {
             clear(outallch[i]);
+            if (debug && pfch[i].hwPt > 0) printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d) -> fail\n", i, 
+                                    int(pfch[i].hwPt)*LINPUPPI_ptLSB, int(pfch[i].hwId), int(pfch[i].hwZ0), z0diff, cfg.dzCut);
         }
     }
 }

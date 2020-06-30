@@ -54,7 +54,7 @@ struct linpuppi_config {
 };
 
 // charged
-void linpuppi_chs_ref(const linpuppi_config &cfg, z0_t pvZ0, const PFChargedObj pfch[/*cfg.nTrack*/], PFChargedObj outallch[/*cfg.nTrack*/]) ;
+void linpuppi_chs_ref(const linpuppi_config &cfg, z0_t pvZ0, const PFChargedObj pfch[/*cfg.nTrack*/], PFChargedObj outallch[/*cfg.nTrack*/], bool debug) ;
 
 // neutrals, in the tracker
 void linpuppi_flt(const linpuppi_config &cfg, const TkObj track[/*cfg.nTrack*/], z0_t pvZ0, const PFNeutralObj pfallne[/*cfg.nIn*/], PFNeutralObj outallne_nocut[/*cfg.nIn*/], PFNeutralObj outallne[/*cfg.nIn*/], PFNeutralObj outselne[/*cfg.nOut*/], bool debug) ;
