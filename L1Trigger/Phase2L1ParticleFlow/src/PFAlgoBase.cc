@@ -13,7 +13,15 @@ PFAlgoBase::~PFAlgoBase() {
 }
 
 void PFAlgoBase::initRegion(Region &r) const {
-    r.inputSort();
+    r.inputCrop(true);
+    r.pf.clear(); r.puppi.clear();
+    for (auto & c : r.calo) c.used = false;
+    for (auto & c : r.emcalo) c.used = false;
+    for (auto & t : r.track) { t.used = false; t.muonLink = false; }
+}
+
+void PFAlgoBase::initRegion(Region &r, bool doSort = true) const {
+    r.inputCrop(doSort);
     r.pf.clear(); r.puppi.clear();
     for (auto & c : r.calo) c.used = false;
     for (auto & c : r.emcalo) c.used = false;

@@ -74,6 +74,8 @@ class L1TPFProducer : public edm::stream::EDProducer<> {
         // region of interest debugging
         float debugEta_, debugPhi_, debugR_;
 
+        bool sortOutputs_;
+
         virtual void produce(edm::Event&, const edm::EventSetup&) override;
         void addUInt(unsigned int value,std::string iLabel,edm::Event& iEvent);
 };
@@ -101,7 +103,8 @@ L1TPFProducer::L1TPFProducer(const edm::ParameterSet& iConfig):
     fRegionCOE(nullptr),
     debugEta_(iConfig.getUntrackedParameter<double>("debugEta",0)),
     debugPhi_(iConfig.getUntrackedParameter<double>("debugPhi",0)),
-    debugR_(iConfig.getUntrackedParameter<double>("debugR",-1))
+    debugR_(iConfig.getUntrackedParameter<double>("debugR",-1)),
+    sortOutputs_(iConfig.getParameter<bool>("sortOutputs"))
 {
     produces<l1t::PFCandidateCollection>("PF");
     produces<l1t::PFCandidateCollection>("Puppi");
@@ -326,9 +329,6 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
         l1pfalgo_->runPF(l1region);
         l1pualgo_->runChargedPV(l1region, z0);
     }
-    // save PF into the event
-    iEvent.put(l1regions_.fetch(false), "PF");
-
     // Then get our alphas (globally)
     std::vector<float> puGlobals;
     l1pualgo_->doPUGlobals(l1regions_.regions(), z0, -1., puGlobals); // FIXME we don't have yet an external PU estimate
@@ -344,7 +344,13 @@ L1TPFProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
     // Then run puppi (regionally)
     for (auto & l1region : l1regions_.regions()) {
         l1pualgo_->runNeutralsPU(l1region, z0, -1., puGlobals);
+        l1region.outputCrop(sortOutputs_);
     }
+
+
+    // save PF into the event
+    iEvent.put(l1regions_.fetch(false), "PF");
+
     // and save puppi
     iEvent.put(l1regions_.fetch(true), "Puppi");
 
