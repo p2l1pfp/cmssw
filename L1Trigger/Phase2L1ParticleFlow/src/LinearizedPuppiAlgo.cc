@@ -53,10 +53,10 @@ const std::vector<std::string> & LinearizedPuppiAlgo::puGlobalNames() const {
     return names_;
 
 }
-void LinearizedPuppiAlgo::doPUGlobals(const std::vector<Region> &rs, float npu, std::vector<float> & globals) const {
+void LinearizedPuppiAlgo::doPUGlobals(const std::vector<Region> &rs, float z0, float npu, std::vector<float> & globals) const {
     globals.clear();
 }
-void LinearizedPuppiAlgo::runNeutralsPU(Region &r, float npu, const std::vector<float> & globals) const {
+void LinearizedPuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::vector<float> & globals) const {
     std::vector<float> alphaC, alphaF;
     PuppiAlgo::computePuppiAlphas(r, alphaC, alphaF);
     computePuppiWeights(r, npu, alphaC, alphaF);

@@ -46,12 +46,12 @@ const std::vector<std::string> & PuppiAlgo::puGlobalNames() const {
     return names_;
 
 }
-void PuppiAlgo::doPUGlobals(const std::vector<Region> &rs, float npu, std::vector<float> & globals) const {
+void PuppiAlgo::doPUGlobals(const std::vector<Region> &rs, float z0, float npu, std::vector<float> & globals) const {
     globals.resize(4);
     computePuppiMedRMS(rs, globals[0], globals[1], globals[2], globals[3]);
 }
 
-void PuppiAlgo::runNeutralsPU(Region &r, float npu, const std::vector<float> & globals) const {
+void PuppiAlgo::runNeutralsPU(Region &r, float z0, float npu, const std::vector<float> & globals) const {
     std::vector<float> alphaC, alphaF;
     computePuppiAlphas(r, alphaC, alphaF);
     computePuppiWeights(r, alphaC, alphaF, globals[0], globals[1], globals[2], globals[3]);
