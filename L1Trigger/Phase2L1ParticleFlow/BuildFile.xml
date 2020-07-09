@@ -10,6 +10,7 @@
 <use   name="CommonTools/Utils"/>
 <use   name="CommonTools/MVAUtils"/>
 <use   name="roottmva"/>
+<flags CFLAGS="-Wno-error=format-truncation -Wno-error=unused-function"/>
 <export>
   <lib name="1"/>
 </export>
