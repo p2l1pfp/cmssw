@@ -1,0 +1,6 @@
+<library file="*.cc" name="L1TriggerPhase2L1JetPlugins">
+ <use   name="DataFormats/L1TParticleFlow"/>
+ <use   name="L1Trigger/Phase2L1Jets"/>
+ <flags   EDM_PLUGIN="1"/>
+</library>
+

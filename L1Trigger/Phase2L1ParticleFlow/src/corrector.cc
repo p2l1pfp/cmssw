@@ -75,14 +75,14 @@ void l1tpf::corrector::init_(TDirectory *lFile, bool debug)
     nemf_ = (is2d_ ? index_->GetNbinsY() : 1);
     corrections_.resize(neta_*nemf_);
     std::fill(corrections_.begin(), corrections_.end(), nullptr);
-    char buff[32];
+    char buff[64];
     int ngraphs = 0;
     for (unsigned int ieta = 0; ieta  < neta_; ++ieta) {
         for (unsigned int iemf = 0; iemf  < nemf_; ++iemf) {
             if (is2d_) {
-                snprintf(buff, 31, "eta_bin%d_emf_bin%d", ieta+1, iemf+1);
+                snprintf(buff, 63, "eta_bin%d_emf_bin%d", ieta+1, iemf+1);
             } else {
-                snprintf(buff, 31, "eta_bin%d", ieta+1);
+                snprintf(buff, 63, "eta_bin%d", ieta+1);
             }
             TGraph *graph = graphs[buff];
             if (debug) std::cout << "   eta bin " << ieta << " emf bin " << iemf << " graph " << buff << ( graph ? " <valid>" : " <nil>")  << std::endl; 
@@ -159,11 +159,11 @@ void l1tpf::corrector::correctPt(l1t::PFCluster & cluster, float preserveEmEt) c
 }
 
 void l1tpf::corrector::setGraph(const TGraph &graph, int ieta, int iemf) {
-    char buff[32];
+    char buff[64];
     if (is2d_) {
-        snprintf(buff, 31, "eta_bin%d_emf_bin%d", (unsigned int)(ieta+1), (unsigned int)(iemf+1));
+        snprintf(buff, 63, "eta_bin%d_emf_bin%d", ieta+1, iemf+1);
     } else {
-        snprintf(buff, 31, "eta_bin%d", (unsigned int)(ieta+1));
+        snprintf(buff, 63, "eta_bin%d", ieta+1);
     }
     TGraph *gclone = (TGraph *) graph.Clone(buff);
     delete corrections_[ieta * nemf_ + iemf];

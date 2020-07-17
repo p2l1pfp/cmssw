@@ -178,19 +178,9 @@ _phase2_siml1emulator.add(l1ParticleFlowTask)
 from L1Trigger.Phase2L1ParticleFlow.l1pfJetMet_cff import *
 # Describe here l1PFJets sequence
 # ###############################
-#l1PFJets = cms.Sequence(
-#  ak4PFL1Calo + ak4PFL1PF + ak4PFL1Puppi +
-#  ak4PFL1CaloCorrected + ak4PFL1PFCorrected + ak4PFL1PuppiCorrected)
-#%% phase2_SimL1Emulator += l1PFJets
-l1PFJetsTask = cms.Task(
-  ak4PFL1Calo , ak4PFL1PF , ak4PFL1Puppi ,
-  ak4PFL1CaloCorrected , ak4PFL1PFCorrected , ak4PFL1PuppiCorrected)
 _phase2_siml1emulator.add(l1PFJetsTask)
 # Describe here l1PFMets sequence
 # ###############################
-#l1PFMets = cms.Sequence(l1PFMetCalo + l1PFMetPF + l1PFMetPuppi)
-#%% phase2_SimL1Emulator += l1PFMets
-l1PFMetsTask = cms.Task(l1PFMetCalo , l1PFMetPF , l1PFMetPuppi)
 _phase2_siml1emulator.add(l1PFMetsTask)
 
 #%% # Phase1 PF jets
