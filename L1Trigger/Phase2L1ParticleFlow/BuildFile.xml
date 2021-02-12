@@ -2,6 +2,8 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/Utilities"/>
 <use name="DataFormats/L1TParticleFlow"/>
+<use name="DataFormats/L1TCorrelator"/>
+
 <use name="CommonTools/BaseParticlePropagator"/>
 <use name="FastSimulation/Particle"/>
 <use name="DataFormats/ParticleFlowReco"/>
@@ -9,6 +11,8 @@
 <use   name="L1Trigger/L1THGCal"/>
 <use   name="CommonTools/Utils"/>
 <use   name="CommonTools/MVAUtils"/>
+<use   name="PhysicsTools/TensorFlow"/>
+<use   name="tensorflow"/>
 <use   name="roottmva"/>
 <use   name="hls"/>
 <export>
