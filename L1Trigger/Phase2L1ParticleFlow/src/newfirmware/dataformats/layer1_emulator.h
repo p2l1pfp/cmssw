@@ -131,25 +131,63 @@ namespace l1ct {
     }
   };
 
-  struct EGIsoObjEmu : public EGIsoObj {
+
+  struct EGObjEmu : EGObj {
+    // FIXME: really needed? can not set compoments of Egamma objects...
+    std::vector<const l1t::PFCluster *> components;
+    void clear() {
+      EGObj::clear();
+      components.clear();
+    }
+  };
+
+
+  struct EGIsoVarsEmu {
+    iso_t hwIsoVars[4];
+    
+    enum IsoType {
+      TkIso = 0,
+      PfIso = 1,
+      TkIsoPV = 2,
+      PfIsoPV = 3
+    };
+    
+    int intIso(const IsoType type) const { return hwIsoVars[type].to_int(); }
+    float floatIso(const IsoType type) const { return Scales::floatIso(hwIsoVars[type]); }
+    void setHwIso(const IsoType type, iso_t value) { hwIsoVars[type] = value; }
+
+    void clear() {
+      hwIsoVars[4]={};
+    }
+  };
+
+  struct EGIsoObjEmu : public EGIsoObj, public EGIsoVarsEmu {
     const l1t::PFCluster *srcCluster;
+    // we use an index to the standalone object needed to retrieve a Ref when putting
+    int sta_idx;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
     void clear() {
       EGIsoObj::clear();
       srcCluster = nullptr;
+      sta_idx = -1;
+      EGIsoVarsEmu::clear();
     }
   };
 
-  struct EGIsoEleObjEmu : public EGIsoEleObj {
+  struct EGIsoEleObjEmu : public EGIsoEleObj, public EGIsoVarsEmu {
     const l1t::PFCluster *srcCluster;
     const l1t::PFTrack *srcTrack;
+    // we use an index to the standalone object needed to retrieve a Ref when putting
+    int sta_idx;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
     void clear() {
       EGIsoEleObj::clear();
       srcCluster = nullptr;
       srcTrack = nullptr;
+      sta_idx = -1;
+      EGIsoVarsEmu::clear();
     }
   };
 
@@ -212,6 +250,7 @@ namespace l1ct {
     std::vector<PFNeutralObjEmu> pfneutral;
     std::vector<PFChargedObjEmu> pfmuon;
     std::vector<PuppiObjEmu> puppi;
+    std::vector<EGObjEmu> egsta;
     std::vector<EGIsoObjEmu> egphoton;
     std::vector<EGIsoEleObjEmu> egelectron;
 
@@ -221,6 +260,7 @@ namespace l1ct {
   };
 
   struct Event {
+    // FIXME: bump version number
     static const int VERSION = 3;
     uint32_t run, lumi;
     uint64_t event;
