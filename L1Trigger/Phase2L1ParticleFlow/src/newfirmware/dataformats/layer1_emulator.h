@@ -152,10 +152,11 @@ namespace l1ct {
       PfIsoPV = 3
     };
     
-    int intIso(const IsoType type) const { return hwIsoVars[type].to_int(); }
-    float floatIso(const IsoType type) const { return Scales::floatIso(hwIsoVars[type]); }
-    void setHwIso(const IsoType type, iso_t value) { hwIsoVars[type] = value; }
-
+    int intIsoVar(const IsoType type) const { return hwIsoVars[type].to_int(); }
+    float floatIsoVar(const IsoType type) const { return Scales::floatIso(hwIsoVars[type]); }
+    void setHwIsoVar(const IsoType type, iso_t value) { hwIsoVars[type] = value; }
+    iso_t hwIsoVar(const IsoType type) const { return hwIsoVars[type]; }
+    
     void clear() {
       hwIsoVars[4]={};
     }
@@ -260,8 +261,7 @@ namespace l1ct {
   };
 
   struct Event {
-    // FIXME: bump version number
-    static const int VERSION = 3;
+    static const int VERSION = 4;
     uint32_t run, lumi;
     uint64_t event;
     RegionizerDecodedInputs decoded;
