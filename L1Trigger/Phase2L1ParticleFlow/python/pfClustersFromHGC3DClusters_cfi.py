@@ -31,8 +31,8 @@ pfClustersFromHGC3DClusters = cms.EDProducer("PFClusterProducerFromHGC3DClusters
         ),
         weightsFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/hgcal_egID/Photon_Pion_vs_Neutrino_BDTweights.xml.gz"),
         wp = cms.string("-0.02")
-    ),                                             
-    scenario = cms.int32(0),
+    ),                                          
+    scenario = cms.int32(0),#0, 1 or 2
     emOnly = cms.bool(False),
     etMin = cms.double(1.0),
     resol = cms.PSet(
