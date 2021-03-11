@@ -47,8 +47,7 @@ l1tpf::PFClusterProducerFromHGC3DClusters::PFClusterProducerFromHGC3DClusters(co
                  emOnly_ || iConfig.getParameter<std::string>("corrector").empty()
                      ? -1
                      : iConfig.getParameter<double>("correctorEmfMax")),
-      resol_(iConfig.getParameter<edm::ParameterSet>("resol")) {
-
+  resol_(iConfig.getParameter<edm::ParameterSet>("resol")) {
   if (!emVsPionID_.method().empty()) {
     emVsPionID_.prepareTMVA();
   }
