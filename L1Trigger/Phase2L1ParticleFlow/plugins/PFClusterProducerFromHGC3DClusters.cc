@@ -84,7 +84,6 @@ void l1tpf::PFClusterProducerFromHGC3DClusters::produce(edm::Event &iEvent, cons
     }
     if (pt <= etCut_)
       continue;
-    // std::cout<<"-- pt "<<pt<<" hoe "<<hoe<<"\n";
 
     if (it->hwQual()) {  // this is the EG ID shipped with the HGC TPs
       // we use the EM interpretation of the cluster energy
