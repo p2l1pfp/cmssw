@@ -94,6 +94,8 @@ private:
   void addMuon(const l1t::Muon &t, l1t::PFCandidate::MuonRef ref);
   void addHadCalo(const l1t::PFCluster &t, l1t::PFClusterRef ref);
   void addEmCalo(const l1t::PFCluster &t, l1t::PFClusterRef ref);
+  // add objects in raw format
+  void addRawMuon(l1ct::DetectorSector<ap_uint<64>> &sec, const l1t::Muon &t);
   // add objects in already-decoded format
   void addDecodedTrack(l1ct::DetectorSector<l1ct::TkObjEmu> &sec, const l1t::PFTrack &t);
   void addDecodedMuon(l1ct::DetectorSector<l1ct::MuObjEmu> &sec, const l1t::Muon &t);
@@ -474,6 +476,7 @@ void L1TCorrelatorLayer1Producer::addTrack(const l1t::PFTrack &t, l1t::PFTrackRe
   trackRefMap_[&t] = ref;
 }
 void L1TCorrelatorLayer1Producer::addMuon(const l1t::Muon &mu, l1t::PFCandidate::MuonRef ref) {
+  addRawMuon(event_.raw.muon, mu);
   addDecodedMuon(event_.decoded.muon, mu);
   muonRefMap_[&mu] = ref;
 }
@@ -509,6 +512,29 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
   tk.hwStubs = t.nStubs();
   tk.src = &t;
   sec.obj.push_back(tk);
+}
+
+void L1TCorrelatorLayer1Producer::addRawMuon(l1ct::DetectorSector<ap_uint<64>> &sec, const l1t::Muon &t) {
+  // FIXME: this packing should be implemented in GMT code, but it's not yet available
+  ap_uint<64> mu = 0;
+  ap_uint<4> gmt_qual = t.hwQual();
+  ap_uint<3> gmt_bx = 0;  // FIXME
+  ap_uint<13> gmt_pt = round(t.pt() / 0.025);
+  ap_int<13> gmt_phi = round(t.phi() * 2 * M_PI / (1 << 13));
+  ap_int<13> gmt_eta = round(t.eta() * 2 * M_PI / (1 << 13));
+  ap_int<5> gmt_z0 = round(t.vertex().Z() / (1.8));
+  ap_int<7> gmt_d0 = round(t.vertex().Rho() / (3.0));
+  ap_uint<13> gmt_beta = 0;  // FIXME
+  mu(3, 0) = gmt_qual;
+  mu(6, 4) = gmt_bx;
+  mu[7] = (t.charge() > 0 ? 0 : 1);
+  mu(20, 8) = gmt_pt;
+  mu(33, 21) = gmt_phi;
+  mu(45, 34) = gmt_eta;
+  mu(50, 46) = gmt_z0;
+  mu(57, 51) = gmt_d0;
+  mu(61, 58) = gmt_beta;
+  sec.obj.push_back(mu);
 }
 
 void L1TCorrelatorLayer1Producer::addDecodedMuon(l1ct::DetectorSector<l1ct::MuObjEmu> &sec, const l1t::Muon &t) {

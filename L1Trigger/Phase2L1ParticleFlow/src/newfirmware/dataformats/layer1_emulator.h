@@ -237,6 +237,14 @@ namespace l1ct {
     inline void clear() { obj.clear(); }
   };
 
+  struct RawInputs {
+    DetectorSector<ap_uint<64>> muon;  // muons are global
+
+    bool read(std::fstream &from);
+    bool write(std::fstream &to) const;
+    void clear();
+  };
+
   struct RegionizerDecodedInputs {
     std::vector<DetectorSector<HadCaloObjEmu>> hadcalo;
     std::vector<DetectorSector<EmCaloObjEmu>> emcalo;
@@ -298,9 +306,10 @@ namespace l1ct {
   };
 
   struct Event {
-    static const int VERSION = 7;
+    static const int VERSION = 8;
     uint32_t run, lumi;
     uint64_t event;
+    RawInputs raw;
     RegionizerDecodedInputs decoded;
     std::vector<PFInputRegion> pfinputs;
     std::vector<PVObjEmu> pvs;

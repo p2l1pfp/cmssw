@@ -126,6 +126,21 @@ bool l1ct::PFRegionEmu::write(std::fstream& to) const { return writeObj<PFRegion
 bool l1ct::PVObjEmu::read(std::fstream& from) { return readObj<PVObj>(from, *this); }
 bool l1ct::PVObjEmu::write(std::fstream& to) const { return writeObj<PVObj>(*this, to); }
 
+bool l1ct::RawInputs::read(std::fstream& from) {
+  if (!(muon.region.read(from) && readManyAP(from, muon.obj)))
+    return false;
+
+  return true;
+}
+
+bool l1ct::RawInputs::write(std::fstream& to) const {
+  if (!(muon.region.write(to) && writeManyAP(muon.obj, to)))
+    return false;
+
+  return true;
+}
+void l1ct::RawInputs::clear() { muon.clear(); }
+
 bool l1ct::RegionizerDecodedInputs::read(std::fstream& from) {
   uint32_t number;
 
@@ -324,13 +339,13 @@ bool l1ct::Event::read(std::fstream& from) {
               << std::endl;
     abort();
   }
-  return readVar(from, run) && readVar(from, lumi) && readVar(from, event) && decoded.read(from) &&
+  return readVar(from, run) && readVar(from, lumi) && readVar(from, event) && raw.read(from) && decoded.read(from) &&
          readMany(from, pfinputs) && readMany(from, pvs) && readMany(from, out);
 }
 bool l1ct::Event::write(std::fstream& to) const {
   uint32_t version = VERSION;
-  return writeVar(version, to) && writeVar(run, to) && writeVar(lumi, to) && writeVar(event, to) && decoded.write(to) &&
-         writeMany(pfinputs, to) && writeMany(pvs, to) && writeMany(out, to);
+  return writeVar(version, to) && writeVar(run, to) && writeVar(lumi, to) && writeVar(event, to) && raw.write(to) &&
+         decoded.write(to) && writeMany(pfinputs, to) && writeMany(pvs, to) && writeMany(out, to);
 }
 void l1ct::Event::init(uint32_t arun, uint32_t alumi, uint64_t anevent) {
   clear();
@@ -342,6 +357,7 @@ void l1ct::Event::clear() {
   run = 0;
   lumi = 0;
   event = 0;
+  raw.clear();
   decoded.clear();
   for (auto& i : pfinputs)
     i.clear();

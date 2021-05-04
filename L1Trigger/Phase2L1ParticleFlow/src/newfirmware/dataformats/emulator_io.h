@@ -76,6 +76,26 @@ namespace l1ct {
     return from.good();
   }
 
+  template <int NB>
+  bool writeManyAP(const std::vector<ap_uint<NB>> &objs, std::fstream &to) {
+    uint32_t number = objs.size();
+    writeVar(number, to);
+    for (uint32_t i = 0; i < number; ++i) {
+      writeAP(objs[i], to);
+    }
+    return to.good();
+  }
+
+  template <int NB>
+  bool readManyAP(std::fstream &from, std::vector<ap_uint<NB>> &objs) {
+    uint32_t number = 0;
+    readVar(from, number);
+    objs.resize(number);
+    for (uint32_t i = 0; i < number; ++i)
+      readAP(from, objs[i]);
+    return from.good();
+  }
+
 }  // namespace l1ct
 
 #endif
