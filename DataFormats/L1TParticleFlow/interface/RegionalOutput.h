@@ -93,12 +93,14 @@ namespace l1t {
           : src_(src), ibegin_(ibegin), iend_(iend) {}
     };
 
-    RegionalOutput() : refprod_(), values_(), regions_() {}
-    RegionalOutput(const edm::RefProd<T>& prod) : refprod_(prod), values_(), regions_() {}
+    RegionalOutput() : refprod_(), values_(), regions_(), etas_(), phis_() {}
+    RegionalOutput(const edm::RefProd<T>& prod) : refprod_(prod), values_(), regions_(), etas_(), phis_() {}
 
-    void addRegion(const std::vector<int>& indices) {
+    void addRegion(const std::vector<int>& indices, const float eta, const float phi) {
       regions_.emplace_back((regions_.empty() ? 0 : regions_.back()) + indices.size());
       values_.insert(values_.end(), indices.begin(), indices.end());
+      etas_.push_back(eta);
+      phis_.push_back(phi);
     }
 
     edm::ProductID id() const { return refprod_.id(); }
@@ -108,16 +110,22 @@ namespace l1t {
     void clear() {
       values_.clear();
       regions_.clear();
+      etas_.clear();
+      phis_.clear();
     }
     void shrink_to_fit() {
       values_.shrink_to_fit();
       regions_.shrink_to_fit();
+      etas_.shrink_to_fit();
+      phis_.shrink_to_fit();
     }
 
     const_iterator begin() const { return const_iterator(this, 0); }
     const_iterator end() const { return const_iterator(this, values_.size()); }
 
     Region region(unsigned int ireg) const { return Region(this, ireg == 0 ? 0 : regions_[ireg - 1], regions_[ireg]); }
+    const float eta(unsigned int ireg) const { return etas_[ireg]; }
+    const float phi(unsigned int ireg) const { return phis_[ireg]; }
 
     ref refAt(unsigned int idx) const { return ref(refprod_, values_[idx]); }
     const value_type& objAt(unsigned int idx) const { return (*refprod_)[values_[idx]]; }
@@ -129,6 +137,8 @@ namespace l1t {
     refprod refprod_;
     std::vector<unsigned int> values_;   // list of indices to objects in each region, flattened.
     std::vector<unsigned int> regions_;  // for each region, store the index of one-past the last object in values
+    std::vector<float> etas_;            // floatEtaCenter of each PFregion
+    std::vector<float> phis_;            // floatPhiCenter of each PFregion
   };
 }  // namespace l1t
 #endif

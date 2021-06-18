@@ -780,7 +780,7 @@ void L1TCorrelatorLayer1Producer::putPuppi(edm::Event &iEvent) const {
       setRefs_(coll->back(), p);
       nobj.push_back(coll->size() - 1);
     }
-    reg->addRegion(nobj);
+    reg->addRegion(nobj, event_.pfinputs[ir].region.floatEtaCenter(), event_.pfinputs[ir].region.floatPhiCenter());
   }
   iEvent.put(std::move(coll), "Puppi");
   iEvent.put(std::move(reg), "PuppiRegional");

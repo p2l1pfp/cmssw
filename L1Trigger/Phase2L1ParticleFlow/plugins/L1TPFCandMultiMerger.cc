@@ -80,7 +80,7 @@ void L1TPFCandMultiMerger::produce(edm::StreamID, edm::Event& iEvent, const edm:
           for (auto iter = region.begin(), iend = region.end(); iter != iend; ++iter) {
             keys.push_back(iter.idx() + offset);
           }
-          regout->addRegion(keys);
+          regout->addRegion(keys, src.eta(ireg), src.phi(ireg));
         }
       }
     }
