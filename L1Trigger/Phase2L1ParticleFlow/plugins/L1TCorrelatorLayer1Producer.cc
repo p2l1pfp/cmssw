@@ -105,6 +105,7 @@ private:
   std::unique_ptr<l1t::PFCandidateCollection> fetchEmCalo() const;
   std::unique_ptr<l1t::PFCandidateCollection> fetchTracks() const;
   std::unique_ptr<l1t::PFCandidateCollection> fetchPF() const;
+  std::unique_ptr<std::vector<l1t::PFTrack>> fetchDecodedTracks() const;
   void putPuppi(edm::Event &iEvent) const;
 
   void putEgObjects(edm::Event &iEvent,
@@ -156,6 +157,9 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
   produces<l1t::PFCandidateCollection>("TK");
 #if 0  // LATER
   produces<l1t::PFCandidateCollection>("TKVtx");
+#endif
+#if 1  // LATER
+  produces<std::vector<l1t::PFTrack>>("DecodedTK");
 #endif
 
   for (const auto &tag : iConfig.getParameter<std::vector<edm::InputTag>>("emClusters")) {
@@ -314,6 +318,10 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
   iEvent.put(fetchEmCalo(), "EmCalo");
   iEvent.put(fetchHadCalo(), "Calo");
   iEvent.put(fetchTracks(), "TK");
+  
+  #if 1
+    iEvent.put(fetchDecodedTracks(), "DecodedTK");
+  #endif
 
   // Then do the vertexing, and save it out
 
@@ -739,6 +747,37 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchTr
   }
   return ret;
 }
+
+std::unique_ptr<std::vector<l1t::PFTrack>> L1TCorrelatorLayer1Producer::fetchDecodedTracks() const {
+  auto ret = std::make_unique<std::vector<l1t::PFTrack>>();
+  for (const auto r : event_.decoded.track) {
+    const auto &reg = r.region;
+    for (const auto &p : r.obj) {
+      if (p.hwPt == 0 || !reg.isFiducial(p))
+        continue;
+      reco::Particle::PolarLorentzVector p4(p.floatPt(), reg.floatGlbEta(p.hwVtxEta()), reg.floatGlbPhi(p.hwVtxPhi()), 0);
+
+      reco::Particle::Point vtx(0,0,p.floatZ0());
+      
+      ret->emplace_back(l1t::PFTrack(p.intCharge(),
+                                     reco::Particle::LorentzVector(p4),
+                                     vtx,
+                                     p.src->track(),
+                                     0,
+                                     reg.floatGlbEta(p.hwEta),
+                                     reg.floatGlbPhi(p.hwPhi),
+                                     -1,
+                                     -1,
+                                     p.hwQuality.to_int(),
+                                     false,
+                                     p.intPt(),
+                                     p.intEta(),
+                                     p.intPhi()));
+    }
+  }
+  return ret;
+}
+
 
 std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchPF() const {
   auto ret = std::make_unique<l1t::PFCandidateCollection>();
