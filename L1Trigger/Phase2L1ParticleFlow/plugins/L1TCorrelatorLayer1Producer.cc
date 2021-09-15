@@ -897,6 +897,9 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchPF
       ret->back().setHwZ0(p.hwZ0);
       ret->back().setHwDxy(p.hwDxy);
       ret->back().setHwTkQuality(p.hwTkQuality);
+      ret->back().setCaloEta(reg.floatGlbEtaOf(p));
+      ret->back().setCaloPhi(reg.floatGlbPhiOf(p));
+      
       setRefs_(ret->back(), p);
     }
     for (const auto &p : event_.out[ir].pfneutral) {
@@ -907,6 +910,8 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchPF
           p.hwId.isPhoton() ? l1t::PFCandidate::Photon : l1t::PFCandidate::NeutralHadron;
       ret->emplace_back(type, 0, p4, 1, p.intPt(), p.intEta(), p.intPhi());
       ret->back().setHwEmID(p.hwEmID);
+      ret->back().setCaloEta(reg.floatGlbEtaOf(p));
+      ret->back().setCaloPhi(reg.floatGlbPhiOf(p));
       setRefs_(ret->back(), p);
     }
   }
