@@ -35,7 +35,7 @@ namespace l1ct {
     std::vector<double> dEtaValues;
     std::vector<double> dPhiValues;
     float trkQualityPtMin;  // GeV
-    bool writeEgSta;
+    bool writeEgSta, applyFinalSorting;
 
     struct IsoParameters {
       IsoParameters(const edm::ParameterSet &);
@@ -77,6 +77,7 @@ namespace l1ct {
                         const std::vector<double> &dPhiValues = {0.07, 0.07},
                         float trkQualityPtMin = 10.,
                         bool writeEgSta = false,
+                        bool applyFinalSorting = false,
                         const IsoParameters &tkIsoParams_tkEle = {2., 0.6, 0.03, 0.2},
                         const IsoParameters &tkIsoParams_tkEm = {2., 0.6, 0.07, 0.3},
                         const IsoParameters &pfIsoParams_tkEle = {1., 0.6, 0.03, 0.2},
@@ -102,6 +103,7 @@ namespace l1ct {
           dPhiValues(std::move(dPhiValues)),
           trkQualityPtMin(trkQualityPtMin),
           writeEgSta(writeEgSta),
+          applyFinalSorting(applyFinalSorting),
           tkIsoParams_tkEle(tkIsoParams_tkEle),
           tkIsoParams_tkEm(tkIsoParams_tkEm),
           pfIsoParams_tkEle(pfIsoParams_tkEle),
@@ -132,6 +134,7 @@ namespace l1ct {
     void setDebug(int verbose) { debug_ = verbose; }
 
     bool writeEgSta() const { return cfg.writeEgSta; }
+    bool applyFinalSorting() const { return cfg.applyFinalSorting; }
 
   private:
     void link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo, std::vector<int> &emCalo2emCalo) const;

@@ -18,6 +18,7 @@ tkEgAlgoParameters = cms.PSet(
     caloEtMin=cms.double(0.0),
     trkQualityPtMin=cms.double(10.0),
     writeEGSta=cms.bool(False),
+    applyFinalSorting=cms.bool(True),
     tkIsoParametersTkEm=cms.PSet(
         tkQualityPtMin=cms.double(2.),
         dZ=cms.double(0.6),
