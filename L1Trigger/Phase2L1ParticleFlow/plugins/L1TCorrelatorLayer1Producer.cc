@@ -31,6 +31,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo_dummy_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/puppi/linpuppi_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegalgo_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegsorter_ref.h"
 
 #include "DataFormats/L1TCorrelator/interface/TkElectron.h"
 #include "DataFormats/L1TCorrelator/interface/TkElectronFwd.h"
@@ -69,6 +70,7 @@ private:
   std::unique_ptr<l1ct::PFAlgoEmulatorBase> l1pfalgo_;
   std::unique_ptr<l1ct::LinPuppiEmulator> l1pualgo_;
   std::unique_ptr<l1ct::PFTkEGAlgoEmulator> l1tkegalgo_;
+  std::unique_ptr<l1ct::PFTkEGSorterEmulator> l1tkegsorter_;
 
   bool writeEgSta_;
   // Region dump
@@ -147,6 +149,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
       l1pfalgo_(nullptr),
       l1pualgo_(nullptr),
       l1tkegalgo_(nullptr),
+      l1tkegsorter_(nullptr),
       regionDumpName_(iConfig.getUntrackedParameter<std::string>("dumpFileName", "")),
       writeRawHgcalCluster_(iConfig.getUntrackedParameter<bool>("writeRawHgcalCluster", false)),
       debugEta_(iConfig.getUntrackedParameter<double>("debugEta", 0)),
@@ -218,6 +221,8 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
 
   l1tkegalgo_ = std::make_unique<l1ct::PFTkEGAlgoEmulator>(
       l1ct::PFTkEGAlgoEmuConfig(iConfig.getParameter<edm::ParameterSet>("tkEgAlgoParameters")));
+  l1tkegsorter_ = std::make_unique<l1ct::PFTkEGSorterEmulator>(
+      iConfig.getParameter<edm::ParameterSet>("tkEgSorterParameters"));
 
   if (l1tkegalgo_->writeEgSta())
     produces<BXVector<l1t::EGamma>>("L1Eg");
@@ -853,6 +858,13 @@ void L1TCorrelatorLayer1Producer::putEgObjects(edm::Event &iEvent,
   auto tkems = std::make_unique<l1t::TkEmCollection>();
   auto tkeles = std::make_unique<l1t::TkElectronCollection>();
 
+  std::vector<l1ct::OutputRegion> outFid;
+  outFid.resize(event_.out.size());
+  std::vector<std::vector<l1ct::EGIsoObjEmu> > emu_photons_sorted_inBoard(5);
+  std::vector<std::pair<const l1ct::EGIsoObjEmu, const l1t::TkEm> > EGIsoAndTkEm;
+  std::vector<std::vector<l1ct::EGIsoEleObjEmu> > emu_electrons_sorted_inBoard(5);
+  std::vector<std::pair<const l1ct::EGIsoEleObjEmu, const l1t::TkElectron> > EGIsoEleAndTkEle;
+
   edm::RefProd<BXVector<l1t::EGamma>> ref_egs;
   if (writeEgSta)
     ref_egs = iEvent.getRefBeforePut<BXVector<l1t::EGamma>>(egLablel);
@@ -884,6 +896,7 @@ void L1TCorrelatorLayer1Producer::putEgObjects(edm::Event &iEvent,
     for (const auto &egiso : event_.out[ir].egphoton) {
       if (egiso.hwPt == 0 || !reg.isFiducial(egiso))
         continue;
+      outFid[ir].egphoton.push_back(egiso);
 
       edm::Ref<BXVector<l1t::EGamma>> ref_egsta;
       if (writeEgSta) {
@@ -904,12 +917,14 @@ void L1TCorrelatorLayer1Producer::putEgObjects(edm::Event &iEvent,
       tkem.setHwQual(egiso.hwQual);
       tkem.setPFIsol(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PfIso));
       tkem.setPFIsolPV(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PfIsoPV));
-      tkems->push_back(tkem);
+      if(l1tkegalgo_->applyFinalSorting()) EGIsoAndTkEm.push_back(std::make_pair(egiso,tkem));
+      else tkems->push_back(tkem);
     }
 
     for (const auto &egele : event_.out[ir].egelectron) {
       if (egele.hwPt == 0 || !reg.isFiducial(egele))
         continue;
+      outFid[ir].egelectron.push_back(egele);
 
       edm::Ref<BXVector<l1t::EGamma>> ref_egsta;
       if (writeEgSta) {
@@ -929,7 +944,22 @@ void L1TCorrelatorLayer1Producer::putEgObjects(edm::Event &iEvent,
                             egele.floatRelIso(l1ct::EGIsoEleObjEmu::IsoType::TkIso));
       tkele.setHwQual(egele.hwQual);
       tkele.setPFIsol(egele.floatRelIso(l1ct::EGIsoEleObjEmu::IsoType::PfIso));
-      tkeles->push_back(tkele);
+      if(l1tkegalgo_->applyFinalSorting()) EGIsoEleAndTkEle.push_back(std::make_pair(egele,tkele));
+      else tkeles->push_back(tkele);
+    }
+  }
+
+  if(l1tkegalgo_->applyFinalSorting()) {
+    l1tkegsorter_->run<l1ct::EGIsoObjEmu>(event_.pfinputs, outFid, emu_photons_sorted_inBoard);
+    for (auto &EGIso: emu_photons_sorted_inBoard[0]) {
+      for (auto &pair : EGIsoAndTkEm)
+        if(EGIso == pair.first) tkems->push_back(pair.second);
+    }
+
+    l1tkegsorter_->run<l1ct::EGIsoEleObjEmu>(event_.pfinputs, outFid, emu_electrons_sorted_inBoard);
+    for (auto &EGIsoEle: emu_electrons_sorted_inBoard[0]) {
+      for (auto &pair : EGIsoEleAndTkEle)
+        if(EGIsoEle == pair.first) tkeles->push_back(pair.second);
     }
   }
 

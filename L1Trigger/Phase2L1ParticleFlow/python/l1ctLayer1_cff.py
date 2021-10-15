@@ -6,6 +6,7 @@ from L1Trigger.Phase2L1ParticleFlow.pfClustersFromCombinedCalo_cff import pfClus
 from L1Trigger.Phase2L1ParticleFlow.pfClustersFromHGC3DClusters_cfi import pfClustersFromHGC3DClusters
 
 from l1TkEgAlgoEmulator_cfi import tkEgAlgoParameters
+from l1TkEgSorterEmulator_cfi import tkEgSorterParameters
 
 muonInputConversionParameters = cms.PSet(
     z0Scale = cms.double(1.875),
@@ -81,6 +82,7 @@ l1ctLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
         nEMCALO_EGIN = 10,
         nEM_EGOUT = 10,
     ),
+    tkEgSorterParameters=tkEgSorterParameters.clone(),
     caloSectors = cms.VPSet(
         cms.PSet( 
             etaBoundaries = cms.vdouble(-1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5),
@@ -212,6 +214,7 @@ l1ctLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         nEM_EGOUT = 5,
         doBremRecovery=True,
         writeEGSta=True),
+    tkEgSorterParameters=tkEgSorterParameters.clone(),
     caloSectors = _hgcalSectors,
     regions = cms.VPSet(
         cms.PSet( 
@@ -285,6 +288,7 @@ l1ctLayer1HGCalNoTK = cms.EDProducer("L1TCorrelatorLayer1Producer",
         nEM_EGOUT = 5,
         doBremRecovery=True,
         writeEGSta=True),
+    tkEgSorterParameters=tkEgSorterParameters.clone(),
     caloSectors = _hgcalSectors,
     regions = cms.VPSet(
         cms.PSet( 
@@ -359,6 +363,7 @@ l1ctLayer1HF = cms.EDProducer("L1TCorrelatorLayer1Producer",
         nEM_EGOUT = 5,        # to be defined
         doBremRecovery=True,
         writeEGSta=True),
+    tkEgSorterParameters=tkEgSorterParameters.clone(),
     caloSectors = cms.VPSet(
         cms.PSet( 
             etaBoundaries = cms.vdouble(-5.5, -3.0),
