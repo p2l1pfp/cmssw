@@ -1,9 +1,5 @@
 #include "multififo_regionizer_ref.h"
-#ifdef CMSSW_GIT_HASH
-#include "../../egamma/pfeginput_ref.h"
-#else
-#include "../../egamma/l1-input/ref/pfeginput_ref.h"
-#endif
+#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pfeginput_ref.h"
 
 #include <iostream>
 
