@@ -5,11 +5,7 @@
 #include <cstdlib>
 #include <algorithm>
 
-#ifdef CMSSW_GIT_HASH
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
-#else
-#include "../utils/dbgPrintf.h"
-#endif
 
 #ifdef CMSSW_GIT_HASH
 #include "DataFormats/Math/interface/deltaPhi.h"

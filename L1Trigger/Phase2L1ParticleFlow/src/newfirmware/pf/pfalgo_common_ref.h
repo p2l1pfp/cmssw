@@ -1,13 +1,8 @@
 #ifndef PFALGO_COMMON_REF_H
 #define PFALGO_COMMON_REF_H
 
-#ifdef CMSSW_GIT_HASH
 #include "../dataformats/layer1_emulator.h"
 #include "pfalgo_types.h"
-#else
-#include "../../dataformats/layer1_emulator.h"
-#include "../firmware/pfalgo_types.h"
-#endif
 
 #include <algorithm>
 #include <vector>
