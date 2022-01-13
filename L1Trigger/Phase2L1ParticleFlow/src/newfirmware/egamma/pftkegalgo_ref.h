@@ -1,15 +1,9 @@
 #ifndef PFTKEGALGO_REF_H
 #define PFTKEGALGO_REF_H
 
-#ifdef CMSSW_GIT_HASH
 #include "../dataformats/layer1_emulator.h"
 #include "../dataformats/egamma.h"
 #include "../dataformats/pf.h"
-#else
-#include "../../../dataformats/layer1_emulator.h"
-#include "../../../dataformats/egamma.h"
-#include "../../../dataformats/pf.h"
-#endif
 
 namespace edm {
   class ParameterSet;

@@ -4,13 +4,11 @@
 #include <cstdio>
 #include <vector>
 
-#ifdef CMSSW_GIT_HASH
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
 #include "../dataformats/layer1_emulator.h"
-#else
-#include "../../../dataformats/layer1_emulator.h"
-#include "../../../utils/dbgPrintf.h"
+
+#ifdef CMSSW_GIT_HASH
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #endif
 
 namespace edm {
