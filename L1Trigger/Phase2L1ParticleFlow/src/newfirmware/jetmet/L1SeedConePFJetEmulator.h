@@ -1,24 +1,15 @@
 #ifndef L1Trigger_Phase2L1ParticleFlow_L1SeedConePFJetEmulator_h
 #define L1Trigger_Phase2L1ParticleFlow_L1SeedConePFJetEmulator_h
 
-#ifdef CMSSW_GIT_HASH
 #include "../dataformats/layer1_emulator.h"
 #include "../dataformats/jets.h"
-#else
-#include "../../../dataformats/layer1_emulator.h"
-#include "../../../dataformats/jets.h"
-#endif
 
 #include <iostream>
 #include <vector>
 #include <numeric>
 #include <algorithm>
 
-#ifdef CMSSW_GIT_HASH
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
-#else
-#include "../../../utils/dbgPrintf.h"
-#endif
 
 class L1SCJetEmu {
 public:
