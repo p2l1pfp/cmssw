@@ -71,6 +71,12 @@ namespace l1ct {
       return unpack_ap(bits);
     }
 
+    inline static Jet unpack(long long unsigned int &src) {
+      // unpack from single 64b int
+      ap_uint<BITWIDTH> bits = src;
+      return unpack_ap(bits);
+    }
+
     l1gt::Jet toGT() const {
       l1gt::Jet j;
       j.valid = hwPt != 0;
