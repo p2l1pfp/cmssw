@@ -5,7 +5,6 @@
 #include "../dataformats/egamma.h"
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
 
-
 namespace edm {
   class ParameterSet;
 }

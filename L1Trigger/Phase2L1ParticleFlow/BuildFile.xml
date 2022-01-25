@@ -13,7 +13,6 @@
 <use   name="CommonTools/Utils"/>
 <use   name="CommonTools/MVAUtils"/>
 <use   name="PhysicsTools/TensorFlow"/>
-<use   name="L1Trigger/DemonstratorTools"/>
 <use   name="tensorflow"/>
 <use   name="roottmva"/>
 <use   name="hls"/>

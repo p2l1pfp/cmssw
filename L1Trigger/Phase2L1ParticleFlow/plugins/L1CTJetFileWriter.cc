@@ -70,7 +70,8 @@ void L1CTJetFileWriter::analyze(const edm::Event& iEvent, const edm::EventSetup&
   sortedJets.reserve(jets.size());
   std::copy(jets.begin(), jets.end(), std::back_inserter(sortedJets));
 
-  std::stable_sort(sortedJets.begin(), sortedJets.end(), [](l1t::PFJet i, l1t::PFJet j) { return (i.hwPt() > j.hwPt()); });
+  std::stable_sort(
+      sortedJets.begin(), sortedJets.end(), [](l1t::PFJet i, l1t::PFJet j) { return (i.hwPt() > j.hwPt()); });
   const auto outputJets(encodeJets(sortedJets));
 
   // 2) Pack jet information into 'event data' object, and pass that to file writer

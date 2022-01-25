@@ -19,80 +19,77 @@
 
 class L1MhtPfProducer : public edm::global::EDProducer<> {
 public:
-    explicit L1MhtPfProducer(const edm::ParameterSet&);
-    ~L1MhtPfProducer() override;
+  explicit L1MhtPfProducer(const edm::ParameterSet&);
+  ~L1MhtPfProducer() override;
 
 private:
-    void produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const override;
-    edm::EDGetTokenT<std::vector<l1t::PFJet>> _jetsToken;
-    float _minJetPt;
-    float _maxJetEta;
+  void produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const override;
+  edm::EDGetTokenT<std::vector<l1t::PFJet>> _jetsToken;
+  float _minJetPt;
+  float _maxJetEta;
 
-    std::vector<l1ct::Jet> convertEDMToHW(std::vector<l1t::PFJet> edmJets) const;
-    std::vector<l1t::EtSum> convertHWToEDM(l1ct::Sum hwSums) const;
+  std::vector<l1ct::Jet> convertEDMToHW(std::vector<l1t::PFJet> edmJets) const;
+  std::vector<l1t::EtSum> convertHWToEDM(l1ct::Sum hwSums) const;
 };
 
 L1MhtPfProducer::L1MhtPfProducer(const edm::ParameterSet& cfg)
     : _jetsToken(consumes<std::vector<l1t::PFJet>>(cfg.getParameter<edm::InputTag>("jets"))),
       _minJetPt(cfg.getParameter<double>("minJetPt")),
-      _maxJetEta(cfg.getParameter<double>("maxJetEta"))
-{
-    produces<std::vector<l1t::EtSum>>();
+      _maxJetEta(cfg.getParameter<double>("maxJetEta")) {
+  produces<std::vector<l1t::EtSum>>();
 }
 
-void L1MhtPfProducer::produce(edm::StreamID,
-                             edm::Event& iEvent,
-                             const edm::EventSetup& iSetup) const {
+void L1MhtPfProducer::produce(edm::StreamID, edm::Event& iEvent, const edm::EventSetup& iSetup) const {
+  // Get the jets from the event
+  l1t::PFJetCollection edmJets = iEvent.get(_jetsToken);
 
-    // Get the jets from the event
-    l1t::PFJetCollection edmJets = iEvent.get(_jetsToken);
+  // Apply pT and eta selections
+  l1t::PFJetCollection edmJetsFiltered;
+  std::copy_if(edmJets.begin(), edmJets.end(), std::back_inserter(edmJetsFiltered), [&](auto jet) {
+    return jet.pt() > _minJetPt && std::abs(jet.eta()) < _maxJetEta;
+  });
 
-    // Apply pT and eta selections
-    l1t::PFJetCollection edmJetsFiltered;
-    std::copy_if(edmJets.begin(), edmJets.end(), std::back_inserter(edmJetsFiltered),
-                 [&](auto jet){ return jet.pt() > _minJetPt && std::abs(jet.eta()) < _maxJetEta; });
+  // Run the emulation
+  std::vector<l1ct::Jet> hwJets = convertEDMToHW(edmJetsFiltered);  // convert to the emulator format
+  l1ct::Sum hwSums = htmht(hwJets);                                 // call the emulator
+  std::vector<l1t::EtSum> edmSums = convertHWToEDM(hwSums);         // convert back to edm format
 
-    // Run the emulation
-    std::vector<l1ct::Jet> hwJets = convertEDMToHW(edmJetsFiltered);  // convert to the emulator format
-    l1ct::Sum hwSums = htmht(hwJets);                                 // call the emulator
-    std::vector<l1t::EtSum> edmSums = convertHWToEDM(hwSums);         // convert back to edm format
+  // Put the sums in the event
+  std::unique_ptr<std::vector<l1t::EtSum>> mhtCollection(new std::vector<l1t::EtSum>(0));
+  mhtCollection->push_back(edmSums.at(0));  // HT
+  mhtCollection->push_back(edmSums.at(1));  // MHT
 
-    // Put the sums in the event
-    std::unique_ptr<std::vector<l1t::EtSum>> mhtCollection(new std::vector<l1t::EtSum>(0));
-    mhtCollection->push_back(edmSums.at(0)); // HT
-    mhtCollection->push_back(edmSums.at(1)); // MHT
-
-    iEvent.put(std::move(mhtCollection));
+  iEvent.put(std::move(mhtCollection));
 }
 
 std::vector<l1ct::Jet> L1MhtPfProducer::convertEDMToHW(std::vector<l1t::PFJet> edmJets) const {
-    std::vector<l1ct::Jet> hwJets;
-    std::for_each(edmJets.begin(), edmJets.end(), [&](l1t::PFJet jet){
-        l1ct::Jet hwJet = l1ct::Jet::unpack(jet.encodedJet());
-        hwJets.push_back(hwJet);
-    });
-    return hwJets;
+  std::vector<l1ct::Jet> hwJets;
+  std::for_each(edmJets.begin(), edmJets.end(), [&](l1t::PFJet jet) {
+    l1ct::Jet hwJet = l1ct::Jet::unpack(jet.encodedJet());
+    hwJets.push_back(hwJet);
+  });
+  return hwJets;
 }
 
 std::vector<l1t::EtSum> L1MhtPfProducer::convertHWToEDM(l1ct::Sum hwSums) const {
-    std::vector<l1t::EtSum> edmSums;
+  std::vector<l1t::EtSum> edmSums;
 
-    reco::Candidate::PolarLorentzVector htVector;
-    htVector.SetPt( hwSums.hwSumPt.to_double() );
-    htVector.SetPhi( 0 );
-    htVector.SetEta( 0 );
+  reco::Candidate::PolarLorentzVector htVector;
+  htVector.SetPt(hwSums.hwSumPt.to_double());
+  htVector.SetPhi(0);
+  htVector.SetEta(0);
 
-    reco::Candidate::PolarLorentzVector mhtVector;
-    mhtVector.SetPt( hwSums.hwPt.to_double() );
-    mhtVector.SetPhi( l1ct::Scales::floatPhi(hwSums.hwPhi) );
-    mhtVector.SetEta( 0 );
+  reco::Candidate::PolarLorentzVector mhtVector;
+  mhtVector.SetPt(hwSums.hwPt.to_double());
+  mhtVector.SetPhi(l1ct::Scales::floatPhi(hwSums.hwPhi));
+  mhtVector.SetEta(0);
 
-    l1t::EtSum ht(htVector, l1t::EtSum::EtSumType::kTotalHt);
-    l1t::EtSum mht(mhtVector, l1t::EtSum::EtSumType::kMissingHt);
+  l1t::EtSum ht(htVector, l1t::EtSum::EtSumType::kTotalHt);
+  l1t::EtSum mht(mhtVector, l1t::EtSum::EtSumType::kMissingHt);
 
-    edmSums.push_back(ht);
-    edmSums.push_back(mht);
-    return edmSums;
+  edmSums.push_back(ht);
+  edmSums.push_back(mht);
+  return edmSums;
 }
 
 L1MhtPfProducer::~L1MhtPfProducer() {}
