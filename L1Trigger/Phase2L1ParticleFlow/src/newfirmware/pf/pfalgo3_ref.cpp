@@ -6,11 +6,7 @@
 #include <vector>
 #include <memory>
 
-#ifdef CMSSW_GIT_HASH
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
-#else
-#include "../../utils/dbgPrintf.h"
-#endif
 
 #ifdef CMSSW_GIT_HASH
 #include "FWCore/ParameterSet/interface/ParameterSet.h"

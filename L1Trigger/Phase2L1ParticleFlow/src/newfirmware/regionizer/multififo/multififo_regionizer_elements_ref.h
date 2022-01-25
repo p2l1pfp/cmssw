@@ -1,7 +1,7 @@
 #ifndef multififo_regionizer_elements_ref_h
 #define multififo_regionizer_elements_ref_h
 
-#include "../../dataformats/layer1_emulator.h"
+#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/dataformats/layer1_emulator.h"
 
 #include <list>
 #include <vector>

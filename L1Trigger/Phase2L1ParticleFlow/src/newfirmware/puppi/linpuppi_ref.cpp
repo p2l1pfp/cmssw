@@ -2,20 +2,12 @@
 #include <cmath>
 #include <algorithm>
 
-#ifdef CMSSW_GIT_HASH
 #include "linpuppi_bits.h"
-#else
-#include "firmware/linpuppi_bits.h"
-#endif
 
 #include "../common/bitonic_hybrid_sort_ref.h"
 #include "../common/bitonic_sort_ref.h"
 
-#ifdef CMSSW_GIT_HASH
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
-#else
-#include "../utils/dbgPrintf.h"
-#endif
 
 #ifdef CMSSW_GIT_HASH
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
