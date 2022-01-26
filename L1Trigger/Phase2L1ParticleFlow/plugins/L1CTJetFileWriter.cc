@@ -65,7 +65,7 @@ void L1CTJetFileWriter::analyze(const edm::Event& iEvent, const edm::EventSetup&
 
   // 1) Encode jet information onto vectors containing link data
   // TODO remove the sort here and sort the input collection where it's created
-  edm::View<l1t::PFJet> jets = iEvent.get(jetsToken_);
+  const edm::View<l1t::PFJet>& jets = iEvent.get(jetsToken_);
   std::vector<l1t::PFJet> sortedJets;
   sortedJets.reserve(jets.size());
   std::copy(jets.begin(), jets.end(), std::back_inserter(sortedJets));

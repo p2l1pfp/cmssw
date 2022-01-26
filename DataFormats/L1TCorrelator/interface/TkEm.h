@@ -55,17 +55,17 @@ namespace l1t {
     void setPuppiIsolPV(float puppiIsolPV) { puppiIsolPV_ = puppiIsolPV; }
     void setEGRef(const edm::Ref<EGammaBxCollection>& egRef) { egRef_ = egRef; }
 
-    template<int N>
+    template <int N>
     void setEgBinaryWord(ap_uint<N> word) {
       egBinaryWord0_ = word;
       egBinaryWord1_ = (word >> 32);
-      egBinaryWord2_ = (word >> 64);     
-   }
+      egBinaryWord2_ = (word >> 64);
+    }
 
-   template<int N>
-   ap_uint<N> egBinaryWord() const {
-     return ap_uint<N>(egBinaryWord0_) | (ap_uint<N>(egBinaryWord1_) << 32) | (ap_uint<N>(egBinaryWord2_) << 64);
-   }
+    template <int N>
+    ap_uint<N> egBinaryWord() const {
+      return ap_uint<N>(egBinaryWord0_) | (ap_uint<N>(egBinaryWord1_) << 32) | (ap_uint<N>(egBinaryWord2_) << 64);
+    }
 
   private:
     edm::Ref<EGammaBxCollection> egRef_;
@@ -78,7 +78,6 @@ namespace l1t {
     uint32_t egBinaryWord0_;
     uint32_t egBinaryWord1_;
     uint32_t egBinaryWord2_;
-
   };
 }  // namespace l1t
 

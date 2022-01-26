@@ -34,7 +34,7 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
     : config_(iConfig),
       token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
       emulator_(iConfig),
-      debug_(iConfig.getUntrackedParameter<bool>("debug", 0)) {
+      debug_(iConfig.getUntrackedParameter<bool>("debug", false)) {
   produces<l1t::PFCandidateCollection>("Puppi");
   produces<l1t::PFCandidateCollection>("TruncatedPuppi");
 }
@@ -87,7 +87,7 @@ void DeregionizerProducer::produce(edm::Event &iEvent, const edm::EventSetup &iS
                                               << i << "] = " << tempOutputRegion.puppi.back().floatEta() << ", phi["
                                               << i << "] = " << tempOutputRegion.puppi.back().floatPhi();
     }
-    if (tempOutputRegion.puppi.size() > 0) {
+    if (!tempOutputRegion.puppi.empty()) {
       regionEtas.push_back(eta);
       regionPhis.push_back(phi);
       outputRegions.push_back(tempOutputRegion);

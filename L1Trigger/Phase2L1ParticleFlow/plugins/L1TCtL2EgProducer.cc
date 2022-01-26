@@ -40,7 +40,7 @@ private:
 
   void produce(edm::StreamID, edm::Event &, const edm::EventSetup &) const override;
 
-  void endJob();
+  void endJob() override;
 
   struct RefRemapper {
     typedef TTTrack<Ref_Phase2TrackerDigi_> L1TTTrackType;
