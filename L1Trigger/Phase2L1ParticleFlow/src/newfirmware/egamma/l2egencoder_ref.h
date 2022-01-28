@@ -40,8 +40,8 @@ namespace l1ct {
       auto encoded_eles = encodeLayer2(electrons);
       encoded_eles.resize(nTkPhoOut_, {0});
       //
-      encodeLayer2To64bits(encoded_photons, ret);
       encodeLayer2To64bits(encoded_eles, ret);
+      encodeLayer2To64bits(encoded_photons, ret);
 
       return ret;
     }
@@ -50,8 +50,7 @@ namespace l1ct {
     template <class T>
     ap_uint<96> encodeLayer2(const T& egiso) const {
       ap_uint<96> ret = 0;
-      // FIXME; should be packed in GT format
-      ret(T::BITWIDTH - 1, 0) = egiso.pack();
+      ret = egiso.toGT().pack();
       return ret;
     }
 

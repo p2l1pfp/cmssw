@@ -368,8 +368,7 @@ l1t::TkEm L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoObjEmu &egiso, cons
   tkem.setHwQual(egiso.hwQual);
   tkem.setPFIsol(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PfIso));
   tkem.setPFIsolPV(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PfIsoPV));
-  // FIXME: we shall put the GT formatted packed object here
-  tkem.setEgBinaryWord(egiso.pack());
+  tkem.setEgBinaryWord(egiso.toGT().pack());
   return tkem;
 }
 
@@ -386,8 +385,7 @@ l1t::TkElectron L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoEleObjEmu &eg
   // FIXME: need to define a global quality (barrel+endcap)?
   tkele.setHwQual(egele.hwQual);
   tkele.setPFIsol(egele.floatRelIso(l1ct::EGIsoEleObjEmu::IsoType::PfIso));
-  // FIXME: shall we put the GT formatted packed object here?
-  tkele.setEgBinaryWord(egele.pack());
+  tkele.setEgBinaryWord(egele.toGT().pack());
   return tkele;
 }
 
