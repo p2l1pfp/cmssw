@@ -34,10 +34,29 @@ namespace l1ct {
 
     virtual ~L2EgSorterEmulator() {}
 
-    // FIXME: parametrize the second dimension
+    template <int NBoards, int NObjs>
     void toFirmware(const std::vector<l1ct::OutputBoard> &in,
-                    EGIsoObj photons_in[/*nBOARDS*/][16],
-                    EGIsoEleObj eles_in[/*nBOARDS*/][16]) const;
+                    EGIsoObj (&photons_in)[NBoards][NObjs],
+                    EGIsoEleObj (&eles_in)[NBoards][NObjs]) const {
+      for (unsigned int ib = 0; ib < NBoards; ib++) {
+        const auto &board = in[ib];
+        for (unsigned int io = 0; io < NObjs; io++) {
+          EGIsoObj pho;
+          EGIsoEleObj ele;
+          if (io < board.egphoton.size())
+            pho = board.egphoton[io];
+          else
+            pho.clear();
+          if (io < board.egelectron.size())
+            ele = board.egelectron[io];
+          else
+            ele.clear();
+
+          photons_in[ib][io] = pho;
+          eles_in[ib][io] = ele;
+        }
+      }
+    }
 
     void toFirmware(const std::vector<EGIsoObjEmu> &out_photons,
                     const std::vector<EGIsoEleObjEmu> &out_eles,
@@ -119,9 +138,9 @@ namespace l1ct {
       }
     }
 
-    unsigned int nBOARDS;
-    unsigned int nEGPerBoard;
-    unsigned int nEGOut;
+    const unsigned int nBOARDS;
+    const unsigned int nEGPerBoard;
+    const unsigned int nEGOut;
     int debug_;
   };
 }  // namespace l1ct

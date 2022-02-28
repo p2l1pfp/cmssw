@@ -19,29 +19,6 @@ l1ct::L2EgSorterEmulator::L2EgSorterEmulator(const edm::ParameterSet &pset)
 
 #endif
 
-void L2EgSorterEmulator::toFirmware(const std::vector<l1ct::OutputBoard> &in,
-                                    EGIsoObj photons_in[/*nBOARDS*/][16],
-                                    EGIsoEleObj eles_in[/*nBOARDS*/][16]) const {
-  for (unsigned int ib = 0; ib < nBOARDS; ib++) {
-    const auto &board = in[ib];
-    for (unsigned int io = 0; io < nEGPerBoard; io++) {
-      EGIsoObj pho;
-      EGIsoEleObj ele;
-      if (io < board.egphoton.size())
-        pho = board.egphoton[io];
-      else
-        pho.clear();
-      if (io < board.egelectron.size())
-        ele = board.egelectron[io];
-      else
-        ele.clear();
-
-      photons_in[ib][io] = pho;
-      eles_in[ib][io] = ele;
-    }
-  }
-}
-
 void L2EgSorterEmulator::toFirmware(const std::vector<EGIsoObjEmu> &out_photons,
                                     const std::vector<EGIsoEleObjEmu> &out_eles,
                                     EGIsoObj out_egphs[/*nObjOut*/],
