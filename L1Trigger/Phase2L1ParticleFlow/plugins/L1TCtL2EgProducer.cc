@@ -249,8 +249,8 @@ std::vector<ap_uint<64>> L1TCtL2EgProducer::encodeLayer1(const std::vector<EGIso
   std::vector<ap_uint<64>> ret;
   for (const auto &ele : electrons) {
     auto eleword = encodeLayer1(ele);
-    ret.push_back(eleword(127, 64));
     ret.push_back(eleword(63, 0));
+    ret.push_back(eleword(127, 64));
   }
   return ret;
 }
