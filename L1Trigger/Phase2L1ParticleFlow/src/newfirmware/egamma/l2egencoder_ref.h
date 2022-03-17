@@ -36,12 +36,23 @@ namespace l1ct {
       std::vector<ap_uint<64>> ret;
 
       auto encoded_photons = encodeLayer2(photons);
-      encoded_photons.resize(nTkEleOut_, {0});
+      encoded_photons.resize(nTkPhoOut_, {0});
       auto encoded_eles = encodeLayer2(electrons);
-      encoded_eles.resize(nTkPhoOut_, {0});
+      encoded_eles.resize(nTkEleOut_, {0});
       //
-      encodeLayer2To64bits(encoded_photons, ret);
       encodeLayer2To64bits(encoded_eles, ret);
+      encodeLayer2To64bits(encoded_photons, ret);
+      return ret;
+    }
+
+    template <class T>
+    std::vector<ap_uint<64>> encodeLayer2EgObjs_trivial(const std::vector<T>& egs, int n) const {
+      std::vector<ap_uint<64>> ret;
+
+      auto encoded_egs = encodeLayer2_trivial<T>(egs);
+      encoded_egs.resize(n, {0});
+      //
+      encodeLayer2To64bits(encoded_egs, ret);
 
       return ret;
     }
@@ -49,10 +60,7 @@ namespace l1ct {
   private:
     template <class T>
     ap_uint<96> encodeLayer2(const T& egiso) const {
-      ap_uint<96> ret = 0;
-      // FIXME; should be packed in GT format
-      ret(T::BITWIDTH - 1, 0) = egiso.pack();
-      return ret;
+      return egiso.toGT().pack();
     }
 
     template <class T>
@@ -64,18 +72,33 @@ namespace l1ct {
       return ret;
     }
     //
+    template <class T>
+    ap_uint<96> encodeLayer2_trivial(const T& egiso) const {
+      ap_uint<96> ret = 0;
+      ret(T::BITWIDTH - 1, 0) = egiso.pack();
+      return ret;
+    }
+
+    template <class T>
+    std::vector<ap_uint<96>> encodeLayer2_trivial(const std::vector<T>& egisos) const {
+      std::vector<ap_uint<96>> ret;
+      for (const auto& egiso : egisos) {
+        ret.push_back(encodeLayer2_trivial(egiso));
+      }
+      return ret;
+    }
 
     void encodeLayer2To64bits(const std::vector<ap_uint<96>>& packed96, std::vector<ap_uint<64>>& packed64) const {
       for (unsigned int i = 0; i < packed96.size(); i += 2) {
         packed64.push_back(packed96[i](63, 0));
         packed64.push_back((ap_uint<32>(packed96[i + 1](95, 64)), ap_uint<32>(packed96[i](95, 64))));
         packed64.push_back(packed96[i + 1](63, 0));
-
+        // std::cout << "REF"  << std::endl;
         // std::cout << "obj [" << i << "]: " << std::hex << packed96[i] << std::endl;
         // std::cout << "obj [" << i+1 << "]: " << std::hex << packed96[i+1] << std::endl;
-        // std::cout << "frame [" << std::dec << packed64.size()-3 << "]" << std::hex << packed64[packed64.size()-3] << std::endl;
-        // std::cout << "frame [" << std::dec << packed64.size()-2 << "]" << std::hex << packed64[packed64.size()-2] << std::endl;
-        // std::cout << "frame [" << std::dec << packed64.size()-1 << "]" << std::hex << packed64[packed64.size()-1] << std::endl;
+        // std::cout << "frame [" << std::dec << packed64.size()-3 << "]" << std::hex << packed64[packed64.size()-3] << std::dec << std::endl;
+        // std::cout << "frame [" << std::dec << packed64.size()-2 << "]" << std::hex << packed64[packed64.size()-2] << std::dec << std::endl;
+        // std::cout << "frame [" << std::dec << packed64.size()-1 << "]" << std::hex << packed64[packed64.size()-1] << std::dec << std::endl;
       }
     }
 

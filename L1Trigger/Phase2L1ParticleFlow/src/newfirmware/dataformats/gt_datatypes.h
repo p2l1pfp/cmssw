@@ -216,7 +216,7 @@ namespace l1gt {
 
     static const int BITWIDTH = 96;
     inline ap_uint<BITWIDTH> pack() const {
-      ap_uint<BITWIDTH> ret;
+      ap_uint<BITWIDTH> ret(0);
       unsigned int start = 0;
       _pack_into_bits(ret, start, valid);
       _pack_into_bits(ret, start, v3.pack());
@@ -235,7 +235,7 @@ namespace l1gt {
     iso_t isolation;
 
     inline ap_uint<96> pack() const {
-      ap_uint<96> ret;
+      ap_uint<96> ret(0);
       unsigned int start = 0;
       _pack_into_bits(ret, start, valid);
       _pack_into_bits(ret, start, v3.pack());

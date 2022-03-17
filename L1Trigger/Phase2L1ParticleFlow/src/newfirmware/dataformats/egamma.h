@@ -2,6 +2,7 @@
 #define FIRMWARE_dataformats_egamma_h
 
 #include "datatypes.h"
+#include "gt_datatypes.h"
 #include "bit_encoding.h"
 
 namespace l1ct {
@@ -64,6 +65,17 @@ namespace l1ct {
       _unpack_from_bits(src, start, hwPhi);
       _unpack_from_bits(src, start, hwQual);
       _unpack_from_bits(src, start, hwIso);
+    }
+
+    l1gt::Photon toGT() const {
+      l1gt::Photon pho;
+      pho.valid = hwPt != 0;
+      pho.v3.pt = CTtoGT_pt(hwPt);
+      pho.v3.phi = CTtoGT_phi(hwPhi);
+      pho.v3.eta = CTtoGT_eta(hwEta);
+      pho.quality = hwQual;
+      pho.isolation = hwIso;
+      return pho;
     }
   };
 
@@ -140,6 +152,19 @@ namespace l1ct {
       _unpack_from_bits(src, start, hwDPhi);
       _unpack_from_bits(src, start, hwZ0);
       _unpack_bool_from_bits(src, start, hwCharge);
+    }
+
+    l1gt::Electron toGT() const {
+      l1gt::Electron ele;
+      ele.valid = hwPt != 0;
+      ele.v3.pt = CTtoGT_pt(hwPt);
+      ele.v3.phi = CTtoGT_phi(hwPhi);
+      ele.v3.eta = CTtoGT_eta(hwEta);
+      ele.quality = hwQual;
+      ele.charge = hwCharge;
+      ele.z0 = hwZ0;
+      ele.isolation = hwIso;
+      return ele;
     }
   };
 
