@@ -15,11 +15,8 @@ namespace l1tpf {
   class corrector {
   public:
     corrector() : is2d_(false), neta_(0), nemf_(0), emfMax_(-1), emulate_(false) {}
-    //corrector(const std::string &iFile, float emfMax = -1, bool debug = false); // TODO needed ?
     corrector(const std::string &iFile, float emfMax = -1, bool debug = false, bool emulate = false);
-    //corrector(const std::string &iFile, const std::string &directory, float emfMax = -1, bool debug = false); // TODO needed ?
     corrector(const std::string &iFile, const std::string &directory, float emfMax = -1, bool debug = false, bool emulate = false);
-    //corrector(TDirectory *src, float emfMax = -1, bool debug = false); // TODO needed?
     corrector(TDirectory *src, float emfMax = -1, bool debug = false, bool emulate = false);
     // create an empty corrector (you'll need to fill the graphs later)
     corrector(const TH1 *index, float emfMax = -1);
@@ -66,7 +63,6 @@ namespace l1tpf {
     void init_(const std::string &iFile, const std::string &directory, bool debug, bool emulate);
     void init_(TDirectory *src, bool debug);
     void initEmulation_(TDirectory *src, bool debug);
-    void exception_(const std::string type, const std::string message);
   };
 }  // namespace l1tpf
 #endif

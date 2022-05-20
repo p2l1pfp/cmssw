@@ -22,11 +22,14 @@ scPFL1PuppiEmulator = L1SeedConePFJetEmulatorProducer.clone(L1PFObject = cms.Inp
 
 _correctedJets = cms.EDProducer("L1TCorrectedPFJetProducer", 
     jets = cms.InputTag("_tag_"),
-    correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs.PU200_110X.root"),
+    correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308_with_emulator_histos_20220519_0p25GeVbins.root"),
     correctorDir = cms.string("_dir_"),
-    copyDaughters = cms.bool(False)
+    copyDaughters = cms.bool(False),
     emulate = cms.bool(False)
 )
+_correctedJetsEmulation = _correctedJets.clone()
+_correctedJetsEmulation.emulate = cms.bool(True)
+
 # Using phase2_hgcalV10 to customize the config for all 106X samples, since there's no other modifier for it
 from Configuration.Eras.Modifier_phase2_hgcalV10_cff import phase2_hgcalV10
 phase2_hgcalV10.toModify(_correctedJets, correctorFile = "L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs.PU200_106X.root")
@@ -37,7 +40,7 @@ ak4PFL1CaloCorrected = _correctedJets.clone(jets = 'ak4PFL1Calo', correctorDir =
 ak4PFL1PFCorrected = _correctedJets.clone(jets = 'ak4PFL1PF', correctorDir = 'L1PFJets')
 ak4PFL1PuppiCorrected = _correctedJets.clone(jets = 'ak4PFL1Puppi', correctorDir = 'L1PuppiJets')
 
-scPFL1PuppiCorrectedEmulator = _correctedJets.clone(jets = 'scPFL1PuppiEmulator', correctorDir = 'L1PuppiSC4EmuDeregJets')
+scPFL1PuppiCorrectedEmulator = _correctedJetsEmulation.clone(jets = 'scPFL1PuppiEmulator', correctorDir = 'L1PuppiSC4EmuJets')
 
 l1PFJetsTask = cms.Task(
     ak4PFL1Calo, ak4PFL1PF, ak4PFL1Puppi,

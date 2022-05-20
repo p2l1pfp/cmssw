@@ -28,7 +28,7 @@ private:
 
 L1TCorrectedPFJetProducer::L1TCorrectedPFJetProducer(const edm::ParameterSet& iConfig)
     : jets_(consumes<edm::View<reco::Candidate>>(iConfig.getParameter<edm::InputTag>("jets"))),
-      corrector_(iConfig.getParameter<std::string>("correctorFile"), iConfig.getParameter<std::string>("correctorDir"), false, iConfig.getParameter<bool>("emulate")),
+      corrector_(iConfig.getParameter<std::string>("correctorFile"), iConfig.getParameter<std::string>("correctorDir"), -1, false, iConfig.getParameter<bool>("emulate")),
       copyDaughters_(iConfig.getParameter<bool>("copyDaughters")) {
   produces<std::vector<l1t::PFJet>>();
 }
