@@ -11,6 +11,7 @@
 
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "DataFormats/L1TParticleFlow/interface/PFJet.h"
+#include "L1Trigger/Phase2L1ParticleFlow/src/corrector.h"
 #include "DataFormats/Math/interface/deltaR.h"
 
 // bitwise emulation headers
@@ -33,21 +34,23 @@ private:
   unsigned _nJets;
   bool _HW;
   bool _debug;
+  bool _doCorrections;
   L1SCJetEmu _emulator;
   edm::EDGetTokenT<std::vector<l1t::PFCandidate>> _l1PFToken;
+  l1tpf::corrector _corrector;
 
   std::vector<l1t::PFJet> processEvent_SW(std::vector<edm::Ptr<l1t::PFCandidate>>& parts) const;
   std::vector<l1t::PFJet> processEvent_HW(std::vector<edm::Ptr<l1t::PFCandidate>>& parts) const;
 
   l1t::PFJet makeJet_SW(const std::vector<edm::Ptr<l1t::PFCandidate>>& parts) const;
 
-  static std::pair<std::vector<L1SCJetEmu::Particle>,
+  std::pair<std::vector<L1SCJetEmu::Particle>,
                    std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>>>
-  convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>& edmParticles);
+  convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>& edmParticles) const;
 
-  static std::vector<l1t::PFJet> convertHWToEDM(
+  std::vector<l1t::PFJet> convertHWToEDM(
       std::vector<L1SCJetEmu::Jet> hwJets,
-      std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap);
+      std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap) const;
 };
 
 L1SeedConePFJetProducer::L1SeedConePFJetProducer(const edm::ParameterSet& cfg)
@@ -55,9 +58,13 @@ L1SeedConePFJetProducer::L1SeedConePFJetProducer(const edm::ParameterSet& cfg)
       _nJets(cfg.getParameter<unsigned>("nJets")),
       _HW(cfg.getParameter<bool>("HW")),
       _debug(cfg.getParameter<bool>("debug")),
+      _doCorrections(cfg.getParameter<bool>("doCorrections")),
       _emulator(L1SCJetEmu(_debug, _coneSize, _nJets)),
       _l1PFToken(consumes<std::vector<l1t::PFCandidate>>(cfg.getParameter<edm::InputTag>("L1PFObjects"))) {
   produces<l1t::PFJetCollection>();
+  if(_doCorrections){
+    _corrector = l1tpf::corrector(cfg.getParameter<std::string>("correctorFile"), cfg.getParameter<std::string>("correctorDir"), -1., _debug, _HW);
+  }
 }
 
 void L1SeedConePFJetProducer::produce(edm::StreamID /*unused*/,
@@ -120,6 +127,10 @@ l1t::PFJet L1SeedConePFJetProducer::makeJet_SW(const std::vector<edm::Ptr<l1t::P
     jet.addConstituent(*it);
   }
 
+  if(_doCorrections){
+    jet.calibratePt(_corrector.correctedPt(jet.pt(), jet.eta()));
+  }
+
   return jet;
 }
 
@@ -161,7 +172,7 @@ std::vector<l1t::PFJet> L1SeedConePFJetProducer::processEvent_HW(std::vector<edm
 }
 
 std::pair<std::vector<L1SCJetEmu::Particle>, std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>>>
-L1SeedConePFJetProducer::convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>& edmParticles) {
+L1SeedConePFJetProducer::convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>& edmParticles) const {
   std::vector<l1ct::PuppiObjEmu> hwParticles;
   std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> candidateMap;
   std::for_each(edmParticles.begin(), edmParticles.end(), [&](edm::Ptr<l1t::PFCandidate>& edmParticle) {
@@ -176,7 +187,7 @@ L1SeedConePFJetProducer::convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>&
 
 std::vector<l1t::PFJet> L1SeedConePFJetProducer::convertHWToEDM(
     std::vector<L1SCJetEmu::Jet> hwJets,
-    std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap) {
+    std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap) const {
   std::vector<l1t::PFJet> edmJets;
   std::for_each(hwJets.begin(), hwJets.end(), [&](L1SCJetEmu::Jet jet) {
     l1t::PFJet edmJet(
@@ -186,6 +197,12 @@ std::vector<l1t::PFJet> L1SeedConePFJetProducer::convertHWToEDM(
     std::for_each(jet.constituents.begin(), jet.constituents.end(), [&](auto constituent) {
       edmJet.addConstituent(constituentMap[constituent.srcCand]);
     });
+    // Do the correction before encoding and sorting, as in the firmware
+    if(_doCorrections){
+      float correctedPt = _corrector.correctedPt(edmJet.pt(), edmJet.eta());
+      edmJet.calibratePt(correctedPt);
+      jet.hwPt = correctedPt;
+    }
     l1gt::Jet gtJet = jet.toGT();
     edmJet.setEncodedJet(jet.toGT().pack());
     edmJets.push_back(edmJet);
