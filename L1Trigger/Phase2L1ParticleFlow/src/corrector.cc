@@ -22,6 +22,7 @@
 #else
 #include <filesystem>
 #include <sstream>
+#include <stdexcept>
 #endif
 
 /* ---
@@ -43,8 +44,6 @@ l1tpf::corrector::corrector(const std::string &filename, const std::string &dire
 
 l1tpf::corrector::corrector(TDirectory *src, float emfMax, bool debug, bool emulate) : emfMax_(emfMax), emulate_(emulate) {
   init_(src, debug);
-  if(emulate)
-    initEmulation_(src, debug);
 }
 
 void l1tpf::corrector::init_(const std::string &filename, const std::string &directory, bool debug, bool emulate) {
@@ -61,7 +60,7 @@ void l1tpf::corrector::init_(const std::string &filename, const std::string &dir
 #ifdef CMSSW_GIT_HASH
     throw cms::Exception("Configuration", "cannot read file " + filename);
 #else
-    throw "Cannot read file " + filename;
+    throw std::runtime_error("Cannot read file " + filename);
 #endif
   }
 
@@ -70,7 +69,7 @@ void l1tpf::corrector::init_(const std::string &filename, const std::string &dir
 #ifdef CMSSW_GIT_HASH 
     throw cms::Exception("Configuration", "cannot find directory '" + directory + "' in file " + filename);
 #else
-    throw "Cannot find directory '" + directory +"' in file " + filename;
+    throw std::runtime_error("Cannot find directory '" + directory +"' in file " + filename);
 #endif
   }
   init_(dir, debug);
@@ -89,7 +88,7 @@ void l1tpf::corrector::init_(TDirectory *lFile, bool debug) {
 #else
     std::stringstream ss;
     ss << "invalid input file " << lFile->GetPath() << ": INDEX histogram nit found.\n";
-    throw ss;
+    throw std::runtime_error(ss.str());
 #endif
   }
   index_.reset((TH1 *)index->Clone());
@@ -195,33 +194,43 @@ l1tpf::corrector::~corrector() {
     p = nullptr;
   }
   corrections_.clear();
+  for (TH1 *&p : correctionsEmulated_) {
+    delete p;
+    p = nullptr;
+  }
+  correctionsEmulated_.clear();
 }
 
 l1tpf::corrector::corrector(corrector &&corr)
     : index_(std::move(corr.index_)),
       corrections_(std::move(corr.corrections_)),
+      correctionsEmulated_(std::move(corr.correctionsEmulated_)),
       is2d_(corr.is2d_),
       neta_(corr.neta_),
       nemf_(corr.nemf_),
-      emfMax_(corr.emfMax_) {}
+      emfMax_(corr.emfMax_),
+      emulate_(corr.emulate_) {}
 
 l1tpf::corrector &l1tpf::corrector::operator=(corrector &&corr) {
   std::swap(is2d_, corr.is2d_);
   std::swap(neta_, corr.neta_);
   std::swap(nemf_, corr.nemf_);
   std::swap(emfMax_, corr.emfMax_);
+  std::swap(emulate_, corr.emulate_);
 
   index_.swap(corr.index_);
   corrections_.swap(corr.corrections_);
+  correctionsEmulated_.swap(corr.correctionsEmulated_);
   return *this;
 }
 
 float l1tpf::corrector::correctedPt(float pt, float emPt, float eta) const {
+  unsigned int ipt, ieta;
   float total = std::max(pt, emPt), abseta = std::abs(eta);
   float emf = emPt / total;
   if (emfMax_ > 0 && emf > emfMax_)
     return total;  // no correction
-  unsigned int ieta = std::min(std::max<unsigned>(1, index_->GetXaxis()->FindBin(abseta)), neta_) - 1;
+  ieta = std::min(std::max<unsigned>(1, index_->GetXaxis()->FindBin(abseta)), neta_) - 1;
   unsigned int iemf =
       is2d_ && abseta < 3.0 ? std::min(std::max<unsigned>(1, index_->GetYaxis()->FindBin(emf)), nemf_) - 1 : 0;
   float ptcorr = 0;
@@ -235,7 +244,7 @@ float l1tpf::corrector::correctedPt(float pt, float emPt, float eta) const {
       std::stringstream ss;
       ss << "Error trying to read calibration for eta " << eta << " emf " << emf
          << " which are not available." << std::endl;
-      throw ss;
+      throw std::runtime_error(ss.str());
 #endif
     }
     ptcorr = std::min<float>(graph->Eval(total), 4 * total);
@@ -249,10 +258,10 @@ float l1tpf::corrector::correctedPt(float pt, float emPt, float eta) const {
       std::stringstream ss;
       ss << "Error trying to read emulated calibration for eta " << eta
          << " which are not available." << std::endl;
-      throw ss;
+      throw std::runtime_error(ss.str());
 #endif
     }
-    unsigned int ipt = hist->GetXaxis()->FindBin(pt);
+    ipt = hist->GetXaxis()->FindBin(pt);
     ptcorr = hist->GetBinContent(ipt);
   }
   return ptcorr;
