@@ -186,7 +186,10 @@ void CompositeIDAlgoEmulator::comp_algo(const PFRegionEmu &region,
 
   // LOAD THE COMPOSITE ID BDT
   auto resolvedFileName = edm::FileInPath("compositeID.json").fullPath();
-  conifer::BDT<double,double,0> bdt(resolvedFileName);
+  conifer::BDT<float,float,0> bdt_float(resolvedFileName);
+
+  // LOAD THE COMPOSITE ID BDT
+  conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0> bdt_apfixed(resolvedFileName);
 
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
@@ -240,11 +243,31 @@ void CompositeIDAlgoEmulator::comp_algo(const PFRegionEmu &region,
 
           std::cout<<hoe<<"\t"<<tkpt<<"\t"<<srrtot<<"\t"<<deta<<"\t"<<dpt<<"\t"<<meanz<<"\t"<<dphi<<"\t"<<tkchi2<<"\t"<<tkz0<<"\t"<<tknstubs<<std::endl;
 
-          // BDT INFERENCE
-          vector<double> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, tkchi2, tkz0, tknstubs } ;
-          auto outputs = bdt.decision_function(inputs);
-          for (int iout = 0, nout = outputs.size(); iout < nout; ++iout) { 
-            std::cout<<outputs[iout]<<std::endl;
+          // BDT INFERENCE (FLOAT VARIABLES)
+          vector<float> inputs_float = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, tkchi2, tkz0, tknstubs } ;
+          auto outputs_float = bdt_float.decision_function(inputs_float);
+          for (int iout = 0, nout = outputs_float.size(); iout < nout; ++iout) { 
+            std::cout<<outputs_float[iout]<<std::endl;
+          }
+
+          // CAST FEATURES TO APFIXED
+          // features=['hoe','tkpt','srrtot','deta','dpt','meanz','dphi','tkchi2','tkz0','tknstubs']
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe_apf = hoe;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt_apf = tkpt;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot_apf = srrtot;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> deta_apf = deta;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> dpt_apf = dpt;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz_apf = meanz;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> dphi_apf = dphi;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkchi2_apf = tkchi2;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkz0_apf = tkz0;
+          ap_fixed<22,3,AP_RND_CONV,AP_SAT> tknstubs_apf = tknstubs;
+
+          // BDT INFERENCE (APFIXED VARIABLES)
+          vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs_apf = { hoe_apf, tkpt_apf, srrtot_apf, deta_apf, dpt_apf, meanz_apf, dphi_apf, tkchi2_apf, tkz0_apf, tknstubs_apf } ;
+          auto outputs_apf = bdt_apfixed.decision_function(inputs_apf);
+          for (int iout = 0, nout = outputs_apf.size(); iout < nout; ++iout) { 
+            std::cout<<outputs_apf[iout]<<std::endl;
           }
 
         }
