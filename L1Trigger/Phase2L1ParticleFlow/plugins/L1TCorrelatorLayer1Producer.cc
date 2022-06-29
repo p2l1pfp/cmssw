@@ -71,6 +71,7 @@ private:
   std::unique_ptr<l1ct::LinPuppiEmulator> l1pualgo_;
   std::unique_ptr<l1ct::PFTkEGAlgoEmulator> l1tkegalgo_;
   std::unique_ptr<l1ct::PFTkEGSorterEmulator> l1tkegsorter_;
+  std::unique_ptr<l1ct::CompositeIDAlgoEmulator> l1compositeidalgo_;
 
   bool writeEgSta_;
   // Region dump
@@ -158,6 +159,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
       l1pualgo_(nullptr),
       l1tkegalgo_(nullptr),
       l1tkegsorter_(nullptr),
+      l1compositeidalgo_(nullptr),
       regionDumpName_(iConfig.getUntrackedParameter<std::string>("dumpFileName", "")),
       writeRawHgcalCluster_(iConfig.getUntrackedParameter<bool>("writeRawHgcalCluster", false)),
       patternWriterConfigs_(iConfig.getUntrackedParameter<std::vector<edm::ParameterSet>>(
@@ -234,6 +236,9 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
 
   l1tkegsorter_ =
       std::make_unique<l1ct::PFTkEGSorterEmulator>(iConfig.getParameter<edm::ParameterSet>("tkEgSorterParameters"));
+
+  l1compositeidalgo_ = std::make_unique<l1ct::CompositeIDAlgoEmulator>(
+      l1ct::CompositeIDAlgoEmuConfig(iConfig.getParameter<edm::ParameterSet>("tkEgAlgoParameters")));
 
   if (l1tkegalgo_->writeEgSta())
     produces<BXVector<l1t::EGamma>>("L1Eg");
@@ -419,6 +424,7 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
     l1pfalgo_->mergeNeutrals(event_.out[ir]);
     l1tkegalgo_->run(event_.pfinputs[ir], event_.out[ir]);
     l1tkegalgo_->runIso(event_.pfinputs[ir], event_.pvs, event_.out[ir]);
+    l1compositeidalgo_->run(event_.pfinputs[ir], event_.out[ir]);    
   }
 
   // Then run puppi (regionally)
