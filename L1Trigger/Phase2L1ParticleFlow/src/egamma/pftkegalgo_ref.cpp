@@ -26,6 +26,7 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       emClusterPtMin(pset.getParameter<double>("caloEtMin")),
       dEtaMaxBrem(pset.getParameter<double>("dEtaMaxBrem")),
       dPhiMaxBrem(pset.getParameter<double>("dPhiMaxBrem")),
+      doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
       absEtaBoundaries(pset.getParameter<std::vector<double>>("absEtaBoundaries")),
       dEtaValues(pset.getParameter<std::vector<double>>("dEtaValues")),
       dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
@@ -48,6 +49,17 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMax")) {}
 
 #endif
+
+PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config) : cfg(config), 
+composite_bdt_(nullptr), 
+debug_(cfg.debug) {
+  if(cfg.doCompositeTkEle) {
+    //FIXME: make the name of the file configurable
+    auto resolvedFileName = edm::FileInPath("compositeID.json").fullPath();
+    composite_bdt_ = std::make_unique<conifer::BDT<double,double,0>>(resolvedFileName);
+  }
+
+}
 
 void PFTkEGAlgoEmulator::toFirmware(const PFInputRegion &in,
                                     PFRegion &region,
@@ -109,10 +121,14 @@ void PFTkEGAlgoEmulator::link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emc
   }
 }
 
-void PFTkEGAlgoEmulator::link_emCalo2tk(const PFRegionEmu &r,
-                                        const std::vector<EmCaloObjEmu> &emcalo,
-                                        const std::vector<TkObjEmu> &track,
-                                        std::vector<int> &emCalo2tk) const {
+
+
+
+
+void PFTkEGAlgoEmulator::link_emCalo2tk_elliptic(const PFRegionEmu &r,
+                                                 const std::vector<EmCaloObjEmu> &emcalo,
+                                                 const std::vector<TkObjEmu> &track,
+                                                 std::vector<int> &emCalo2tk) const {
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
@@ -145,6 +161,69 @@ void PFTkEGAlgoEmulator::link_emCalo2tk(const PFRegionEmu &r,
     }
   }
 }
+
+
+void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
+                                        const std::vector<EmCaloObjEmu> &emcalo,
+                                        const std::vector<TkObjEmu> &track,
+                                        std::vector<int> &emCalo2tk) const {
+  //FIXME: should be configurable
+  const int nCAND_PER_CLUSTER = 4;
+  unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
+  for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
+    auto &calo = emcalo[ic];
+
+    std::vector<CompositeCandidate> candidates;
+
+    for (unsigned int itk = 0; itk < nTrackMax; ++itk) {
+          const auto &tk = track[itk];
+          if (tk.floatPt() < cfg.trkQualityPtMin)
+            continue;
+
+      float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
+      float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
+      // FIXME: move magic numbers to config file
+      if (((d_phi * d_phi ) + (d_eta * d_eta )) < 0.2 * 0.2) {
+          CompositeCandidate cand;
+          cand.cluster_idx = ic;
+          cand.track_idx = itk;
+          cand.deta = d_eta;
+          cand.dphi = d_phi;
+          cand.dpt = fabs(tk.floatPt() - calo.floatPt());
+          cand.dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
+          candidates.push_back(cand);
+      }
+    }
+    // FIXME: find best sort criteria, for now we use dpt
+    std::sort(candidates.begin(), candidates.end(), 
+              [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
+                { return a.dpt < b.dpt; });
+    unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
+    
+    if(nCandPerCluster == 0) continue;
+
+    float bdtWP = 10;
+    float minScore = 999;
+    int ibest = -1;
+    for(unsigned int icand = 0; icand < nCandPerCluster; icand++) {
+      auto &cand = candidates[icand];
+      float score = compute_composite_score(cand);
+      if((score < bdtWP) && (score < minScore)) {
+        minScore = score;
+        ibest = icand;
+      }
+    }    
+    if(ibest != -1) emCalo2tk[ic] = candidates[ibest].track_idx;
+  }
+}
+
+
+float PFTkEGAlgoEmulator::compute_composite_score(const CompositeCandidate& cand) const {
+  float bdt_score;
+  //FIXME: implement
+  return bdt_score;
+}
+
 
 void PFTkEGAlgoEmulator::sel_emCalo(unsigned int nmax_sel,
                                     const std::vector<EmCaloObjEmu> &emcalo,
@@ -183,8 +262,12 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
     link_emCalo2emCalo(emcalo_sel, emCalo2emCalo);
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
-  link_emCalo2tk(in.region, emcalo_sel, in.track, emCalo2tk);
-
+  if(cfg.doCompositeTkEle) {
+    link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk);
+  } else {
+    link_emCalo2tk_elliptic(in.region, emcalo_sel, in.track, emCalo2tk);
+  }
+  
   out.egsta.clear();
   std::vector<EGIsoObjEmu> egobjs;
   std::vector<EGIsoEleObjEmu> egeleobjs;

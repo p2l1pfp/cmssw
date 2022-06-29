@@ -4,6 +4,7 @@
 #include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
 #include "DataFormats/L1TParticleFlow/interface/egamma.h"
 #include "DataFormats/L1TParticleFlow/interface/pf.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/conifer.h"
 
 namespace edm {
   class ParameterSet;
@@ -25,6 +26,7 @@ namespace l1ct {
     float emClusterPtMin;  // GeV
     float dEtaMaxBrem;
     float dPhiMaxBrem;
+    bool doCompositeTkEle;
 
     std::vector<double> absEtaBoundaries;
     std::vector<double> dEtaValues;
@@ -68,6 +70,7 @@ namespace l1ct {
                         float emClusterPtMin = 2.,
                         float dEtaMaxBrem = 0.02,
                         float dPhiMaxBrem = 0.1,
+                        bool doCompositeTkEle = false,
                         const std::vector<double> &absEtaBoundaries = {0.0, 1.5},
                         const std::vector<double> &dEtaValues = {0.015, 0.01},
                         const std::vector<double> &dPhiValues = {0.07, 0.07},
@@ -95,6 +98,10 @@ namespace l1ct {
           emClusterPtMin(emClusterPtMin),
           dEtaMaxBrem(dEtaMaxBrem),
           dPhiMaxBrem(dPhiMaxBrem),
+          doCompositeTkEle(doCompositeTkEle),
+          //absEtaBoundaries(std::move(absEtaBoundaries)),
+          //dEtaValues(std::move(dEtaValues)),
+          //dPhiValues(std::move(dPhiValues)),
           absEtaBoundaries(absEtaBoundaries),
           dEtaValues(dEtaValues),
           dPhiValues(dPhiValues),
@@ -113,7 +120,9 @@ namespace l1ct {
 
   class PFTkEGAlgoEmulator {
   public:
-    PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config) : cfg(config), debug_(cfg.debug) {}
+
+    PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config);
+
 
     virtual ~PFTkEGAlgoEmulator() {}
 
@@ -133,12 +142,33 @@ namespace l1ct {
     bool writeEgSta() const { return cfg.writeEgSta; }
 
   private:
+
+
     void link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo, std::vector<int> &emCalo2emCalo) const;
 
-    void link_emCalo2tk(const PFRegionEmu &r,
-                        const std::vector<EmCaloObjEmu> &emcalo,
-                        const std::vector<TkObjEmu> &track,
-                        std::vector<int> &emCalo2tk) const;
+    void link_emCalo2tk_elliptic(const PFRegionEmu &r,
+                                const std::vector<EmCaloObjEmu> &emcalo,
+                                const std::vector<TkObjEmu> &track,
+                                std::vector<int> &emCalo2tk) const;
+
+    void link_emCalo2tk_composite(const PFRegionEmu &r,
+                                const std::vector<EmCaloObjEmu> &emcalo,
+                                const std::vector<TkObjEmu> &track,
+                                std::vector<int> &emCalo2tk) const;
+
+    struct CompositeCandidate {
+      unsigned int cluster_idx;
+      unsigned int track_idx;
+      // FIXME: should probably be stored in ap_fixed format
+      // FIXME: not all needed depending on the sort algo etc etc
+      float dpt;
+      float deta;
+      float dphi;
+      float dR;
+    };
+
+    float compute_composite_score(const CompositeCandidate& cand) const;
+
 
     //FIXME: still needed
     float deltaPhi(float phi1, float phi2) const;
@@ -309,6 +339,7 @@ namespace l1ct {
                            z0_t z0) const;
 
     PFTkEGAlgoEmuConfig cfg;
+    std::unique_ptr<conifer::BDT<double,double,0>> composite_bdt_;
     int debug_;
   };
 }  // namespace l1ct
