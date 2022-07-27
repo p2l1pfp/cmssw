@@ -26,7 +26,6 @@ namespace l1ct {
     float emClusterPtMin;  // GeV
     float dEtaMaxBrem;
     float dPhiMaxBrem;
-    bool doCompositeTkEle;
 
     std::vector<double> absEtaBoundaries;
     std::vector<double> dEtaValues;
@@ -55,6 +54,45 @@ namespace l1ct {
     bool doPfIso;
     EGIsoEleObjEmu::IsoType hwIsoTypeTkEle;
     EGIsoObjEmu::IsoType hwIsoTypeTkEm;
+
+    bool doCompositeTkEle;
+    struct CompIDParameters {
+      CompIDParameters(const edm::ParameterSet &);
+      CompIDParameters(double hoeMin, double hoeMax, double tkptMin, double tkptMax, double srrtotMin, double srrtotMax, double detaMin, double detaMax, double dptMin, double dptMax, double meanzMin, double meanzMax, double dphiMin, double dphiMax, double tkchi2Min, double tkchi2Max, double tkz0Min, double tkz0Max, double tknstubsMin, double tknstubsMax)
+          : hoeMin(hoeMin), hoeMax(hoeMax),
+            tkptMin(tkptMin),tkptMax(tkptMax),
+            srrtotMin(srrtotMin),srrtotMax(srrtotMax),
+            detaMin(detaMin),detaMax(detaMax),
+            dptMin(dptMin),dptMax(dptMax),
+            meanzMin(meanzMin),meanzMax(meanzMax),
+            dphiMin(dphiMin),dphiMax(dphiMax),
+            tkchi2Min(tkchi2Min),tkchi2Max(tkchi2Max),
+            tkz0Min(tkz0Min),tkz0Max(tkz0Max),
+            tknstubsMin(tknstubsMin),tknstubsMax(tknstubsMax) {}
+      double hoeMin;
+      double hoeMax;
+      double tkptMin;
+      double tkptMax;
+      double srrtotMin;
+      double srrtotMax;
+      double detaMin;
+      double detaMax;
+      double dptMin;
+      double dptMax;
+      double meanzMin;
+      double meanzMax;
+      double dphiMin;
+      double dphiMax;
+      double tkchi2Min;
+      double tkchi2Max;
+      double tkz0Min;
+      double tkz0Max;
+      double tknstubsMin;
+      double tknstubsMax;
+    };
+
+    CompIDParameters myCompIDparams;
+
     int debug = 0;
 
     PFTkEGAlgoEmuConfig(const edm::ParameterSet &iConfig);
@@ -70,7 +108,6 @@ namespace l1ct {
                         float emClusterPtMin = 2.,
                         float dEtaMaxBrem = 0.02,
                         float dPhiMaxBrem = 0.1,
-                        bool doCompositeTkEle = false,
                         const std::vector<double> &absEtaBoundaries = {0.0, 1.5},
                         const std::vector<double> &dEtaValues = {0.015, 0.01},
                         const std::vector<double> &dPhiValues = {0.07, 0.07},
@@ -84,6 +121,8 @@ namespace l1ct {
                         bool doPfIso = false,
                         EGIsoEleObjEmu::IsoType hwIsoTypeTkEle = EGIsoEleObjEmu::IsoType::TkIso,
                         EGIsoObjEmu::IsoType hwIsoTypeTkEm = EGIsoObjEmu::IsoType::TkIsoPV,
+                        bool doCompositeTkEle = false,
+                        const CompIDParameters &myCompIDparams = {-1.0, 1566.547607421875, 1.9501149654388428, 11102.0048828125, 0.0, 0.01274710614234209, -0.24224889278411865, 0.23079538345336914, 0.010325592942535877, 184.92538452148438, 325.0653991699219, 499.6089782714844, -6.281332015991211, 6.280326843261719, 0.024048099294304848, 1258.37158203125, -14.94140625, 14.94140625, 4.0, 6.0},
                         int debug = 0)
 
         : nTRACK(nTrack),
@@ -98,7 +137,6 @@ namespace l1ct {
           emClusterPtMin(emClusterPtMin),
           dEtaMaxBrem(dEtaMaxBrem),
           dPhiMaxBrem(dPhiMaxBrem),
-          doCompositeTkEle(doCompositeTkEle),
           //absEtaBoundaries(std::move(absEtaBoundaries)),
           //dEtaValues(std::move(dEtaValues)),
           //dPhiValues(std::move(dPhiValues)),
@@ -115,6 +153,8 @@ namespace l1ct {
           doPfIso(doPfIso),
           hwIsoTypeTkEle(hwIsoTypeTkEle),
           hwIsoTypeTkEm(hwIsoTypeTkEm),
+          doCompositeTkEle(doCompositeTkEle),
+          myCompIDparams(myCompIDparams),
           debug(debug) {}
   };
 
@@ -154,17 +194,24 @@ namespace l1ct {
     void link_emCalo2tk_composite(const PFRegionEmu &r,
                                 const std::vector<EmCaloObjEmu> &emcalo,
                                 const std::vector<TkObjEmu> &track,
-                                std::vector<int> &emCalo2tk) const;
+                                std::vector<int> &emCalo2tk,
+                                const PFTkEGAlgoEmuConfig::CompIDParameters &params) const;
 
     struct CompositeCandidate {
       unsigned int cluster_idx;
       unsigned int track_idx;
-      // FIXME: should probably be stored in ap_fixed format
-      // FIXME: not all needed depending on the sort algo etc etc
-      float dpt;
-      float deta;
-      float dphi;
-      float dR;
+      double dpt_double; // For sorting
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> deta; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dpt; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dphi; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> chi2; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkz0; 
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs;
+      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dR;
     };
 
     float compute_composite_score(const CompositeCandidate& cand) const;
@@ -339,7 +386,7 @@ namespace l1ct {
                            z0_t z0) const;
 
     PFTkEGAlgoEmuConfig cfg;
-    std::unique_ptr<conifer::BDT<double,double,0>> composite_bdt_;
+    std::unique_ptr<conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0>> composite_bdt_;
     int debug_;
   };
 }  // namespace l1ct

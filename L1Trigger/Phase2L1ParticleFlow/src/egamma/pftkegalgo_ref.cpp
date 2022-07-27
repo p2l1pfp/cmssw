@@ -26,7 +26,6 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       emClusterPtMin(pset.getParameter<double>("caloEtMin")),
       dEtaMaxBrem(pset.getParameter<double>("dEtaMaxBrem")),
       dPhiMaxBrem(pset.getParameter<double>("dPhiMaxBrem")),
-      doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
       absEtaBoundaries(pset.getParameter<std::vector<double>>("absEtaBoundaries")),
       dEtaValues(pset.getParameter<std::vector<double>>("dEtaValues")),
       dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
@@ -40,6 +39,8 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       doPfIso(pset.getParameter<bool>("doPfIso")),
       hwIsoTypeTkEle(static_cast<EGIsoEleObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEle"))),
       hwIsoTypeTkEm(static_cast<EGIsoObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEm"))),
+      doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
+      myCompIDparams(pset.getParameter<edm::ParameterSet>("compositeParametersTkEle")),
       debug(pset.getUntrackedParameter<uint32_t>("debug", 0)) {}
 
 l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet &pset)
@@ -48,6 +49,28 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMin"),
                     pset.getParameter<double>("dRMax")) {}
 
+l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
+    : CompIDParameters(pset.getParameter<double>("hoeMin"),
+                       pset.getParameter<double>("hoeMax"),
+                       pset.getParameter<double>("tkptMin"),
+                       pset.getParameter<double>("tkptMax"),
+                       pset.getParameter<double>("srrtotMin"),
+                       pset.getParameter<double>("srrtotMax"),
+                       pset.getParameter<double>("detaMin"),
+                       pset.getParameter<double>("detaMax"),
+                       pset.getParameter<double>("dptMin"),
+                       pset.getParameter<double>("dptMax"),
+                       pset.getParameter<double>("meanzMin"),
+                       pset.getParameter<double>("meanzMax"),
+                       pset.getParameter<double>("dphiMin"),
+                       pset.getParameter<double>("dphiMax"),
+                       pset.getParameter<double>("tkchi2Min"),
+                       pset.getParameter<double>("tkchi2Max"),
+                       pset.getParameter<double>("tkz0Min"),
+                       pset.getParameter<double>("tkz0Max"),
+                       pset.getParameter<double>("tknstubsMin"),
+                       pset.getParameter<double>("tknstubsMax")) {}
+
 #endif
 
 PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config) : cfg(config), 
@@ -55,10 +78,9 @@ composite_bdt_(nullptr),
 debug_(cfg.debug) {
   if(cfg.doCompositeTkEle) {
     //FIXME: make the name of the file configurable
-    auto resolvedFileName = edm::FileInPath("compositeID.json").fullPath();
-    composite_bdt_ = std::make_unique<conifer::BDT<double,double,0>>(resolvedFileName);
+    auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/compositeID.json").fullPath();
+    composite_bdt_ = std::make_unique<conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0>> (resolvedFileName);
   }
-
 }
 
 void PFTkEGAlgoEmulator::toFirmware(const PFInputRegion &in,
@@ -122,9 +144,6 @@ void PFTkEGAlgoEmulator::link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emc
 }
 
 
-
-
-
 void PFTkEGAlgoEmulator::link_emCalo2tk_elliptic(const PFRegionEmu &r,
                                                  const std::vector<EmCaloObjEmu> &emcalo,
                                                  const std::vector<TkObjEmu> &track,
@@ -166,7 +185,8 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_elliptic(const PFRegionEmu &r,
 void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
                                         const std::vector<EmCaloObjEmu> &emcalo,
                                         const std::vector<TkObjEmu> &track,
-                                        std::vector<int> &emCalo2tk) const {
+                                        std::vector<int> &emCalo2tk,
+                                        const PFTkEGAlgoEmuConfig::CompIDParameters &params) const {
   //FIXME: should be configurable
   const int nCAND_PER_CLUSTER = 4;
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
@@ -180,24 +200,40 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           if (tk.floatPt() < cfg.trkQualityPtMin)
             continue;
 
-      float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
-      float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
-      // FIXME: move magic numbers to config file
-      if (((d_phi * d_phi ) + (d_eta * d_eta )) < 0.2 * 0.2) {
+      // float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
+      // float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
+      float clu_eta=calo.floatEta();
+      float clu_phi=calo.floatPhi();
+      float trk_eta=tk.src->caloEta();
+      float trk_phi=tk.src->caloPhi();
+      float dR = deltaR(clu_eta,clu_phi,trk_eta,trk_phi);
+
+      // if (((d_phi * d_phi ) + (d_eta * d_eta )) < 0.2 * 0.2) {
+      if (dR<0.2){
           CompositeCandidate cand;
           cand.cluster_idx = ic;
           cand.track_idx = itk;
-          cand.deta = d_eta;
-          cand.dphi = d_phi;
-          cand.dpt = fabs(tk.floatPt() - calo.floatPt());
-          cand.dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
+          // cand.dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
+          cand.dR = dR;
+          cand.dpt_double = tk.floatPt()/calo.floatPt();
+          // Normalize feature values
+          cand.hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
+          cand.tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
+          cand.srrtot = (0-params.srrtotMin)/(params.srrtotMax-params.srrtotMin); //FIXME: Get the srrtot from the cluster
+          cand.deta = (tk.src->caloEta()-calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
+          cand.dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
+          cand.meanz = (0.-params.meanzMin)/(params.meanzMax-params.meanzMin); //FIXME: Get the meanz from the cluster
+          cand.dphi = (tk.src->caloPhi()- calo.floatPhi() -params.dphiMin)/(params.dphiMax-params.dphiMin);
+          cand.chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
+          cand.tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
+          cand.nstubs = (tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
           candidates.push_back(cand);
       }
     }
     // FIXME: find best sort criteria, for now we use dpt
     std::sort(candidates.begin(), candidates.end(), 
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
-                { return a.dpt < b.dpt; });
+                { return abs(a.dpt_double-1) < abs(b.dpt_double-1); });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
     
     if(nCandPerCluster == 0) continue;
@@ -219,9 +255,10 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
 
 
 float PFTkEGAlgoEmulator::compute_composite_score(const CompositeCandidate& cand) const {
-  float bdt_score;
-  //FIXME: implement
-  return bdt_score;
+  vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { cand.hoe, cand.tkpt, cand.srrtot, cand.deta, cand.dpt, cand.meanz, cand.dphi, cand.chi2, cand.tkz0, cand.nstubs } ;
+  auto bdt_score = composite_bdt_->decision_function(inputs);
+  std::cout<<"BDT score or composite candidate = "<<bdt_score[0]<<std::endl;
+  return bdt_score[0];
 }
 
 
@@ -263,7 +300,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
   if(cfg.doCompositeTkEle) {
-    link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk);
+    link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, cfg.myCompIDparams);
   } else {
     link_emCalo2tk_elliptic(in.region, emcalo_sel, in.track, emCalo2tk);
   }

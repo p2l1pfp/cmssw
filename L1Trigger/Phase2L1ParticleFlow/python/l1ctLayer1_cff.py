@@ -259,7 +259,8 @@ l1ctLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         doBremRecovery=True,
         doEndcapHwQual=True,
         writeBeforeBremRecovery=False,
-        writeEGSta=True),
+        writeEGSta=True,
+        doCompositeTkEle=True),
     tkEgSorterParameters=tkEgSorterParameters.clone(
         nObjToSort = 5
     ),
