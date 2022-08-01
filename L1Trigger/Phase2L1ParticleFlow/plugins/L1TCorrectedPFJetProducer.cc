@@ -9,7 +9,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 
-#include "L1Trigger/Phase2L1ParticleFlow/src/corrector.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/corrector.h"
 
 #include <vector>
 
@@ -30,7 +30,7 @@ L1TCorrectedPFJetProducer::L1TCorrectedPFJetProducer(const edm::ParameterSet& iC
       corrector_(iConfig.getParameter<std::string>("correctorFile"),
                  iConfig.getParameter<std::string>("correctorDir"),
                  -1, false,
-                  iConfig.getParameter<bool>("emulate"))) {
+                  iConfig.getParameter<bool>("emulate")) {
   produces<std::vector<l1t::PFJet>>();
 }
 
