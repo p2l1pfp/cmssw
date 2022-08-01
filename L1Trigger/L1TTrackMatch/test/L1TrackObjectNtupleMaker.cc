@@ -99,7 +99,7 @@ using namespace edm;
 //                          //
 //////////////////////////////
 
-class L1TrackObjectNtupleMaker : public edm::one::EDAnalyzer<> {
+class L1TrackObjectNtupleMaker : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 private:
   // ----------constants, enums and typedefs ---------
   typedef TTTrack<Ref_Phase2TrackerDigi_> L1Track;
@@ -107,7 +107,7 @@ private:
   typedef std::vector<L1TrackPtr> L1TrackPtrCollection;
   typedef std::vector<L1Track> L1TrackCollection;
   typedef edm::Ref<L1TrackCollection> L1TrackRef;
-  typedef std::vector<L1TrackRef> L1TrackRefCollection;
+  typedef edm::RefVector<L1TrackCollection> L1TrackRefCollection;
 
 public:
   // Constructor/destructor
@@ -115,8 +115,8 @@ public:
   ~L1TrackObjectNtupleMaker() override;
 
   // Mandatory methods
-  void beginJob();
-  void endJob();
+  void beginJob() override;
+  void endJob() override;
   void analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) override;
 
   // Other member functions
@@ -558,6 +558,8 @@ L1TrackObjectNtupleMaker::L1TrackObjectNtupleMaker(edm::ParameterSet const& iCon
   L1VertexEmuToken_ = consumes<l1t::VertexWordCollection>(RecoVertexEmuInputTag);
   tTopoToken_ = esConsumes<TrackerTopology, TrackerTopologyRcd>(edm::ESInputTag("", ""));
   tGeomToken_ = esConsumes<TrackerGeometry, TrackerDigiGeometryRecord>(edm::ESInputTag("", ""));
+
+  usesResource(TFileService::kSharedResource);
 }
 
 /////////////
@@ -1270,12 +1272,12 @@ void L1TrackObjectNtupleMaker::analyze(const edm::Event& iEvent, const edm::Even
   iEvent.getByToken(GenParticleToken_, GenParticleHandle);
 
   //Vertex
-  edm::Handle<l1t::VertexCollection> L1TkPrimaryVertexHandle;
-  iEvent.getByToken(L1VertexToken_, L1TkPrimaryVertexHandle);
+  edm::Handle<l1t::VertexCollection> L1PrimaryVertexHandle;
+  iEvent.getByToken(L1VertexToken_, L1PrimaryVertexHandle);
   std::vector<l1t::Vertex>::const_iterator vtxIter;
 
-  edm::Handle<l1t::VertexWordCollection> L1TkPrimaryVertexEmuHandle;
-  iEvent.getByToken(L1VertexEmuToken_, L1TkPrimaryVertexEmuHandle);
+  edm::Handle<l1t::VertexWordCollection> L1PrimaryVertexEmuHandle;
+  iEvent.getByToken(L1VertexEmuToken_, L1PrimaryVertexEmuHandle);
   std::vector<l1t::VertexWord>::const_iterator vtxEmuIter;
 
   // Track jets
@@ -1353,7 +1355,7 @@ void L1TrackObjectNtupleMaker::analyze(const edm::Event& iEvent, const edm::Even
       zvtx_gen = genpartIter->vz();  //for gen vertex
       int id = genpartIter->pdgId();
       bool isNeutrino = false;
-      if ((fabs(id) == 12 || fabs(id) == 14 || fabs(id) == 16))
+      if ((std::abs(id) == 12 || std::abs(id) == 14 || std::abs(id) == 16))
         isNeutrino = true;
       if (isNeutrino || id == 1000022) {
         trueMETx += genpartIter->pt() * cos(genpartIter->phi());
@@ -2366,21 +2368,21 @@ void L1TrackObjectNtupleMaker::analyze(const edm::Event& iEvent, const edm::Even
   }  //end loop tracking particles
   trueTkMET = sqrt(trueTkMETx * trueTkMETx + trueTkMETy * trueTkMETy);
 
-  if (L1TkPrimaryVertexHandle.isValid()) {
-    for (vtxIter = L1TkPrimaryVertexHandle->begin(); vtxIter != L1TkPrimaryVertexHandle->end(); ++vtxIter) {
+  if (L1PrimaryVertexHandle.isValid()) {
+    for (vtxIter = L1PrimaryVertexHandle->begin(); vtxIter != L1PrimaryVertexHandle->end(); ++vtxIter) {
       m_pv_L1reco->push_back(vtxIter->z0());
       m_pv_L1reco_sum->push_back(vtxIter->pt());
     }
   } else
-    edm::LogWarning("DataNotFound") << "\nWarning: L1TkPrimaryVertexHandle not found" << std::endl;
+    edm::LogWarning("DataNotFound") << "\nWarning: L1PrimaryVertexHandle not found" << std::endl;
 
-  if (L1TkPrimaryVertexEmuHandle.isValid()) {
-    for (vtxEmuIter = L1TkPrimaryVertexEmuHandle->begin(); vtxEmuIter != L1TkPrimaryVertexEmuHandle->end();
+  if (L1PrimaryVertexEmuHandle.isValid()) {
+    for (vtxEmuIter = L1PrimaryVertexEmuHandle->begin(); vtxEmuIter != L1PrimaryVertexEmuHandle->end();
          ++vtxEmuIter) {
       m_pv_L1reco_emu->push_back(vtxEmuIter->z0());
     }
   } else
-    edm::LogWarning("DataNotFound") << "\nWarning: L1TkPrimaryVertexEmuHandle not found" << std::endl;
+    edm::LogWarning("DataNotFound") << "\nWarning: L1PrimaryVertexEmuHandle not found" << std::endl;
 
   if (SaveTrackSums) {
     if (Displaced == "Prompt" || Displaced == "Both") {

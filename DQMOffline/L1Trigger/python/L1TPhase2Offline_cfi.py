@@ -6,7 +6,7 @@ from DQMServices.Core.DQMEDAnalyzer import DQMEDAnalyzer
 OuterTrackerTkMET = DQMEDAnalyzer('L1TPhase2OuterTrackerTkMET',
     TopFolderName  = cms.string('L1T/L1TPhase2/'),
     TTTracksTag    = cms.InputTag("TTTracksFromTrackletEmulation", "Level1TTTracks"),
-    L1VertexInputTag = cms.InputTag("L1TkPrimaryVertex"),
+    L1VertexInputTag = cms.InputTag("L1VertexFinderEmulator", "l1verticesEmulation"),
     maxZ0 = cms.double ( 15. ) ,    # in cm
     maxEta = cms.double ( 2.4 ) ,
     chi2dofMax = cms.double( 10. ),
@@ -131,10 +131,12 @@ l1tPhase2CorrelatorOfflineDQM = DQMEDAnalyzer(
             xmax=cms.untracked.double(5.),
         ),
     ),
-
 )
+
+from DQMOffline.L1Trigger.L1TPhase2MuonOffline_cfi import *
 
 l1tPhase2OfflineDQM = cms.Sequence(
                           l1tPhase2CorrelatorOfflineDQM +
-                          OuterTrackerTkMET
+                          OuterTrackerTkMET +
+                          l1tPhase2MuonOffline
                           )

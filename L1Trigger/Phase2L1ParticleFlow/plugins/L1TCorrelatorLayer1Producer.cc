@@ -19,32 +19,19 @@
 
 #include "DataFormats/Math/interface/deltaR.h"
 
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/dataformats/layer1_emulator.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/dataformats/layer1_emulator.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/l1-converters/tracks/tkinput_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/l1-converters/tracks/tkinput_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/l1-converters/muons/muonGmtToL1ct_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/l1-converters/muons/muonGmtToL1ct_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/common/regionizer_base_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/common/regionizer_base_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/multififo/multififo_regionizer_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/multififo/multififo_regionizer_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/tdr/tdr_regionizer_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/regionizer/tdr/tdr_regionizer_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo2hgc_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo2hgc_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo3_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo3_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo_dummy_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo_dummy_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/puppi/linpuppi_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/puppi/linpuppi_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegalgo_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegalgo_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo_common_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/pf/pfalgo_common_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegsorter_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/L1TCorrelatorLayer1PatternFileWriter.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/tkinput_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/muonGmtToL1ct_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/regionizer_base_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/multififo_regionizer_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/tdr_regionizer_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/pf/pfalgo2hgc_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/pf/pfalgo3_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/pf/pfalgo_dummy_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/puppi/linpuppi_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/pftkegalgo_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/pf/pfalgo_common_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/pftkegsorter_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/L1TCorrelatorLayer1PatternFileWriter.h"
 
 #include "DataFormats/L1TCorrelator/interface/TkElectron.h"
 #include "DataFormats/L1TCorrelator/interface/TkElectronFwd.h"
@@ -60,7 +47,6 @@ public:
 
 private:
   edm::ParameterSet config_;
-  int debug_;
 
   bool hasTracks_;
   edm::EDGetTokenT<l1t::PFTrackCollection> tkCands_;
@@ -160,7 +146,6 @@ private:
 //
 L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet &iConfig)
     : config_(iConfig),
-      debug_(iConfig.getUntrackedParameter<int>("debug", 0)),
       hasTracks_(!iConfig.getParameter<edm::InputTag>("tracks").label().empty()),
       tkCands_(hasTracks_ ? consumes<l1t::PFTrackCollection>(iConfig.getParameter<edm::InputTag>("tracks"))
                           : edm::EDGetTokenT<l1t::PFTrackCollection>()),

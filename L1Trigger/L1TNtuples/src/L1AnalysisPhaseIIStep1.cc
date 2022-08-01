@@ -11,7 +11,7 @@ L1Analysis::L1AnalysisPhaseIIStep1::~L1AnalysisPhaseIIStep1() {}
 void L1Analysis::L1AnalysisPhaseIIStep1::SetVertices(float z0Puppi,
                                                      const edm::Handle<std::vector<l1t::VertexWord> > TkPrimaryVertex) {
   //l1extra_.z0Puppi = z0Puppi;
-  l1extra_.z0L1TkPV.push_back(TkPrimaryVertex->at(0).z0());
+  l1extra_.z0L1TkPV = TkPrimaryVertex->at(0).z0();
   for (unsigned int i = 0; i < TkPrimaryVertex->size(); i++) {
     l1extra_.z0L1TkAll.push_back(TkPrimaryVertex->at(i).z0());
     //l1extra_.sumL1TkPV.push_back(TkPrimaryVertex->at(i).sum());
@@ -63,7 +63,7 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetHPSPFTaus(const edm::Handle<l1t::HPS
     l1extra_.hpsTauPassTightRelIso.push_back(l1HPSPFTaus->at(i).passTightRelIso());
     bool hpsTauPassTightRelIsoMenuVar = (l1HPSPFTaus->at(i).sumChargedIso() / l1HPSPFTaus->at(i).pt()) < 0.05;
     l1extra_.hpsTauPassTightRelIsoMenu.push_back(hpsTauPassTightRelIsoMenuVar);
-    l1extra_.hpsTauZ0.push_back(l1HPSPFTaus->at(i).Z());
+    l1extra_.hpsTauZ0.push_back(l1HPSPFTaus->at(i).z());
     //if (!l1HPSPFTaus->at(i).leadChargedPFCand().isNull()){
     //    l1extra_.hpsTauZ0.push_back(l1HPSPFTaus->at(i).leadChargedPFCand()->pfTrack()->vertex().z());
     //}else{
@@ -475,9 +475,6 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetL1PfPhase1L1TJetSums(
 }
 
 void L1Analysis::L1AnalysisPhaseIIStep1::SetPFJet(const edm::Handle<l1t::PFJetCollection> PFJet, unsigned maxL1Extra) {
-  double mHT30_px = 0, mHT30_py = 0, HT30 = 0;
-  double mHT30_3p5_px = 0, mHT30_3p5_py = 0, HT30_3p5 = 0;
-
   for (l1t::PFJetCollection::const_iterator it = PFJet->begin();
        it != PFJet->end() && l1extra_.nSeededConePuppiJets < maxL1Extra;
        it++) {
@@ -489,34 +486,25 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetPFJet(const edm::Handle<l1t::PFJetCo
     //    l1extra_.seededConePuppiJetzVtx.push_back(it->getJetVtx());
     l1extra_.seededConePuppiJetBx.push_back(0);  //it->bx());
     l1extra_.nSeededConePuppiJets++;
-
-    if (it->pt() > 30 && fabs(it->eta()) < 2.4) {
-      HT30 += it->pt();
-      mHT30_px += it->px();
-      mHT30_py += it->py();
-    }
-    if (it->pt() > 30 && fabs(it->eta()) < 3.5) {
-      HT30_3p5 += it->pt();
-      mHT30_3p5_px += it->px();
-      mHT30_3p5_py += it->py();
-    }
   }
-  l1extra_.seededConePuppiMHTEt.push_back(sqrt(mHT30_px * mHT30_px + mHT30_py * mHT30_py));
-  l1extra_.seededConePuppiMHTPhi.push_back(atan(mHT30_py / mHT30_px));
-  l1extra_.seededConePuppiHT.push_back(HT30);
 
-  l1extra_.seededConePuppiMHTEt.push_back(sqrt(mHT30_3p5_px * mHT30_3p5_px + mHT30_3p5_py * mHT30_3p5_py));
-  l1extra_.seededConePuppiMHTPhi.push_back(atan(mHT30_3p5_py / mHT30_3p5_px));
-  l1extra_.seededConePuppiHT.push_back(HT30_3p5);
-
-  l1extra_.nSeededConePuppiMHT = 2;  //why 2?
 }
+
+void L1Analysis::L1AnalysisPhaseIIStep1::SetL1seededConeMHT(const edm::Handle<std::vector<l1t::EtSum> > l1SeededConeMHT) {
+  l1t::EtSum HT = l1SeededConeMHT->at(0);
+  l1t::EtSum MHT = l1SeededConeMHT->at(1);
+  l1extra_.seededConePuppiHT = HT.pt();
+  l1extra_.seededConePuppiMHTEt = MHT.pt();
+  l1extra_.seededConePuppiMHTPhi = MHT.phi();
+}
+
 
 void L1Analysis::L1AnalysisPhaseIIStep1::SetL1METPF(const edm::Handle<std::vector<l1t::EtSum> > l1MetPF) {
   l1t::EtSum met = l1MetPF->at(0);
   l1extra_.puppiMETEt = met.et();
   l1extra_.puppiMETPhi = met.phi();
 }
+
 //void L1Analysis::L1AnalysisPhaseIIStep1::SetL1METPF(const edm::Handle<std::vector<reco::PFMET> > l1MetPF) {
 //  reco::PFMET met = l1MetPF->at(0);
 //  l1extra_.puppiMETRecoEt = met.et();
@@ -617,16 +605,6 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkMHT(const edm::Handle<std::vector<
   l1extra_.trackerMHTPhi = trackerMHT->begin()->hwPhi() * l1tmhtemu::kStepMHTPhi - M_PI;
 }
 
-// trackerMetDisplaced
-void L1Analysis::L1AnalysisPhaseIIStep1::SetTkMETDisplaced(const edm::Handle<l1t::TkEtMissCollection> trackerMets) {
-  for (l1t::TkEtMissCollection::const_iterator it = trackerMets->begin(); it != trackerMets->end(); it++) {
-    l1extra_.trackerMetDisplacedSumEt.push_back(it->etTotal());
-    l1extra_.trackerMetDisplacedEt.push_back(it->etMiss());
-    l1extra_.trackerMetDisplacedPhi.push_back(it->phi());
-    l1extra_.trackerMetDisplacedBx.push_back(it->bx());
-    l1extra_.nTrackerMetDisplaced++;
-  }
-}
 
 void L1Analysis::L1AnalysisPhaseIIStep1::SetTkMHTDisplaced(const edm::Handle<std::vector<l1t::EtSum> > trackerMHT) {
   l1extra_.trackerHTDisplaced = trackerMHT->begin()->hwPt() * l1tmhtemu::kStepPt;

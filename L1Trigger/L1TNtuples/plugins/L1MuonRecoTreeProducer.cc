@@ -98,12 +98,20 @@ UserCode/L1Trigger/src/L1MuonRecoTreeProducer.cc
 // class declaration
 //
 
-class L1MuonRecoTreeProducer : public edm::one::EDAnalyzer<> {
+class L1MuonRecoTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
   explicit L1MuonRecoTreeProducer(const edm::ParameterSet &);
   ~L1MuonRecoTreeProducer() override;
-  TrajectoryStateOnSurface cylExtrapTrkSam(reco::TrackRef track, double rho);
-  TrajectoryStateOnSurface surfExtrapTrkSam(reco::TrackRef track, double z);
+  TrajectoryStateOnSurface cylExtrapTrkSam(reco::TrackRef track,
+                                           double rho,
+                                           const MagneticField *theMagneticField,
+                                           const Propagator &propagatorAlong,
+                                           const Propagator &propagatorOpposite);
+  TrajectoryStateOnSurface surfExtrapTrkSam(reco::TrackRef track,
+                                            double z,
+                                            const MagneticField *theMagneticField,
+                                            const Propagator &propagatorAlong,
+                                            const Propagator &propagatorOpposite);
   void empty_global();
   void empty_tracker();
   void empty_standalone();
@@ -149,26 +157,20 @@ private:
 
   enum { GL_MUON = 0, SA_MUON = 1, TR_MUON = 2, TRSA_MUON = 3 };
 
-  // CSC Geometry
   edm::ESGetToken<CSCGeometry, MuonGeometryRecord> cscGeomToken_;
-
-  // RPC Geometry
   edm::ESGetToken<RPCGeometry, MuonGeometryRecord> rpcGeomToken_;
 
   // The Magnetic field
-  edm::ESHandle<MagneticField> theBField;
+  edm::ESGetToken<MagneticField, IdealMagneticFieldRecord> theBFieldToken_;
 
   // The GlobalTrackingGeometry
-  edm::ESHandle<GlobalTrackingGeometry> theTrackingGeometry;
+  edm::ESGetToken<GlobalTrackingGeometry, GlobalTrackingGeometryRecord> theTrackingGeometryToken_;
 
   // Extrapolator to cylinder
-  edm::ESHandle<Propagator> propagatorAlong;
-  edm::ESHandle<Propagator> propagatorOpposite;
+  edm::ESGetToken<Propagator, TrackingComponentsRecord> propagatorAlongToken_;
+  edm::ESGetToken<Propagator, TrackingComponentsRecord> propagatorOppositeToken_;
 
-  FreeTrajectoryState freeTrajStateMuon(reco::TrackRef track);
-
-  // output file
-  edm::Service<TFileService> fs_;
+  FreeTrajectoryState freeTrajStateMuon(reco::TrackRef track, const MagneticField *theMagneticField);
 
   // tree
   TTree *tree_;
@@ -182,7 +184,14 @@ private:
 
 L1MuonRecoTreeProducer::L1MuonRecoTreeProducer(const edm::ParameterSet &iConfig)
     : cscGeomToken_(esConsumes<CSCGeometry, MuonGeometryRecord>(edm::ESInputTag("", ""))),
-      rpcGeomToken_(esConsumes<RPCGeometry, MuonGeometryRecord>(edm::ESInputTag("", ""))) {
+      rpcGeomToken_(esConsumes<RPCGeometry, MuonGeometryRecord>(edm::ESInputTag("", ""))),
+      theBFieldToken_(esConsumes<MagneticField, IdealMagneticFieldRecord>(edm::ESInputTag("", ""))),
+      theTrackingGeometryToken_(
+          esConsumes<GlobalTrackingGeometry, GlobalTrackingGeometryRecord>(edm::ESInputTag("", ""))),
+      propagatorAlongToken_(
+          esConsumes<Propagator, TrackingComponentsRecord>(edm::ESInputTag("SmartPropagatorAny", ""))),
+      propagatorOppositeToken_(
+          esConsumes<Propagator, TrackingComponentsRecord>(edm::ESInputTag("SmartPropagatorAnyOpposite", ""))) {
   maxMuon_ = iConfig.getParameter<unsigned int>("maxMuon");
   maxRpcHit_ = iConfig.getParameter<unsigned int>("maxMuon");
 
@@ -197,8 +206,11 @@ L1MuonRecoTreeProducer::L1MuonRecoTreeProducer(const edm::ParameterSet &iConfig)
   rpcHit = new L1Analysis::L1AnalysisRecoRpcHit();
   rpcHitData = rpcHit->getData();
 
+  usesResource(TFileService::kSharedResource);
+
   // set up output
-  tree_ = fs_->make<TTree>("MuonRecoTree", "MuonRecoTree");
+  edm::Service<TFileService> fs;
+  tree_ = fs->make<TTree>("MuonRecoTree", "MuonRecoTree");
   tree_->Branch("Muon", "L1Analysis::L1AnalysisRecoMuonDataFormat", &muonData, 32000, 3);
   tree_->Branch("RpcHit", "L1Analysis::L1AnalysisRecoRpcHitDataFormat", &rpcHitData, 32000, 3);
 
@@ -398,18 +410,16 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
   muon->Reset();
   rpcHit->Reset();
 
-  //GP start
-  // Get the CSC Geometry
   const CSCGeometry &cscGeom = iSetup.getData(cscGeomToken_);
-
-  // Get the RPC Geometry from the setup
   const RPCGeometry &rpcGeom = iSetup.getData(rpcGeomToken_);
 
   //Get the Magnetic field from the setup
-  iSetup.get<IdealMagneticFieldRecord>().get(theBField);
+  const MagneticField &theBField = iSetup.getData(theBFieldToken_);
+  const MagneticField *theMagneticField = &theBField;
 
   // Get the GlobalTrackingGeometry from the setup
-  iSetup.get<GlobalTrackingGeometryRecord>().get(theTrackingGeometry);
+  const GlobalTrackingGeometry &TrackingGeometry = iSetup.getData(theTrackingGeometryToken_);
+  const GlobalTrackingGeometry *theTrackingGeometry = &TrackingGeometry;
 
   edm::Handle<RPCRecHitCollection> rpcRecHits;
 
@@ -483,8 +493,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
   iEvent.getByLabel(edm::InputTag("offlinePrimaryVertices"), vertex);
 
   // Get the propagators
-  iSetup.get<TrackingComponentsRecord>().get("SmartPropagatorAny", propagatorAlong);
-  iSetup.get<TrackingComponentsRecord>().get("SmartPropagatorAnyOpposite", propagatorOpposite);
+  const Propagator &propagatorAlong = iSetup.getData(propagatorAlongToken_);
+  const Propagator &propagatorOpposite = iSetup.getData(propagatorOppositeToken_);
 
   for (reco::MuonCollection::const_iterator imu = mucand->begin();
        // for(pat::MuonCollection::const_iterator imu = mucand->begin();
@@ -777,7 +787,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
 
         // Use the track now, and make a transient track out of it (for extrapolations)
         reco::TrackRef glb_mu = imu->globalTrack();
-        reco::TransientTrack ttrack(*glb_mu, &*theBField, theTrackingGeometry);
+        reco::TransientTrack ttrack(*glb_mu, theMagneticField, theTrackingGeometry);
 
         // Track quantities
         muonData->ch.push_back(glb_mu->charge());
@@ -808,7 +818,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         if (!runOnPostLS1_) {
           //Extrapolation to HB
           TrajectoryStateOnSurface tsos;
-          tsos = cylExtrapTrkSam(glb_mu, 235);
+          tsos = cylExtrapTrkSam(glb_mu, 235, theMagneticField, propagatorAlong, propagatorOpposite);
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -826,7 +836,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
           }
 
           //Extrapolation to HE+
-          tsos = surfExtrapTrkSam(glb_mu, 479);
+          tsos = surfExtrapTrkSam(glb_mu, 479, theMagneticField, propagatorAlong, propagatorOpposite);
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -843,7 +853,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
           }
 
           //Extrapolation to HE-
-          tsos = surfExtrapTrkSam(glb_mu, -479);
+          tsos = surfExtrapTrkSam(glb_mu, -479, theMagneticField, propagatorAlong, propagatorOpposite);
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -872,7 +882,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
       if (isTR || isGL || isTRSA) {
         // Take the tracker track and build a transient track out of it
         reco::TrackRef tr_mu = imu->innerTrack();
-        reco::TransientTrack ttrack(*tr_mu, &*theBField, theTrackingGeometry);
+        reco::TransientTrack ttrack(*tr_mu, theMagneticField, theTrackingGeometry);
         // Fill track quantities
         muonData->tr_ch.push_back(tr_mu->charge());
         muonData->tr_pt.push_back(tr_mu->pt());
@@ -905,7 +915,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
 
         if (!runOnPostLS1_) {
           TrajectoryStateOnSurface tsos;
-          tsos = cylExtrapTrkSam(tr_mu, 410);  // track at MB1 radius - extrapolation
+          tsos = cylExtrapTrkSam(
+              tr_mu, 410, theMagneticField, propagatorAlong, propagatorOpposite);  // track at MB1 radius - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -922,7 +933,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
             muonData->tr_phi_mb1.push_back(-999999);
           }
 
-          tsos = cylExtrapTrkSam(tr_mu, 500);  // track at MB2 radius - extrapolation
+          tsos = cylExtrapTrkSam(
+              tr_mu, 500, theMagneticField, propagatorAlong, propagatorOpposite);  // track at MB2 radius - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -939,7 +951,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
             muonData->tr_phi_mb2.push_back(-999999);
           }
 
-          tsos = surfExtrapTrkSam(tr_mu, 630);  // track at ME1+ plane - extrapolation
+          tsos = surfExtrapTrkSam(
+              tr_mu, 630, theMagneticField, propagatorAlong, propagatorOpposite);  // track at ME1+ plane - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -955,7 +968,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
             muonData->tr_phi_me1_p.push_back(-999999);
           }
 
-          tsos = surfExtrapTrkSam(tr_mu, 790);  // track at ME2+ plane - extrapolation
+          tsos = surfExtrapTrkSam(
+              tr_mu, 790, theMagneticField, propagatorAlong, propagatorOpposite);  // track at ME2+ plane - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -971,7 +985,11 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
             muonData->tr_phi_me2_p.push_back(-999999);
           }
 
-          tsos = surfExtrapTrkSam(tr_mu, -630);  // track at ME1- plane - extrapolation
+          tsos = surfExtrapTrkSam(tr_mu,
+                                  -630,
+                                  theMagneticField,
+                                  propagatorAlong,
+                                  propagatorOpposite);  // track at ME1- plane - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -987,7 +1005,11 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
             muonData->tr_phi_me1_n.push_back(-999999);
           }
 
-          tsos = surfExtrapTrkSam(tr_mu, -790);  // track at ME2- plane - extrapolation
+          tsos = surfExtrapTrkSam(tr_mu,
+                                  -790,
+                                  theMagneticField,
+                                  propagatorAlong,
+                                  propagatorOpposite);  // track at ME2- plane - extrapolation
           if (tsos.isValid()) {
             double xx = tsos.globalPosition().x();
             double yy = tsos.globalPosition().y();
@@ -1026,7 +1048,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
 
         // Take the SA track and build a transient track out of it
         reco::TrackRef sa_mu = imu->outerTrack();
-        reco::TransientTrack ttrack(*sa_mu, &*theBField, theTrackingGeometry);
+        reco::TransientTrack ttrack(*sa_mu, theMagneticField, theTrackingGeometry);
 
         // Extrapolation to IP
         if (ttrack.impactPointTSCP().isValid()) {
@@ -1046,7 +1068,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         // Extrapolation to MB2
 
         TrajectoryStateOnSurface tsos;
-        tsos = cylExtrapTrkSam(sa_mu, 410);  // track at MB1 radius - extrapolation
+        tsos = cylExtrapTrkSam(
+            sa_mu, 410, theMagneticField, propagatorAlong, propagatorOpposite);  // track at MB1 radius - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1063,7 +1086,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
           muonData->sa_phi_mb1.push_back(-999999);
         }
 
-        tsos = cylExtrapTrkSam(sa_mu, 500);  // track at MB2 radius - extrapolation
+        tsos = cylExtrapTrkSam(
+            sa_mu, 500, theMagneticField, propagatorAlong, propagatorOpposite);  // track at MB2 radius - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1086,7 +1110,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
           muonData->sa_pseta.push_back(-999999);
         }
 
-        tsos = surfExtrapTrkSam(sa_mu, 630);  // track at ME1+ plane - extrapolation
+        tsos = surfExtrapTrkSam(
+            sa_mu, 630, theMagneticField, propagatorAlong, propagatorOpposite);  // track at ME1+ plane - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1103,7 +1128,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         }
 
         // Extrapolation to ME2+
-        tsos = surfExtrapTrkSam(sa_mu, 790);
+        tsos = surfExtrapTrkSam(sa_mu, 790, theMagneticField, propagatorAlong, propagatorOpposite);
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1119,7 +1144,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
           muonData->sa_phi_me2_p.push_back(-999999);
         }
 
-        tsos = surfExtrapTrkSam(sa_mu, -630);  // track at ME1- plane - extrapolation
+        tsos = surfExtrapTrkSam(
+            sa_mu, -630, theMagneticField, propagatorAlong, propagatorOpposite);  // track at ME1- plane - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1136,7 +1162,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         }
 
         // Extrapolation to ME2-
-        tsos = surfExtrapTrkSam(sa_mu, -790);  // track at ME2- disk - extrapolation
+        tsos = surfExtrapTrkSam(
+            sa_mu, -790, theMagneticField, propagatorAlong, propagatorOpposite);  // track at ME2- disk - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1153,7 +1180,8 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         }
 
         // Extrapolation to HB
-        tsos = cylExtrapTrkSam(sa_mu, 235);  // track at HB radius - extrapolation
+        tsos = cylExtrapTrkSam(
+            sa_mu, 235, theMagneticField, propagatorAlong, propagatorOpposite);  // track at HB radius - extrapolation
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1171,7 +1199,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         }
 
         // Extrapolation to HE+
-        tsos = surfExtrapTrkSam(sa_mu, 479);
+        tsos = surfExtrapTrkSam(sa_mu, 479, theMagneticField, propagatorAlong, propagatorOpposite);
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1188,7 +1216,7 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
         }
 
         // Extrapolation to HE-
-        tsos = surfExtrapTrkSam(sa_mu, -479);
+        tsos = surfExtrapTrkSam(sa_mu, -479, theMagneticField, propagatorAlong, propagatorOpposite);
         if (tsos.isValid()) {
           double xx = tsos.globalPosition().x();
           double yy = tsos.globalPosition().y();
@@ -1234,40 +1262,49 @@ void L1MuonRecoTreeProducer::analyze(const edm::Event &iEvent, const edm::EventS
 }
 
 // to get the track position info at a particular rho
-TrajectoryStateOnSurface L1MuonRecoTreeProducer::cylExtrapTrkSam(reco::TrackRef track, double rho) {
+TrajectoryStateOnSurface L1MuonRecoTreeProducer::cylExtrapTrkSam(reco::TrackRef track,
+                                                                 double rho,
+                                                                 const MagneticField *theMagneticField,
+                                                                 const Propagator &propagatorAlong,
+                                                                 const Propagator &propagatorOpposite) {
   Cylinder::PositionType pos(0, 0, 0);
   Cylinder::RotationType rot;
   Cylinder::CylinderPointer myCylinder = Cylinder::build(pos, rot, rho);
 
-  FreeTrajectoryState recoStart = freeTrajStateMuon(track);
+  FreeTrajectoryState recoStart = freeTrajStateMuon(track, theMagneticField);
   TrajectoryStateOnSurface recoProp;
-  recoProp = propagatorAlong->propagate(recoStart, *myCylinder);
+  recoProp = propagatorAlong.propagate(recoStart, *myCylinder);
   if (!recoProp.isValid()) {
-    recoProp = propagatorOpposite->propagate(recoStart, *myCylinder);
+    recoProp = propagatorOpposite.propagate(recoStart, *myCylinder);
   }
   return recoProp;
 }
 
 // to get track position at a particular (xy) plane given its z
-TrajectoryStateOnSurface L1MuonRecoTreeProducer::surfExtrapTrkSam(reco::TrackRef track, double z) {
+TrajectoryStateOnSurface L1MuonRecoTreeProducer::surfExtrapTrkSam(reco::TrackRef track,
+                                                                  double z,
+                                                                  const MagneticField *theMagneticField,
+                                                                  const Propagator &propagatorAlong,
+                                                                  const Propagator &propagatorOpposite) {
   Plane::PositionType pos(0, 0, z);
   Plane::RotationType rot;
   Plane::PlanePointer myPlane = Plane::build(pos, rot);
 
-  FreeTrajectoryState recoStart = freeTrajStateMuon(track);
+  FreeTrajectoryState recoStart = freeTrajStateMuon(track, theMagneticField);
   TrajectoryStateOnSurface recoProp;
-  recoProp = propagatorAlong->propagate(recoStart, *myPlane);
+  recoProp = propagatorAlong.propagate(recoStart, *myPlane);
   if (!recoProp.isValid()) {
-    recoProp = propagatorOpposite->propagate(recoStart, *myPlane);
+    recoProp = propagatorOpposite.propagate(recoStart, *myPlane);
   }
   return recoProp;
 }
 
-FreeTrajectoryState L1MuonRecoTreeProducer::freeTrajStateMuon(reco::TrackRef track) {
+FreeTrajectoryState L1MuonRecoTreeProducer::freeTrajStateMuon(reco::TrackRef track,
+                                                              const MagneticField *theMagneticField) {
   GlobalPoint innerPoint(track->innerPosition().x(), track->innerPosition().y(), track->innerPosition().z());
   GlobalVector innerVec(track->innerMomentum().x(), track->innerMomentum().y(), track->innerMomentum().z());
 
-  FreeTrajectoryState recoStart(innerPoint, innerVec, track->charge(), &*theBField);
+  FreeTrajectoryState recoStart(innerPoint, innerVec, track->charge(), theMagneticField);
 
   return recoStart;
 }

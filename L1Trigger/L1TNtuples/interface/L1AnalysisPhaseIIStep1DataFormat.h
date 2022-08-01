@@ -16,7 +16,7 @@ namespace L1Analysis {
     ~L1AnalysisPhaseIIStep1DataFormat(){};
 
     void Reset() {
-      z0L1TkPV.clear();
+      z0L1TkPV = 0;
       z0L1TkAll.clear();
       nL1TkPVs = 0;
 
@@ -246,10 +246,9 @@ namespace L1Analysis {
       seededConePuppiJetzVtx.clear();
       seededConePuppiJetEtUnCorr.clear();
 
-      seededConePuppiHT.clear();
-      seededConePuppiMHTEt.clear();
-      seededConePuppiMHTPhi.clear();
-      nSeededConePuppiMHT = 0;
+      seededConePuppiHT = 0;
+      seededConePuppiMHTEt = 0;
+      seededConePuppiMHTPhi = 0;
 
       nNNTaus = 0;
       nnTauPt.clear();
@@ -319,18 +318,12 @@ namespace L1Analysis {
       trackerMHTDisplaced = 0;
       trackerMHTPhiDisplaced = 0;
 
-      // TrackerMetDisplaced
-      nTrackerMetDisplaced = 0;
-      trackerMetDisplacedSumEt.clear();
-      trackerMetDisplacedEt.clear();
-      trackerMetDisplacedPhi.clear();
-      trackerMetDisplacedBx.clear();
     }
 
     //double z0Puppi;
     unsigned short int nL1TkPVs;
     std::vector<double> z0L1TkAll;
-    std::vector<double> z0L1TkPV;
+    double z0L1TkPV;
     //std::vector<double> sumL1TkPV;
 
     unsigned short int nCaloTaus;
@@ -558,10 +551,9 @@ namespace L1Analysis {
     std::vector<double> seededConePuppiJetzVtx;
     std::vector<double> seededConePuppiJetEtUnCorr;
 
-    std::vector<double> seededConePuppiHT;
-    std::vector<double> seededConePuppiMHTEt;
-    std::vector<double> seededConePuppiMHTPhi;
-    unsigned int nSeededConePuppiMHT;
+    double seededConePuppiHT;
+    double seededConePuppiMHTEt;
+    double seededConePuppiMHTPhi;
 
     unsigned int nNNTaus;
     std::vector<double> nnTauPt;
@@ -628,11 +620,6 @@ namespace L1Analysis {
     double trackerMHTDisplaced;
     double trackerMHTPhiDisplaced;
 
-    unsigned int nTrackerMetDisplaced;
-    std::vector<double> trackerMetDisplacedSumEt;
-    std::vector<double> trackerMetDisplacedEt;
-    std::vector<double> trackerMetDisplacedPhi;
-    std::vector<double> trackerMetDisplacedBx;
   };
 }  // namespace L1Analysis
 #endif

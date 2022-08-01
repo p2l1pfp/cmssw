@@ -133,6 +133,7 @@ namespace L1Analysis {
                                  unsigned maxL1Extra);
 
     void SetPFJet(const edm::Handle<l1t::PFJetCollection> PFJet, unsigned maxL1Extra);
+    void SetL1seededConeMHT(const edm::Handle<std::vector<l1t::EtSum>> l1SeededConeMHT);
 
     // Add nntaus
     void SetNNTaus(const edm::Handle<std::vector<l1t::PFTau>> l1nnTaus, unsigned maxL1Extra);
@@ -144,7 +145,6 @@ namespace L1Analysis {
 
     void SetTkMET(const edm::Handle<std::vector<l1t::EtSum>> trackerMet);
     void SetTkMHT(const edm::Handle<std::vector<l1t::EtSum>> trackerMHT);
-    void SetTkMETDisplaced(const edm::Handle<l1t::TkEtMissCollection> trackerMets);  // still not emu!
     void SetTkMHTDisplaced(const edm::Handle<std::vector<l1t::EtSum>> trackerMHT);
 
     L1AnalysisPhaseIIStep1DataFormat* getData() { return &l1extra_; }

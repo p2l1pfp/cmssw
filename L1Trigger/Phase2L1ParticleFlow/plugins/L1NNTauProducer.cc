@@ -12,8 +12,7 @@
 #include "DataFormats/L1TParticleFlow/interface/PFTau.h"
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/TauNNId.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/taus/nn/TauNNIdHW.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/taus/nn/TauNNIdHW.cc"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/taus/TauNNIdHW.h"
 
 #include "ap_int.h"
 #include "ap_fixed.h"

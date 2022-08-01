@@ -471,20 +471,17 @@ namespace l1tVertexFinder {
                                     std::string color) {
     int tableSize = data.size();
 
+    if (maximum == -1) {
+      maximum = float(*std::max_element(std::begin(data), std::end(data))) * 1.05;
+    } else if (maximum <= minimum) {
+      maximum = float(*std::max_element(std::begin(data), std::end(data))) * 1.05;
+      minimum = float(*std::min_element(std::begin(data), std::end(data)));
+    }
+
     if (minimum < 0) {
       minimum *= 1.05;
     } else {
       minimum = 0;
-    }
-
-    if (maximum == -1) {
-      maximum = float(*std::max_element(std::begin(data), std::end(data))) * 1.05;
-    }
-
-    if (maximum <= minimum) {
-      float average = (minimum + maximum) / 2.0;
-      minimum = average - 0.5;
-      maximum = average + 0.5;
     }
 
     std::vector<std::string> intervals(tableSize, "");

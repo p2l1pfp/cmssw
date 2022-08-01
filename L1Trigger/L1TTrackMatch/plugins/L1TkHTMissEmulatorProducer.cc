@@ -19,7 +19,6 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
-#include "DataFormats/L1TCorrelator/interface/TkPrimaryVertex.h"
 #include "DataFormats/L1TCorrelator/interface/TkHTMiss.h"
 #include "DataFormats/L1TCorrelator/interface/TkHTMissFwd.h"
 #include "DataFormats/L1Trigger/interface/EtSum.h"
@@ -33,7 +32,7 @@ using namespace l1t;
 class L1TkHTMissEmulatorProducer : public edm::stream::EDProducer<> {
 public:
   explicit L1TkHTMissEmulatorProducer(const edm::ParameterSet&);
-  ~L1TkHTMissEmulatorProducer() override;
+  ~L1TkHTMissEmulatorProducer() override = default;
 
 private:
   virtual void beginJob();
@@ -100,8 +99,6 @@ L1TkHTMissEmulatorProducer::L1TkHTMissEmulatorProducer(const edm::ParameterSet& 
         << "-------------------------------------------------------------------------\n";
   }
 }
-
-L1TkHTMissEmulatorProducer::~L1TkHTMissEmulatorProducer() {}
 
 void L1TkHTMissEmulatorProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace edm;

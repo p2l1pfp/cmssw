@@ -15,7 +15,8 @@ process.source = cms.Source("PoolSource",
     inputCommands = cms.untracked.vstring("keep *", 
             "drop l1tPFClusters_*_*_*",
             "drop l1tPFTracks_*_*_*",
-            "drop l1tPFCandidates_*_*_*")
+            "drop l1tPFCandidates_*_*_*",
+            "drop l1tTkPrimaryVertexs_*_*_*")
 )
 
 process.load('Configuration.Geometry.GeometryExtended2026D49Reco_cff')
@@ -27,7 +28,6 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, '123X_mcRun4_realistic_v3', '')
 
-process.load("L1Trigger.Phase2L1ParticleFlow.l1ParticleFlow_cff")
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer2EG_cff')
 process.load('L1Trigger.L1TTrackMatch.L1GTTInputProducer_cfi')
@@ -68,8 +68,6 @@ process.runPF = cms.Path(
         process.L1SAMuonsGmt +
         process.L1GTTInputProducer +
         process.L1VertexFinderEmulator +
-        process.pfTracksFromL1Tracks +
-        process.l1ParticleFlow_calo +
         process.l1ctLayer1Barrel +
         #process.l1ctLayer1Barrel9 +
         process.l1ctLayer1HGCal +
@@ -81,6 +79,7 @@ process.runPF = cms.Path(
         process.l1ctLayer2SeedConeJets +
         process.l1ctLayer2SeedConeJetWriter
     )
+process.runPF.associate(process.l1ctLayer1TaskInputsTask)
 
 
 #####################################################################################################################

@@ -2,6 +2,18 @@
 #define PHASE2GMT_PRETRACKMATCHEDMUON
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+#include "L1Trigger/Phase2L1GMT/interface/Constants.h"
+#include "DataFormats/L1TMuon/interface/RegionalMuonCandFwd.h"
+#include "DataFormats/L1TMuonPhase2/interface/MuonStub.h"
+#include "DataFormats/Common/interface/Ptr.h"
+#include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
+#include "DataFormats/L1TrackTrigger/interface/TTStub.h"
+#include "DataFormats/L1TrackTrigger/interface/TTTypes.h"
+#include "DataFormats/Phase2TrackerDigi/interface/Phase2TrackerDigi.h"
+#include "DataFormats/TrackerCommon/interface/TrackerTopology.h"
+#include "DataFormats/L1Trigger/interface/Vertex.h"
+
+#include <vector>
 
 namespace Phase2L1GMT {
 
@@ -72,13 +84,13 @@ namespace Phase2L1GMT {
       stubs_.push_back(stub);
       if (stub->tfLayer() == 0)
         stubID0_ = stub->id();
-      if (stub->tfLayer() == 1)
+      else if (stub->tfLayer() == 1)
         stubID1_ = stub->id();
-      if (stub->tfLayer() == 2)
+      else if (stub->tfLayer() == 2)
         stubID2_ = stub->id();
-      if (stub->tfLayer() == 3)
+      else if (stub->tfLayer() == 3)
         stubID3_ = stub->id();
-      if (stub->tfLayer() == 4)
+      else if (stub->tfLayer() == 4)
         stubID4_ = stub->id();
     }
 

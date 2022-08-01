@@ -1,4 +1,4 @@
-#include "L1TCorrelatorLayer1PatternFileWriter.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/L1TCorrelatorLayer1PatternFileWriter.h"
 #include "FWCore/Utilities/interface/Exception.h"
 #include <iostream>
 

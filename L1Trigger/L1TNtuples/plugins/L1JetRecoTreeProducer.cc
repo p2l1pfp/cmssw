@@ -54,7 +54,7 @@
 // class declaration
 //
 
-class L1JetRecoTreeProducer : public edm::one::EDAnalyzer<> {
+class L1JetRecoTreeProducer : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
   explicit L1JetRecoTreeProducer(const edm::ParameterSet&);
   ~L1JetRecoTreeProducer() override;
@@ -82,9 +82,6 @@ public:
   L1Analysis::L1AnalysisRecoMetDataFormat* met_data;
 
 private:
-  // output file
-  edm::Service<TFileService> fs_;
-
   // tree
   TTree* tree_;
 
@@ -150,6 +147,8 @@ L1JetRecoTreeProducer::L1JetRecoTreeProducer(const edm::ParameterSet& iConfig)
 
   muonToken_ = consumes<reco::MuonCollection>(iConfig.getUntrackedParameter("muonToken", edm::InputTag("muons")));
 
+  usesResource(TFileService::kSharedResource);
+
   jetptThreshold_ = iConfig.getParameter<double>("jetptThreshold");
   jetetaMax_ = iConfig.getParameter<double>("jetetaMax");
   maxJet_ = iConfig.getParameter<unsigned int>("maxJet");
@@ -158,6 +157,7 @@ L1JetRecoTreeProducer::L1JetRecoTreeProducer(const edm::ParameterSet& iConfig)
   met_data = new L1Analysis::L1AnalysisRecoMetDataFormat();
 
   // set up output
+  edm::Service<TFileService> fs_;
   tree_ = fs_->make<TTree>("JetRecoTree", "JetRecoTree");
   tree_->Branch("Jet", "L1Analysis::L1AnalysisRecoJetDataFormat", &jet_data, 32000, 3);
   tree_->Branch("Sums", "L1Analysis::L1AnalysisRecoMetDataFormat", &met_data, 32000, 3);
@@ -388,7 +388,7 @@ void L1JetRecoTreeProducer::doPFJetCorr(edm::Handle<reco::PFJetCollection> pfJet
 
     nJets++;
 
-    if (it->pt() * corrFactor > jetptThreshold_ && fabs(it->eta()) < jetetaMax_) {
+    if (it->pt() * corrFactor > jetptThreshold_ && std::abs(it->eta()) < jetetaMax_) {
       mHx += -1. * it->px() * corrFactor;
       mHy += -1. * it->py() * corrFactor;
       met_data->Ht += it->pt() * corrFactor;
@@ -419,7 +419,7 @@ void L1JetRecoTreeProducer::doCaloJetCorr(edm::Handle<reco::CaloJetCollection> c
 
     nCaloJets++;
 
-    if (it->pt() * caloCorrFactor > jetptThreshold_ && fabs(it->eta()) < jetetaMax_) {
+    if (it->pt() * caloCorrFactor > jetptThreshold_ && std::abs(it->eta()) < jetetaMax_) {
       met_data->caloHt += it->pt() * caloCorrFactor;
     }
   }
@@ -487,7 +487,7 @@ void L1JetRecoTreeProducer::doCaloMetBE(edm::Handle<reco::CaloMETCollection> cal
 
 bool L1JetRecoTreeProducer::pfJetID(const reco::PFJet& jet) {
   bool tmp = true;
-  if (fabs(jet.eta()) < 2.7) {
+  if (std::abs(jet.eta()) < 2.7) {
     tmp &= jet.neutralHadronEnergyFraction() < 0.9;
     tmp &= jet.neutralEmEnergyFraction() < 0.9;
     tmp &= (jet.chargedMultiplicity() + jet.neutralMultiplicity()) > 1;
@@ -496,12 +496,12 @@ bool L1JetRecoTreeProducer::pfJetID(const reco::PFJet& jet) {
     tmp &= jet.chargedMultiplicity() > 0;
     tmp &= jet.chargedEmEnergyFraction() < 0.9;
   }
-  if (fabs(jet.eta()) > 2.7 && fabs(jet.eta()) < 3.0) {
+  if (std::abs(jet.eta()) > 2.7 && std::abs(jet.eta()) < 3.0) {
     tmp &= jet.neutralEmEnergyFraction() > 0.01;
     tmp &= jet.neutralHadronEnergyFraction() < 0.98;
     tmp &= jet.neutralMultiplicity() > 2;
   }
-  if (fabs(jet.eta()) > 3.0) {
+  if (std::abs(jet.eta()) > 3.0) {
     tmp &= jet.neutralEmEnergyFraction() < 0.9;
     tmp &= jet.neutralMultiplicity() > 10;
   }

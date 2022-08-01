@@ -10,11 +10,11 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/Utilities/interface/transform.h"
 
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/dataformats/layer1_emulator.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egsorter_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egsorter_ref.cpp"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egencoder_ref.h"
-#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egencoder_ref.cpp"
+#include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/l2egsorter_ref.h"
+//#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egsorter_ref.cpp"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/l2egencoder_ref.h"
+//#include "L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/l2egencoder_ref.cpp"
 
 #include "L1Trigger/DemonstratorTools/interface/BoardDataWriter.h"
 #include "L1Trigger/DemonstratorTools/interface/utilities.h"
@@ -332,8 +332,9 @@ void L1TCtL2EgProducer::convertToEmu(const l1t::TkElectron &tkele,
   }
   refRemapper.origRefAndPtr.push_back(std::make_pair(refEg, tkele.trkPtr()));
   emu.sta_idx = refRemapper.origRefAndPtr.size() - 1;
-  emu.setHwIso(EGIsoEleObjEmu::IsoType::TkIso, l1ct::Scales::makeIso(tkele.trkIsol()));
-  emu.setHwIso(EGIsoEleObjEmu::IsoType::PfIso, l1ct::Scales::makeIso(tkele.pfIsol()));
+  // NOTE: The emulator and FW data-format stores absolute iso while the CMSSW object stores relative iso
+  emu.setHwIso(EGIsoEleObjEmu::IsoType::TkIso, l1ct::Scales::makeIso(tkele.trkIsol() * tkele.pt()));
+  emu.setHwIso(EGIsoEleObjEmu::IsoType::PfIso, l1ct::Scales::makeIso(tkele.pfIsol() * tkele.pt()));
   // std::cout << "[convertToEmu] TkEle pt: " << emu.hwPt << " eta: " << emu.hwEta << " phi: " << emu.hwPhi << " staidx: " << emu.sta_idx << std::endl;
 
   boarOut.egelectron.push_back(emu);
@@ -352,10 +353,11 @@ void L1TCtL2EgProducer::convertToEmu(const l1t::TkEm &tkem,
   }
   refRemapper.origRefAndPtr.push_back(std::make_pair(refEg, edm::Ptr<RefRemapper::L1TTTrackType>(nullptr, 0)));
   emu.sta_idx = refRemapper.origRefAndPtr.size() - 1;
-  emu.setHwIso(EGIsoObjEmu::IsoType::TkIso, l1ct::Scales::makeIso(tkem.trkIsol()));
-  emu.setHwIso(EGIsoObjEmu::IsoType::PfIso, l1ct::Scales::makeIso(tkem.pfIsol()));
-  emu.setHwIso(EGIsoObjEmu::IsoType::TkIsoPV, l1ct::Scales::makeIso(tkem.trkIsolPV()));
-  emu.setHwIso(EGIsoObjEmu::IsoType::PfIsoPV, l1ct::Scales::makeIso(tkem.pfIsolPV()));
+  // NOTE: The emulator and FW data-format stores absolute iso while the CMSSW object stores relative iso
+  emu.setHwIso(EGIsoObjEmu::IsoType::TkIso, l1ct::Scales::makeIso(tkem.trkIsol() * tkem.pt()));
+  emu.setHwIso(EGIsoObjEmu::IsoType::PfIso, l1ct::Scales::makeIso(tkem.pfIsol() * tkem.pt()));
+  emu.setHwIso(EGIsoObjEmu::IsoType::TkIsoPV, l1ct::Scales::makeIso(tkem.trkIsolPV() * tkem.pt()));
+  emu.setHwIso(EGIsoObjEmu::IsoType::PfIsoPV, l1ct::Scales::makeIso(tkem.pfIsolPV() * tkem.pt()));
   // std::cout << "[convertToEmu] TkEM pt: " << emu.hwPt << " eta: " << emu.hwEta << " phi: " << emu.hwPhi << " staidx: " << emu.sta_idx << std::endl;
   boarOut.egphoton.push_back(emu);
 }
@@ -366,6 +368,7 @@ l1t::TkEm L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoObjEmu &egiso, cons
   const auto gteg = egiso.toGT();
   reco::Candidate::PolarLorentzVector mom(
       l1gt::Scales::floatPt(gteg.v3.pt), l1gt::Scales::floatEta(gteg.v3.eta), l1gt::Scales::floatPhi(gteg.v3.phi), 0.);
+  // NOTE: The emulator and FW data-format stores absolute iso while the CMSSW object stores relative iso
   l1t::TkEm tkem(reco::Candidate::LorentzVector(mom),
                  refRemapper.origRefAndPtr[egiso.sta_idx].first,
                  egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::TkIso),
@@ -384,7 +387,7 @@ l1t::TkElectron L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoEleObjEmu &eg
   const auto gteg = egele.toGT();
   reco::Candidate::PolarLorentzVector mom(
       l1gt::Scales::floatPt(gteg.v3.pt), l1gt::Scales::floatEta(gteg.v3.eta), l1gt::Scales::floatPhi(gteg.v3.phi), 0.);
-
+  // NOTE: The emulator and FW data-format stores absolute iso while the CMSSW object stores relative iso
   l1t::TkElectron tkele(reco::Candidate::LorentzVector(mom),
                         refRemapper.origRefAndPtr[egele.sta_idx].first,
                         refRemapper.origRefAndPtr[egele.sta_idx].second,
