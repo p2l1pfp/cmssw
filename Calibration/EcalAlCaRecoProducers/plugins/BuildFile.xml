@@ -18,4 +18,5 @@
 <use name="Geometry/EcalMapping"/>
 <use name="Geometry/HcalTowerAlgo"/>
 <use name="Geometry/Records"/>
+<use name="hls"/>
 <flags EDM_PLUGIN="1"/>

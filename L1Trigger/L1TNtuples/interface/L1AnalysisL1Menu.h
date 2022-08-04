@@ -3,7 +3,6 @@
 
 #include "DataFormats/L1GlobalTrigger/interface/L1GtTriggerMenuLite.h"
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenuFwd.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "L1Trigger/GlobalTriggerAnalyzer/interface/L1GtUtils.h"
 #include "FWCore/Framework/interface/Event.h"
