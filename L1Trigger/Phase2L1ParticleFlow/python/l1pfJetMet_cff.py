@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 from L1Trigger.Phase2L1ParticleFlow.L1SeedConePFJetProducer_cfi import L1SeedConePFJetProducer, L1SeedConePFJetEmulatorProducer
-from L1Trigger.Phase2L1ParticleFlow.DeregionizerProducer_cfi import DeregionizerProducer as l1ctLayer2Deregionizer
+from L1Trigger.Phase2L1ParticleFlow.DeregionizerProducer_cfi import DeregionizerProducer as l1ctLayer2Deregionizer, DeregionizerProducerExtended as l1ctLayer2DeregionizerExtended
 scPFL1PF            = L1SeedConePFJetProducer.clone(L1PFObjects = 'l1ctLayer1:PF')
 scPFL1Puppi         = L1SeedConePFJetProducer.clone()
 scPFL1PuppiEmulator = L1SeedConePFJetEmulatorProducer.clone(L1PFObject = cms.InputTag('l1ctLayer2Deregionizer', 'Puppi'))
@@ -22,9 +22,15 @@ scPFL1PuppiCorrectedEmulator = _correctedJets.clone(jets = 'scPFL1PuppiEmulator'
 from L1Trigger.Phase2L1ParticleFlow.L1MhtPfProducer_cfi import L1MhtPfProducer
 scPFL1PuppiCorrectedEmulatorMHT = L1MhtPfProducer.clone() #(jets = cms.InputTag("scPFL1PuppiCorrectedEmulator"))
 
+scPFL1PuppiExtended = scPFL1Puppi.clone(L1PFObjects = 'l1ctLayer1Extended:Puppi')
+scPFL1PuppiExtendedEmulator = scPFL1PuppiEmulator.clone(L1PFObjects = cms.InputTag('l1ctLayer2DeregionizerExtended', 'Puppi'))
+scPFL1PuppiExtendedCorrectedEmulator = _correctedJets.clone(jets = 'scPFL1PuppiExtendedEmulator', correctorDir = 'L1PuppiSC4EmuDeregJets')
 
 l1PFJetsTask = cms.Task(
-    l1ctLayer2Deregionizer, scPFL1PF, scPFL1Puppi, scPFL1PuppiEmulator, scPFL1PuppiCorrectedEmulator, scPFL1PuppiCorrectedEmulatorMHT
+    l1ctLayer2Deregionizer, scPFL1PF, scPFL1Puppi, scPFL1PuppiEmulator, scPFL1PuppiCorrectedEmulator, scPFL1PuppiCorrectedEmulatorMHT,
+)
+l1PFJetsExtendedTask = cms.Task(
+    l1ctLayer2DeregionizerExtended, scPFL1PuppiExtended, scPFL1PuppiExtendedEmulator, scPFL1PuppiExtendedCorrectedEmulator
 )
 
 
