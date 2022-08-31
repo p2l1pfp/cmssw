@@ -200,8 +200,6 @@ namespace l1ct {
       unsigned int cluster_idx;
       unsigned int track_idx;
       double dpt_double; // For sorting
-      float srrtot_float;
-      float meanz_float;
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe; 
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt; 
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot; 
