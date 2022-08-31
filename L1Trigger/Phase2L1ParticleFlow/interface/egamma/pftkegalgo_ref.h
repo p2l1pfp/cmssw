@@ -58,7 +58,7 @@ namespace l1ct {
     bool doCompositeTkEle;
     struct CompIDParameters {
       CompIDParameters(const edm::ParameterSet &);
-      CompIDParameters(double hoeMin, double hoeMax, double tkptMin, double tkptMax, double srrtotMin, double srrtotMax, double detaMin, double detaMax, double dptMin, double dptMax, double meanzMin, double meanzMax, double dphiMin, double dphiMax, double tkchi2Min, double tkchi2Max, double tkz0Min, double tkz0Max, double tknstubsMin, double tknstubsMax)
+      CompIDParameters(double hoeMin, double hoeMax, double tkptMin, double tkptMax, double srrtotMin, double srrtotMax, double detaMin, double detaMax, double dptMin, double dptMax, double meanzMin, double meanzMax, double dphiMin, double dphiMax, double tkchi2Min, double tkchi2Max, double tkz0Min, double tkz0Max, double tknstubsMin, double tknstubsMax, double BDTcut_wp97p5, double BDTcut_wp95p0)
           : hoeMin(hoeMin), hoeMax(hoeMax),
             tkptMin(tkptMin),tkptMax(tkptMax),
             srrtotMin(srrtotMin),srrtotMax(srrtotMax),
@@ -68,7 +68,8 @@ namespace l1ct {
             dphiMin(dphiMin),dphiMax(dphiMax),
             tkchi2Min(tkchi2Min),tkchi2Max(tkchi2Max),
             tkz0Min(tkz0Min),tkz0Max(tkz0Max),
-            tknstubsMin(tknstubsMin),tknstubsMax(tknstubsMax) {}
+            tknstubsMin(tknstubsMin),tknstubsMax(tknstubsMax),
+            BDTcut_wp97p5(BDTcut_wp97p5),BDTcut_wp95p0(BDTcut_wp95p0){}
       double hoeMin;
       double hoeMax;
       double tkptMin;
@@ -89,6 +90,8 @@ namespace l1ct {
       double tkz0Max;
       double tknstubsMin;
       double tknstubsMax;
+      double BDTcut_wp97p5;
+      double BDTcut_wp95p0;
     };
 
     CompIDParameters myCompIDparams;
@@ -122,7 +125,7 @@ namespace l1ct {
                         EGIsoEleObjEmu::IsoType hwIsoTypeTkEle = EGIsoEleObjEmu::IsoType::TkIso,
                         EGIsoObjEmu::IsoType hwIsoTypeTkEm = EGIsoObjEmu::IsoType::TkIsoPV,
                         bool doCompositeTkEle = false,
-                        const CompIDParameters &myCompIDparams = {-1.0, 1566.547607421875, 1.9501149654388428, 11102.0048828125, 0.0, 0.01274710614234209, -0.24224889278411865, 0.23079538345336914, 0.010325592942535877, 184.92538452148438, 325.0653991699219, 499.6089782714844, -6.281332015991211, 6.280326843261719, 0.024048099294304848, 1258.37158203125, -14.94140625, 14.94140625, 4.0, 6.0},
+                        const CompIDParameters &myCompIDparams = {-1.0, 1566.547607421875, 1.9501149654388428, 11102.0048828125, 0.0, 0.01274710614234209, -0.24224889278411865, 0.23079538345336914, 0.010325592942535877, 184.92538452148438, 325.0653991699219, 499.6089782714844, -6.281332015991211, 6.280326843261719, 0.024048099294304848, 1258.37158203125, -14.94140625, 14.94140625, 4.0, 6.0, 0.5406244, 0.9693441},
                         int debug = 0)
 
         : nTRACK(nTrack),

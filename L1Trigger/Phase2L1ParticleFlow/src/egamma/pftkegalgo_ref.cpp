@@ -71,7 +71,9 @@ l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::Paramet
                        pset.getParameter<double>("tkz0Min"),
                        pset.getParameter<double>("tkz0Max"),
                        pset.getParameter<double>("tknstubsMin"),
-                       pset.getParameter<double>("tknstubsMax")) {}
+                       pset.getParameter<double>("tknstubsMax"),
+                       pset.getParameter<double>("BDTcut_wp97p5"),
+                       pset.getParameter<double>("BDTcut_wp95p0")) {}
 
 #endif
 
