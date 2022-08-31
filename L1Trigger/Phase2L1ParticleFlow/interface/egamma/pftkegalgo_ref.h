@@ -194,13 +194,14 @@ namespace l1ct {
     void link_emCalo2tk_composite(const PFRegionEmu &r,
                                 const std::vector<EmCaloObjEmu> &emcalo,
                                 const std::vector<TkObjEmu> &track,
-                                std::vector<int> &emCalo2tk,
-                                const PFTkEGAlgoEmuConfig::CompIDParameters &params) const;
+                                std::vector<int> &emCalo2tk) const;
 
     struct CompositeCandidate {
       unsigned int cluster_idx;
       unsigned int track_idx;
       double dpt_double; // For sorting
+      float srrtot_float;
+      float meanz_float;
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe; 
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt; 
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot; 
@@ -214,8 +215,10 @@ namespace l1ct {
       ap_fixed<22,3,AP_RND_CONV,AP_SAT> dR;
     };
 
-    float compute_composite_score(const CompositeCandidate& cand) const;
-
+    float compute_composite_score(CompositeCandidate &cand,
+                                  const std::vector<EmCaloObjEmu> &emcalo,
+                                  const std::vector<TkObjEmu> &track,
+                                  const PFTkEGAlgoEmuConfig::CompIDParameters &params) const;
 
     //FIXME: still needed
     float deltaPhi(float phi1, float phi2) const;
