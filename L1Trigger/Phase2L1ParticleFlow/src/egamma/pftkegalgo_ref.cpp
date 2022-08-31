@@ -8,6 +8,8 @@
 #include <iostream>
 #include <bitset>
 
+#include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
+#include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 using namespace l1ct;
 
 #ifdef CMSSW_GIT_HASH
@@ -204,8 +206,8 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
       // float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
       float clu_eta=calo.floatEta();
       float clu_phi=calo.floatPhi();
-      float trk_eta=tk.src->caloEta();
-      float trk_phi=tk.src->caloPhi();
+      float trk_eta=tk.floatEta();
+      float trk_phi=tk.floatPhi();
       float dR = deltaR(clu_eta,clu_phi,trk_eta,trk_phi);
 
       // if (((d_phi * d_phi ) + (d_eta * d_eta )) < 0.2 * 0.2) {
@@ -219,10 +221,11 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           // Normalize feature values
           cand.hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
           cand.tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
-          cand.srrtot = (0-params.srrtotMin)/(params.srrtotMax-params.srrtotMin); //FIXME: Get the srrtot from the cluster
+          cand.srrtot = (dynamic_cast<const l1t::HGCalMulticluster *>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot()-params.srrtotMin)/(params.srrtotMax-params.srrtotMin); //FIXME: Get the srrtot from the cluster
+          std::cout << "SRRTOT: " << dynamic_cast<const l1t::HGCalMulticluster *>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot() << std::endl;
           cand.deta = (tk.src->caloEta()-calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
           cand.dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
-          cand.meanz = (0.-params.meanzMin)/(params.meanzMax-params.meanzMin); //FIXME: Get the meanz from the cluster
+          cand.meanz = (dynamic_cast<const l1t::HGCalMulticluster *>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter()-params.meanzMin)/(params.meanzMax-params.meanzMin); //FIXME: Get the meanz from the cluster
           cand.dphi = (tk.src->caloPhi()- calo.floatPhi() -params.dphiMin)/(params.dphiMax-params.dphiMin);
           cand.chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
           cand.tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
@@ -235,7 +238,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
                 { return abs(a.dpt_double-1) < abs(b.dpt_double-1); });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
-    
+    std::cout << "# composit candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
 
     float bdtWP = 10;
