@@ -203,11 +203,17 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           if (tk.floatPt() < cfg.trkQualityPtMin)
             continue;
 
+<<<<<<< HEAD:L1Trigger/Phase2L1ParticleFlow/src/egamma/pftkegalgo_ref.cpp
       float clu_eta=calo.floatEta();  
       float clu_phi=calo.floatPhi();
       float trk_eta=tk.floatEta();
       float trk_phi=tk.floatPhi();
       float dR = deltaR(clu_eta,clu_phi,trk_eta,trk_phi);
+=======
+      float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
+      float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
+      float dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
+>>>>>>> Mapping of scores and WPs for consistent comparisons:L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegalgo_ref.cpp
 
       if (dR<0.2){
           // Only store indices, dR and dpT for now. The other quantities are computed only for the best nCandPerCluster.
@@ -227,18 +233,19 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     std::cout << "# composit candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
 
-    float bdtWP = cfg.myCompIDparams.BDTcut_wp97p5;
+    float bdtWP_MVA = cfg.myCompIDparams.BDTcut_wp97p5;
+    float bdtWP_XGB = 1. / (1. + std::sqrt((1. - bdtWP_MVA) / (1. + bdtWP_MVA))); // Convert WP value from ROOT.TMVA to XGboost
     float maxScore = -999;
     int ibest = -1;
     for(unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
       std::vector<EmCaloObjEmu> emcalo_sel = emcalo;
       float score = compute_composite_score(cand, emcalo_sel, track, cfg.myCompIDparams);
-      if((score > bdtWP) && (score > maxScore)) {
+      if((score > bdtWP_XGB) && (score > maxScore)) {
         maxScore = score;
         ibest = icand;
       }
-    }    
+    }
     if(ibest != -1) emCalo2tk[ic] = candidates[ibest].track_idx;
   }
 }
@@ -248,34 +255,47 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
                                                   const std::vector<EmCaloObjEmu> &emcalo,
                                                   const std::vector<TkObjEmu> &track,
                                                   const PFTkEGAlgoEmuConfig::CompIDParameters &params) const {
-
   // Get the cluster/track objects that form the composite candidate
   const auto &calo = emcalo[cand.cluster_idx];
   const auto &tk = track[cand.track_idx];
 
   // FIXME: using these two floats crashes code...
   float srrtot = dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot();
-  float meanz = dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter();
+  float meanz = abs(dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter());
 
   // Call and normalize input feature values, then cast to ap_fixed.
   // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
   // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
   cand.hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
   cand.tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
-  cand.srrtot = (1.-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
-  cand.deta = (tk.src->caloEta()-calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
+  cand.srrtot = (srrtot-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
+  cand.deta = (tk.floatEta() - calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
   cand.dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
-  cand.meanz = (1.-params.meanzMin)/(params.meanzMax-params.meanzMin);
-  cand.dphi = (tk.src->caloPhi()- calo.floatPhi() -params.dphiMin)/(params.dphiMax-params.dphiMin);
+  cand.meanz = (meanz-params.meanzMin)/(params.meanzMax-params.meanzMin);
+  cand.dphi = (deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin);
   cand.chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
   cand.tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
   cand.nstubs = (tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
+  // std::cout<<"hoe\t"<<calo.src->hOverE()<<"\t"<<(calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin)<<std::endl;
+  // std::cout<<"tkpt\t"<<tk.floatPt()<<"\t"<<(tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin)<<std::endl;
+  // std::cout<<"srrtot\t"<<srrtot<<"\t"<<(srrtot-params.srrtotMin)/(params.srrtotMax-params.srrtotMin)<<std::endl;
+  // std::cout<<"deta\t"<<tk.floatEta()-calo.floatEta()<<"\t"<<(tk.floatEta()-calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin)<<std::endl;
+  // std::cout<<"dpt\t"<<tk.floatPt()/calo.floatPt()<<"\t"<<((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin)<<std::endl;
+  // std::cout<<"meanz\t"<<meanz<<"\t"<<(meanz-params.meanzMin)/(params.meanzMax-params.meanzMin)<<std::endl;
+  // std::cout<<"dphi\t"<<deltaPhi(tk.floatPhi(), calo.floatPhi())<<"\t"<<(deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin)<<std::endl;
+  // std::cout<<"chi2\t"<<tk.src->chi2()<<"\t"<<(tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min)<<std::endl;
+  // std::cout<<"tkz0\t"<<tk.floatZ0()<<"\t"<<(tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min)<<std::endl;
+  // std::cout<<"nstubs\t"<<tk.src->nStubs()<<"\t"<<(tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin)<<std::endl;
 
   // Run BDT inference
   vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { cand.hoe, cand.tkpt, cand.srrtot, cand.deta, cand.dpt, cand.meanz, cand.dphi, cand.chi2, cand.tkz0, cand.nstubs } ;
   auto bdt_score = composite_bdt_->decision_function(inputs);
-  std::cout<<"BDT score of composite candidate = "<<bdt_score[0]<<std::endl;
-  return bdt_score[0];
+
+  float bdt_score_CON = bdt_score[0];
+  float bdt_score_XGB = 1/(1+exp(-bdt_score_CON)); // Map Conifer score to XGboost score. (same as scipy.expit)
+
+  // std::cout<<"BDT score of composite candidate = "<<bdt_score_XGB<<std::endl;
+  return bdt_score_XGB;
 }
 
 
