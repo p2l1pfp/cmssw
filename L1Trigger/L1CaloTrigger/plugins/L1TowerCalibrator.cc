@@ -38,7 +38,7 @@ Implementation:
 //
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDProducer.h"
+#include "FWCore/Framework/interface/one/EDProducer.h"
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
@@ -60,7 +60,7 @@ Implementation:
 #include "TFile.h"
 #include "TF1.h"
 
-class L1TowerCalibrator : public edm::EDProducer {
+class L1TowerCalibrator : public edm::one::EDProducer<> {
 public:
   explicit L1TowerCalibrator(const edm::ParameterSet&);
 
