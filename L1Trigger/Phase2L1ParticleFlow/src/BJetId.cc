@@ -7,8 +7,7 @@ static constexpr unsigned int n_particles_max = 10;
 
 BJetId::BJetId(const std::string &iInput, const BJetTFCache *cache, const std::string &iWeightFile, int iNParticles) {
   NNvectorVar_.clear();
-  edm::FileInPath fp(iWeightFile);
-  session_ = tensorflow::createSession(cache->graphDef);
+  session_ = tensorflow::createSession(cache->graphDef.get());
   fNParticles_ = iNParticles;
 
   fPt_ = std::make_unique<float[]>(fNParticles_);

@@ -71,14 +71,10 @@ std::unique_ptr<BJetTFCache> L1BJetProducer::initializeGlobalCache(const edm::Pa
   tensorflow::setLogging("3");
   std::string lNNFile = cfg.getParameter<std::string>("NNFileName");
   edm::FileInPath fp(lNNFile);
-  BJetTFCache* cache = new BJetTFCache();
-  cache->graphDef = tensorflow::loadGraphDef(fp.fullPath());
-  return std::unique_ptr<BJetTFCache>(cache);
+  auto cache = std::make_unique<BJetTFCache>(fp.fullPath());
+  return cache;
 }
 void L1BJetProducer::globalEndJob(const BJetTFCache* cache) {
-  if (cache->graphDef != nullptr) {
-    delete cache->graphDef;
-  }
 }
 void L1BJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
 

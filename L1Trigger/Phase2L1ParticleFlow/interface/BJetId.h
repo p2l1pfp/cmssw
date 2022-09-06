@@ -7,8 +7,8 @@
 #include "DataFormats/L1TParticleFlow/interface/PFJet.h"
 
 struct BJetTFCache {
-  BJetTFCache() : graphDef(nullptr) {}
-  std::atomic<tensorflow::GraphDef *> graphDef;
+  BJetTFCache(std::string graphPath) : graphDef(tensorflow::loadGraphDef(graphPath)) {}
+  std::unique_ptr<tensorflow::GraphDef> graphDef;
 };
 
 class BJetId {
