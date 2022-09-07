@@ -55,7 +55,7 @@ L1BJetProducer::L1BJetProducer(const edm::ParameterSet& cfg, const BJetTFCache* 
       fMaxJets_(cfg.getParameter<int>("maxJets")),
       fNParticles_(cfg.getParameter<int>("nParticles")),
       fVtxEmulation_(cfg.getParameter<bool>("vtxEmulation")) {
-  std::string lNNFile = cfg.getParameter<std::string>("NNFileName"); 
+  std::string lNNFile = cfg.getParameter<std::string>("NNFileName");
   fBJetId_ = std::make_unique<BJetId>(
       cfg.getParameter<std::string>("NNInput"), cfg.getParameter<std::string>("NNOutput"), cache, lNNFile, fNParticles_);
   if (fVtxEmulation_) {
@@ -72,10 +72,8 @@ std::unique_ptr<BJetTFCache> L1BJetProducer::initializeGlobalCache(const edm::Pa
   auto cache = std::make_unique<BJetTFCache>(fp.fullPath());
   return cache;
 }
-void L1BJetProducer::globalEndJob(const BJetTFCache* cache) {
-}
+void L1BJetProducer::globalEndJob(const BJetTFCache* cache) {}
 void L1BJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) {
-
   edm::Handle<edm::View<l1t::PFJet>> jets;
   iEvent.getByToken(jets_, jets);
 
@@ -84,7 +82,7 @@ void L1BJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   if (fVtxEmulation_) {
     edm::Handle<std::vector<l1t::VertexWord>> vtxEmuHandle;
     iEvent.getByToken(fVtxEmu_, vtxEmuHandle);
-    for (const auto &vtx : *vtxEmuHandle) {
+    for (const auto& vtx : *vtxEmuHandle) {
       if (ptsum == 0 || vtx.pt() > ptsum) {
         ptsum = vtx.pt();
         vz = vtx.z0();
@@ -93,7 +91,7 @@ void L1BJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   } else {
     edm::Handle<std::vector<l1t::TkPrimaryVertex>> vtxHandle;
     iEvent.getByToken(fTkVtx_, vtxHandle);
-    for (const l1t::TkPrimaryVertex & vtx : *vtxHandle) {
+    for (const l1t::TkPrimaryVertex& vtx : *vtxHandle) {
       if (ptsum == 0 || vtx.sum() > ptsum) {
         ptsum = vtx.sum();
         vz = vtx.zvertex();
@@ -104,7 +102,8 @@ void L1BJetProducer::produce(edm::Event& iEvent, const edm::EventSetup& iSetup) 
   std::vector<float> bScores;
 
   for (const auto& srcjet : *jets) {
-    if (((fUseRawPt_ ? srcjet.rawPt() : srcjet.pt()) < fMinPt_) || std::abs(srcjet.eta())>fMaxEta_ || bScores.size() >= fMaxJets_) {
+    if (((fUseRawPt_ ? srcjet.rawPt() : srcjet.pt()) < fMinPt_) || std::abs(srcjet.eta()) > fMaxEta_ ||
+        bScores.size() >= fMaxJets_) {
       bScores.push_back(-1.);
       continue;
     }
@@ -132,7 +131,7 @@ void L1BJetProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptio
   desc.add<int>("nParticles", 10);
   desc.add<double>("minPt", 20);
   desc.add<double>("maxEta", 2.4);
-  desc.add<edm::InputTag>("vtx", edm::InputTag("L1VertexFinderEmulator","l1verticesEmulation"));
+  desc.add<edm::InputTag>("vtx", edm::InputTag("L1VertexFinderEmulator", "l1verticesEmulation"));
   desc.add<bool>("vtxEmulation", true);
   descriptions.add("L1BJetProducer", desc);
 }

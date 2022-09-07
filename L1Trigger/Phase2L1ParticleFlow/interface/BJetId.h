@@ -13,7 +13,11 @@ struct BJetTFCache {
 
 class BJetId {
 public:
-  BJetId(const std::string &iInput, const std::string &iOutput, const BJetTFCache *cache, const std::string &iWeightFile, int iNParticles);
+  BJetId(const std::string &iInput,
+         const std::string &iOutput,
+         const BJetTFCache *cache,
+         const std::string &iWeightFile,
+         int iNParticles);
   ~BJetId();
 
   void setNNVectorVar();
