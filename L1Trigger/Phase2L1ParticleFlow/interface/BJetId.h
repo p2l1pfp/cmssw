@@ -7,13 +7,13 @@
 #include "DataFormats/L1TParticleFlow/interface/PFJet.h"
 
 struct BJetTFCache {
-  BJetTFCache(std::string graphPath) : graphDef(tensorflow::loadGraphDef(graphPath)) {}
+  BJetTFCache(const std::string &graphPath) : graphDef(tensorflow::loadGraphDef(graphPath)) {}
   std::unique_ptr<tensorflow::GraphDef> graphDef;
 };
 
 class BJetId {
 public:
-  BJetId(const std::string &iInput, const BJetTFCache *cache, const std::string &iWeightFile, int iNParticles);
+  BJetId(const std::string &iInput, const std::string &iOutput, const BJetTFCache *cache, const std::string &iWeightFile, int iNParticles);
   ~BJetId();
 
   void setNNVectorVar();
@@ -24,6 +24,7 @@ private:
   tensorflow::Session *session_;
   std::vector<float> NNvectorVar_;
   std::string fInput_;
+  std::string fOutput_;
   int fNParticles_;
   unique_ptr<float[]> fPt_;
   unique_ptr<float[]> fEta_;
