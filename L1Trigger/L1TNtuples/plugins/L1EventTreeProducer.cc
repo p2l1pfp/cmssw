@@ -22,7 +22,7 @@ Implementation:
 
 // framework
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -46,7 +46,7 @@ Implementation:
 // class declaration
 //
 
-class L1EventTreeProducer : public edm::EDAnalyzer {
+class L1EventTreeProducer : public edm::one::EDAnalyzer<> {
 public:
   explicit L1EventTreeProducer(const edm::ParameterSet&);
   ~L1EventTreeProducer() override;

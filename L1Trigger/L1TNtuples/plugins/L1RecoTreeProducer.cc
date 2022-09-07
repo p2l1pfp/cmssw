@@ -12,13 +12,12 @@
 
 // framework
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 
 // ROOT output stuff
 #include "FWCore/ServiceRegistry/interface/Service.h"
@@ -38,7 +37,7 @@
 // class declaration
 //
 
-class L1RecoTreeProducer : public edm::EDAnalyzer {
+class L1RecoTreeProducer : public edm::one::EDAnalyzer<> {
 public:
   explicit L1RecoTreeProducer(const edm::ParameterSet&);
   ~L1RecoTreeProducer() override;

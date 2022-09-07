@@ -16,6 +16,7 @@
 <use name="root"/>
 <use name="roofit"/>
 <use name="boost"/>
+<use name="hls"/>
 <library name="DQMOfflineEGammaPlugins" file="*.cc">
   <flags EDM_PLUGIN="1"/>
 </library>
