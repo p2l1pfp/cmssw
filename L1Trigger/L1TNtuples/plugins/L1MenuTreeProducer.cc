@@ -22,7 +22,7 @@ Implementation:
 
 // framework
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -42,16 +42,16 @@ Implementation:
 // class declaration
 //
 
-class L1MenuTreeProducer : public edm::EDAnalyzer {
+class L1MenuTreeProducer : public edm::one::EDAnalyzer<> {
 public:
   explicit L1MenuTreeProducer(const edm::ParameterSet&);
   ~L1MenuTreeProducer() override;
 
 private:
   void beginJob(void) override;
-  void beginRun(const edm::Run&, const edm::EventSetup&) override;
+  void beginRun(const edm::Run&, const edm::EventSetup&);
   void analyze(const edm::Event&, const edm::EventSetup&) override;
-  void endRun(const edm::Run&, const edm::EventSetup&) override {}
+  void endRun(const edm::Run&, const edm::EventSetup&) {}
   void endJob() override;
 
 public:

@@ -28,6 +28,11 @@
 <use name="TrackingTools/TransientTrack"/>
 <use name="TrackingTools/TrajectoryState"/>
 <use name="L1Trigger/GlobalTriggerAnalyzer"/>
+<use name="L1Trigger/Phase2L1GMT"/>
+<use name="L1Trigger/Phase2L1ParticleFlow"/>
+<use name="JetMETCorrections/Objects"/>
+<use name="JetMETCorrections/Algorithms"/>
+<use name="PhysicsTools/Utilities"/>
 <use name="HLTrigger/HLTcore"/>
 <use name="L1Trigger/L1TNtuples"/>
 <use name="CondFormats/AlignmentRecord"/>

@@ -15,13 +15,12 @@
 
 // framework
 #include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDAnalyzer.h"
+#include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/Framework/interface/ESHandle.h"
 
 // cond formats
 #include "JetMETCorrections/JetCorrector/interface/JetCorrector.h"
@@ -59,7 +58,7 @@
 // class declaration
 //
 
-class L1TauRecoTreeProducer : public edm::EDAnalyzer {
+class L1TauRecoTreeProducer : public edm::one::EDAnalyzer<> {
 public:
   explicit L1TauRecoTreeProducer(const edm::ParameterSet&);
   ~L1TauRecoTreeProducer() override;

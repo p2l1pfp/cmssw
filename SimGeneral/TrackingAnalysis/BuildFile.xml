@@ -1,4 +1,5 @@
 <use name="clhep"/>
+<use name="hls"/>
 <use name="CalibFormats/SiStripObjects"/>
 <use name="CalibTracker/Records"/>
 <use name="CondFormats/CSCObjects"/>
