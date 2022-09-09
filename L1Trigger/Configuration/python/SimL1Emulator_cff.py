@@ -222,6 +222,11 @@ _phase2_siml1emulator.add(L1NNTauProducerPuppi)
 #_phase2_siml1emulator.add(L1NNTauProducerPuppi2Vtx)
 _phase2_siml1emulator.add(tau2VtxTaskHW)
 
+# BJets
+# ########################################################################
+from L1Trigger.Phase2L1ParticleFlow.L1BJetProducer_cff import *
+_phase2_siml1emulator.add(l1BJetsTask)
+
 
 # --> add modules
 from Configuration.Eras.Modifier_phase2_trigger_cff import phase2_trigger

@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 import math
 
-from L1Trigger.Phase2L1ParticleFlow.pfTracksFromL1Tracks_cfi import pfTracksFromL1Tracks
+from L1Trigger.Phase2L1ParticleFlow.pfTracksFromL1Tracks_cfi import pfTracksFromL1Tracks, pfTracksFromL1TracksExtended
 from L1Trigger.Phase2L1ParticleFlow.pfClustersFromL1EGClusters_cfi import pfClustersFromL1EGClusters
 from L1Trigger.Phase2L1ParticleFlow.pfClustersFromCombinedCalo_cff import pfClustersFromCombinedCaloHCal, pfClustersFromCombinedCaloHF
 from L1Trigger.Phase2L1ParticleFlow.pfClustersFromHGC3DClusters_cfi import pfClustersFromHGC3DClusters
@@ -136,6 +136,8 @@ l1ctLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
             # regions=cms.vuint32(range(36, 54))), # eta splitting
     )
 )
+
+l1ctLayer1BarrelExtended = l1ctLayer1Barrel.clone(tracks = cms.InputTag('pfTracksFromL1TracksExtended'))
 
 _hgcalSectors = cms.VPSet(
     cms.PSet( 
@@ -286,6 +288,7 @@ l1ctLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
     writeRawHgcalCluster = cms.untracked.bool(True)
 )
 
+l1ctLayer1HGCalExtended = l1ctLayer1HGCal.clone(tracks = cms.InputTag('pfTracksFromL1TracksExtended'))
 
 l1ctLayer1HGCalNoTK = cms.EDProducer("L1TCorrelatorLayer1Producer",
     tracks = cms.InputTag(''),
@@ -469,6 +472,15 @@ l1ctLayer1 = cms.EDProducer("L1TPFCandMultiMerger",
     regionalLabelsToMerge = cms.vstring("Puppi"),
 )
 
+l1ctLayer1Extended = l1ctLayer1.clone(
+    pfProducers = cms.VInputTag(
+        cms.InputTag("l1ctLayer1BarrelExtended"),
+        cms.InputTag("l1ctLayer1HGCalExtended"),
+        cms.InputTag("l1ctLayer1HGCalNoTK"),
+        cms.InputTag("l1ctLayer1HF")
+    )
+)
+
 l1ctLayer1EG = cms.EDProducer(
     "L1TEGMultiMerger",
     tkElectrons=cms.VPSet(
@@ -516,14 +528,18 @@ l1ctLayer1TaskInputsTask = cms.Task(
     pfClustersFromCombinedCaloHCal,
     pfClustersFromCombinedCaloHF,
     pfClustersFromHGC3DClusters,
-    pfTracksFromL1Tracks
+    pfTracksFromL1Tracks,
+    pfTracksFromL1TracksExtended
 )
 
 l1ctLayer1Task = cms.Task(
      l1ctLayer1Barrel,
+     l1ctLayer1BarrelExtended,
      l1ctLayer1HGCal,
+     l1ctLayer1HGCalExtended,
      l1ctLayer1HGCalNoTK,
      l1ctLayer1HF,
      l1ctLayer1,
+     l1ctLayer1Extended,
      l1ctLayer1EG
 )
