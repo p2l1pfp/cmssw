@@ -197,7 +197,8 @@ namespace l1ct {
     void link_emCalo2tk_composite(const PFRegionEmu &r,
                                 const std::vector<EmCaloObjEmu> &emcalo,
                                 const std::vector<TkObjEmu> &track,
-                                std::vector<int> &emCalo2tk) const;
+                                std::vector<int> &emCalo2tk,
+                                std::vector<float> &emCaloTkBdtScore) const;
 
     struct CompositeCandidate {
       unsigned int cluster_idx;
@@ -222,6 +223,7 @@ namespace l1ct {
                  const std::vector<TkObjEmu> &track,
                  const std::vector<int> &emCalo2emCalo,
                  const std::vector<int> &emCalo2tk,
+                 const std::vector<float> &emCaloTkBdtScore,
                  std::vector<EGObjEmu> &egstas,
                  std::vector<EGIsoObjEmu> &egobjs,
                  std::vector<EGIsoEleObjEmu> &egeleobjs) const;
@@ -235,6 +237,7 @@ namespace l1ct {
                        const unsigned int hwQual,
                        const pt_t ptCorr,
                        const int tk_idx,
+                       const float bdtScore,
                        const std::vector<unsigned int> &components = {}) const;
 
     EGObjEmu &addEGStaToPF(std::vector<EGObjEmu> &egobjs,
@@ -252,7 +255,8 @@ namespace l1ct {
                                     const EmCaloObjEmu &calo,
                                     const TkObjEmu &track,
                                     const unsigned int hwQual,
-                                    const pt_t ptCorr) const;
+                                    const pt_t ptCorr,
+                                    const float bdtScore) const;
 
     // FIXME: reimplemented from PFAlgoEmulatorBase
     template <typename T>
