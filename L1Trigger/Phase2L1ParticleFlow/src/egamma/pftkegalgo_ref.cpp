@@ -203,32 +203,23 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           if (tk.floatPt() < cfg.trkQualityPtMin)
             continue;
 
-<<<<<<< HEAD:L1Trigger/Phase2L1ParticleFlow/src/egamma/pftkegalgo_ref.cpp
-      float clu_eta=calo.floatEta();  
-      float clu_phi=calo.floatPhi();
-      float trk_eta=tk.floatEta();
-      float trk_phi=tk.floatPhi();
-      float dR = deltaR(clu_eta,clu_phi,trk_eta,trk_phi);
-=======
       float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
       float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
       float dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
->>>>>>> Mapping of scores and WPs for consistent comparisons:L1Trigger/Phase2L1ParticleFlow/src/newfirmware/egamma/pftkegalgo_ref.cpp
 
       if (dR<0.2){
           // Only store indices, dR and dpT for now. The other quantities are computed only for the best nCandPerCluster.
           CompositeCandidate cand;
           cand.cluster_idx = ic;
           cand.track_idx = itk;
-          cand.dR = dR;
-          cand.dpt_double = tk.floatPt()/calo.floatPt();
+          cand.dpt = fabs(tk.floatPt() - calo.floatPt());
           candidates.push_back(cand);
       }
     }
     // FIXME: find best sort criteria, for now we use dpt
     std::sort(candidates.begin(), candidates.end(), 
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
-                { return abs(a.dpt_double-1) < abs(b.dpt_double-1); });
+                { return a.dpt < b.dpt; });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
     std::cout << "# composit candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
@@ -260,22 +251,23 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   const auto &tk = track[cand.track_idx];
 
   // FIXME: using these two floats crashes code...
-  float srrtot = dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot();
-  float meanz = abs(dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter());
+  float srrtot_f = dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot();
+  float meanz_f = abs(dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter());
 
   // Call and normalize input feature values, then cast to ap_fixed.
   // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
   // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
-  cand.hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
-  cand.tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
-  cand.srrtot = (srrtot-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
-  cand.deta = (tk.floatEta() - calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
-  cand.dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
-  cand.meanz = (meanz-params.meanzMin)/(params.meanzMax-params.meanzMin);
-  cand.dphi = (deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin);
-  cand.chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
-  cand.tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
-  cand.nstubs = (tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot = (srrtot_f-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> deta = (tk.floatEta() - calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
+  // FIXME: do we really need dpt to be a ratio?
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz = (meanz_f-params.meanzMin)/(params.meanzMax-params.meanzMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> dphi = (deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs = (tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
   // std::cout<<"hoe\t"<<calo.src->hOverE()<<"\t"<<(calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin)<<std::endl;
   // std::cout<<"tkpt\t"<<tk.floatPt()<<"\t"<<(tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin)<<std::endl;
   // std::cout<<"srrtot\t"<<srrtot<<"\t"<<(srrtot-params.srrtotMin)/(params.srrtotMax-params.srrtotMin)<<std::endl;
@@ -288,7 +280,7 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   // std::cout<<"nstubs\t"<<tk.src->nStubs()<<"\t"<<(tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin)<<std::endl;
 
   // Run BDT inference
-  vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { cand.hoe, cand.tkpt, cand.srrtot, cand.deta, cand.dpt, cand.meanz, cand.dphi, cand.chi2, cand.tkz0, cand.nstubs } ;
+  vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs } ;
   auto bdt_score = composite_bdt_->decision_function(inputs);
 
   float bdt_score_CON = bdt_score[0];

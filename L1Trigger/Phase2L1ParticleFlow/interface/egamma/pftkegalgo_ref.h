@@ -202,18 +202,7 @@ namespace l1ct {
     struct CompositeCandidate {
       unsigned int cluster_idx;
       unsigned int track_idx;
-      double dpt_double; // For sorting
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> deta; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dpt; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dphi; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> chi2; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkz0; 
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs;
-      ap_fixed<22,3,AP_RND_CONV,AP_SAT> dR;
+      double dpt; // For sorting
     };
 
     float compute_composite_score(CompositeCandidate &cand,
