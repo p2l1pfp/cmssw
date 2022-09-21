@@ -8,6 +8,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/src/corrector.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/ParametricResolution.h"
 #include "DataFormats/L1Trigger/interface/EGamma.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/CaloClusterer.h"
 
 namespace l1tpf {
   class PFClusterProducerFromL1EGClusters : public edm::stream::EDProducer<> {
@@ -56,6 +57,8 @@ void l1tpf::PFClusterProducerFromL1EGClusters::produce(edm::Event &iEvent, const
   edm::Handle<BXVector<l1t::EGamma>> clusters;
   iEvent.getByToken(src_, clusters);
 
+  l1tpf_calo::GridSelector selector = l1tpf_calo::GridSelector(etaBounds_, phiBounds_, maxClustersEtaPhi_);
+
   unsigned int index = 0;
   for (auto it = clusters->begin(), ed = clusters->end(); it != ed; ++it, ++index) {
     if (it->pt() <= etCut_)
@@ -69,59 +72,19 @@ void l1tpf::PFClusterProducerFromL1EGClusters::produce(edm::Event &iEvent, const
     cluster.setHwQual(it->hwQual());
     out->push_back(cluster);
     out->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, index));
+    selector.fill(cluster.pt(),cluster.eta(),cluster.phi(),index);
   }
-  index = 0;
-  std::vector<std::vector<std::pair<float,unsigned int>>> regionPtIndices(maxClustersEtaPhi_.size());//pt and index pairs in each region
-  if (maxClustersEtaPhi_.size() > 0) {
-    for (auto it = clusters->begin(), ed = clusters->end(); it != ed; ++it, ++index) {
-      if (it->pt() <= etCut_)
-        continue;
-      unsigned int etai = etaBounds_.size();
-      for (unsigned int ie = 0; ie < etaBounds_.size()-1; ie++) {
-        if (it->eta() >= etaBounds_[ie] && it->eta() < etaBounds_[ie+1]) {
-          etai = ie;
-          break;
-        }
-      }
-      unsigned int phii = phiBounds_.size();
-      for (unsigned int ip = 0; ip < phiBounds_.size()-1; ip++) {
-        if (it->phi() >= phiBounds_[ip] && it->phi() < phiBounds_[ip+1]) {
-          phii = ip;
-          break;
-        }
-      }
-      if (etai < etaBounds_.size() && phii < phiBounds_.size()) {
-        regionPtIndices[etai*(phiBounds_.size()-1)+phii].emplace_back(it->pt(),index);
-      }
-    }
-    for (unsigned int ir = 0; ir < maxClustersEtaPhi_.size(); ir++) {
-      std::sort(regionPtIndices[ir].begin(),regionPtIndices[ir].end(),std::greater<std::pair<float,unsigned int>>());
-      for (unsigned int i = 0; i < std::min(size_t(maxClustersEtaPhi_[ir]),regionPtIndices[ir].size()); i++) {
-        unsigned int theIndex = regionPtIndices[ir][i].second;
-        l1t::PFCluster cluster(
-            (clusters->begin()+theIndex)->pt(), (clusters->begin()+theIndex)->eta(), (clusters->begin()+theIndex)->phi(), /*hOverE=*/0., /*isEM=*/true);  // it->hovere() seems to return random values
-        if (corrector_.valid())
-          corrector_.correctPt(cluster);
-        cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
-        cluster.setHwQual((clusters->begin()+theIndex)->hwQual());
-        out_sel->push_back(cluster);
-        out_sel->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, theIndex));
-      }
-    }
-  } else {
-    for (auto it = clusters->begin(), ed = clusters->end(); it != ed; ++it, ++index) {
-      if (it->pt() <= etCut_)
-        continue;
-  
-      l1t::PFCluster cluster(
-          it->pt(), it->eta(), it->phi(), /*hOverE=*/0., /*isEM=*/true);  // it->hovere() seems to return random values
-      if (corrector_.valid())
+  std::vector<unsigned int> indices = selector.returnSorted();
+  for (unsigned int ii = 0; ii < indices.size(); ii++) {
+    unsigned int theIndex = indices[ii];
+    l1t::PFCluster cluster(
+        (clusters->begin()+theIndex)->pt(), (clusters->begin()+theIndex)->eta(), (clusters->begin()+theIndex)->phi(), /*hOverE=*/0., /*isEM=*/true);  // it->hovere() seems to return random values
+    if (corrector_.valid())
         corrector_.correctPt(cluster);
-      cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
-      cluster.setHwQual(it->hwQual());
-      out_sel->push_back(cluster);
-      out_sel->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, index));
-    }
+    cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
+    cluster.setHwQual((clusters->begin()+theIndex)->hwQual());
+    out_sel->push_back(cluster);
+    out_sel->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, theIndex));
   }
 
   iEvent.put(std::move(out), "all");

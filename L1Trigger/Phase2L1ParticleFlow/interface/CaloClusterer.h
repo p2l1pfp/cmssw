@@ -327,6 +327,19 @@ namespace l1tpf_calo {
     SingleCaloClusterer combClusterer_;
   };
 
+  class GridSelector {
+  public:
+    GridSelector(std::vector<double> etaBounds, std::vector<double> phiBounds, std::vector<unsigned int> maxClusters);
+    ~GridSelector() {}
+    void fill(float pt, float eta, float phi, unsigned int index);
+    std::vector<unsigned int> returnSorted();
+  private:
+    const std::vector<double> etaBounds_;
+    const std::vector<double> phiBounds_;
+    const std::vector<unsigned int> maxClustersEtaPhi_;
+    std::vector<std::vector<std::pair<float,unsigned int>>> regionPtIndices_; //pt and index pairs in each region
+  };
+
   // makes a calo linker (pointer will be owned by the callee)
   std::unique_ptr<SimpleCaloLinkerBase> makeCaloLinker(const edm::ParameterSet &pset,
                                                        const SingleCaloClusterer &ecal,
