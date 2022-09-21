@@ -40,13 +40,15 @@ l1tpf::PFClusterProducerFromL1EGClusters::PFClusterProducerFromL1EGClusters(cons
       resol_(iConfig.getParameter<edm::ParameterSet>("resol")) {
   produces<l1t::PFClusterCollection>("all");
   produces<l1t::PFClusterCollection>("selected");
-  if ((etaBounds_.size() - 1)*(phiBounds_.size() - 1) != maxClustersEtaPhi_.size()) {
-    throw cms::Exception("Configuration") << "Size mismatch between eta/phi bounds and max clusters: " << (etaBounds_.size() - 1) << " x "<<(phiBounds_.size() - 1)<<" != "<< maxClustersEtaPhi_.size() << "\n";
+  if ((etaBounds_.size() - 1) * (phiBounds_.size() - 1) != maxClustersEtaPhi_.size()) {
+    throw cms::Exception("Configuration")
+        << "Size mismatch between eta/phi bounds and max clusters: " << (etaBounds_.size() - 1) << " x "
+        << (phiBounds_.size() - 1) << " != " << maxClustersEtaPhi_.size() << "\n";
   }
-  if (!std::is_sorted(etaBounds_.begin(),etaBounds_.end())) {
+  if (!std::is_sorted(etaBounds_.begin(), etaBounds_.end())) {
     throw cms::Exception("Configuration") << "etaBounds is not sorted\n";
   }
-  if (!std::is_sorted(phiBounds_.begin(),phiBounds_.end())) {
+  if (!std::is_sorted(phiBounds_.begin(), phiBounds_.end())) {
     throw cms::Exception("Configuration") << "phiBounds is not sorted\n";
   }
 }
@@ -72,23 +74,26 @@ void l1tpf::PFClusterProducerFromL1EGClusters::produce(edm::Event &iEvent, const
     cluster.setHwQual(it->hwQual());
     out->push_back(cluster);
     out->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, index));
-    selector.fill(cluster.pt(),cluster.eta(),cluster.phi(),index);
+    selector.fill(cluster.pt(), cluster.eta(), cluster.phi(), index);
   }
   std::vector<unsigned int> indices = selector.returnSorted();
   for (unsigned int ii = 0; ii < indices.size(); ii++) {
     unsigned int theIndex = indices[ii];
-    l1t::PFCluster cluster(
-        (clusters->begin()+theIndex)->pt(), (clusters->begin()+theIndex)->eta(), (clusters->begin()+theIndex)->phi(), /*hOverE=*/0., /*isEM=*/true);  // it->hovere() seems to return random values
+    l1t::PFCluster cluster((clusters->begin() + theIndex)->pt(),
+                           (clusters->begin() + theIndex)->eta(),
+                           (clusters->begin() + theIndex)->phi(),
+                           /*hOverE=*/0.,
+                           /*isEM=*/true);  // it->hovere() seems to return random values
     if (corrector_.valid())
-        corrector_.correctPt(cluster);
+      corrector_.correctPt(cluster);
     cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
-    cluster.setHwQual((clusters->begin()+theIndex)->hwQual());
+    cluster.setHwQual((clusters->begin() + theIndex)->hwQual());
     out_sel->push_back(cluster);
     out_sel->back().addConstituent(edm::Ptr<l1t::L1Candidate>(clusters, theIndex));
   }
 
   iEvent.put(std::move(out), "all");
-  iEvent.put(std::move(out_sel),"selected");
+  iEvent.put(std::move(out_sel), "selected");
 }
 using l1tpf::PFClusterProducerFromL1EGClusters;
 DEFINE_FWK_MODULE(PFClusterProducerFromL1EGClusters);
