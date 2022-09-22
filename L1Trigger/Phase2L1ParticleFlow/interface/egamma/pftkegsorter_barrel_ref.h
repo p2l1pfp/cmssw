@@ -4,8 +4,6 @@
 #include <cstdio>
 #include <vector>
 
-#include "../../../dataformats/layer1_multiplicities.h"
-
 #include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/common/bitonic_hybrid_sort_ref.h"
 
@@ -29,7 +27,7 @@ namespace l1ct {
 
     void setDebug(bool debug = true) { debug_ = debug; };
 
-    void toFirmware_pho(const OutputRegion& outregions, EGIsoObj (&photons_in)[NEM_EGOUT]) const {
+    void toFirmware_pho(const OutputRegion& outregions, EGIsoObj (&photons_in)[nObjSorted_]) const {
       for (unsigned int i = 0; i < nObjToSort_; i++) {
         EGIsoObj pho;
         if (i < outregions.egphoton.size()) {
@@ -41,7 +39,7 @@ namespace l1ct {
       }
     }
 
-    void toFirmware_ele(const OutputRegion& outregions, EGIsoEleObj (&eles_in)[NEM_EGOUT]) const {
+    void toFirmware_ele(const OutputRegion& outregions, EGIsoEleObj (&eles_in)[nObjSorted_]) const {
       for (unsigned int i = 0; i < nObjToSort_; i++) {
         EGIsoEleObj ele;
         if (i < outregions.egelectron.size()) {
