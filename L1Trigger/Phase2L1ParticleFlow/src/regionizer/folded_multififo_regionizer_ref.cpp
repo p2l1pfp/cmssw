@@ -120,13 +120,14 @@ bool l1ct::FoldedMultififoRegionizerEmulator::step(bool newEvent,
                                                    bool mux) {
   iclock_ = (newEvent ? 0 : iclock_ + 1);
   bool newSubEvent = iclock_ % clocksPerFold_ == 0;
+  bool ret = false;
   if (!mux) {
     Fold& f = fold_[whichFold(iclock_)];
-    f.regionizer->step(
+    ret = f.regionizer->step(
         newSubEvent, links_tk, links_hadCalo, links_emCalo, links_mu, out_tk, out_hadCalo, out_emCalo, out_mu, false);
   } else {
-    int inputFold = whichFold(iclock_);
-    int outputFold = (inputFold + 1) % fold_.size();  // to be seen if this is general or not
+    unsigned int inputFold = whichFold(iclock_);
+    unsigned int outputFold = (inputFold + 1) % fold_.size();  // to be seen if this is general or not
     std::vector<l1ct::TkObjEmu> nolinks_tk(links_tk.size());
     std::vector<l1ct::HadCaloObjEmu> nolinks_hadCalo(links_hadCalo.size());
     std::vector<l1ct::EmCaloObjEmu> nolinks_emCalo(links_emCalo.size());
@@ -136,18 +137,21 @@ bool l1ct::FoldedMultififoRegionizerEmulator::step(bool newEvent,
     std::vector<l1ct::EmCaloObjEmu> noout_emCalo;
     std::vector<l1ct::MuObjEmu> noout_mu;
     for (auto& f : fold_) {
-      f.regionizer->step(newSubEvent,
-                         f.index == inputFold ? links_tk : nolinks_tk,
-                         f.index == inputFold ? links_hadCalo : nolinks_hadCalo,
-                         f.index == inputFold ? links_emCalo : nolinks_emCalo,
-                         f.index == inputFold ? links_mu : nolinks_mu,
-                         f.index == outputFold ? out_tk : noout_tk,
-                         f.index == outputFold ? out_hadCalo : noout_hadCalo,
-                         f.index == outputFold ? out_emCalo : noout_emCalo,
-                         f.index == outputFold ? out_mu : noout_mu,
-                         true);
+      bool fret = f.regionizer->step(newSubEvent,
+                                     f.index == inputFold ? links_tk : nolinks_tk,
+                                     f.index == inputFold ? links_hadCalo : nolinks_hadCalo,
+                                     f.index == inputFold ? links_emCalo : nolinks_emCalo,
+                                     f.index == inputFold ? links_mu : nolinks_mu,
+                                     f.index == outputFold ? out_tk : noout_tk,
+                                     f.index == outputFold ? out_hadCalo : noout_hadCalo,
+                                     f.index == outputFold ? out_emCalo : noout_emCalo,
+                                     f.index == outputFold ? out_mu : noout_mu,
+                                     true);
+      if (f.index == outputFold)
+        ret = fret;
     }
   }
+  return ret;
 }
 
 void l1ct::FoldedMultififoRegionizerEmulator::fillEvent(const l1ct::RegionizerDecodedInputs& in) {
@@ -159,17 +163,21 @@ void l1ct::FoldedMultififoRegionizerEmulator::fillEvent(const l1ct::RegionizerDe
   }
 }
 
-int l1ct::FoldedMultififoRegionizerEmulator::whichFold(const l1ct::PFRegion& reg) {
+unsigned int l1ct::FoldedMultififoRegionizerEmulator::whichFold(const l1ct::PFRegion& reg) {
   switch (foldMode_) {
     case FoldMode::EndcapEta2:
-      return int(reg.floatEtaCenter() >= 0);
+      return (reg.floatEtaCenter() >= 0);
   }
+  assert(false);
+  return 0;
 }
 bool l1ct::FoldedMultififoRegionizerEmulator::inFold(const l1ct::PFRegion& reg, const Fold& fold) {
   switch (foldMode_) {
     case FoldMode::EndcapEta2:
-      return int(reg.floatEtaCenter() >= 0) == fold.index;
+      return int(reg.floatEtaCenter() >= 0) == int(fold.index);
   }
+  assert(false);
+  return false;
 }
 
 void l1ct::FoldedMultififoRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) {

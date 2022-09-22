@@ -105,8 +105,8 @@ namespace l1ct {
     unsigned int clocksPerFold_;
     unsigned int iclock_;
 
-    int whichFold(const l1ct::PFRegion& reg);
-    int whichFold(unsigned int iclock) { return (iclock % nclocks_) / clocksPerFold_; }
+    unsigned int whichFold(const l1ct::PFRegion& reg);
+    unsigned int whichFold(unsigned int iclock) { return (iclock % nclocks_) / clocksPerFold_; }
     bool inFold(const l1ct::PFRegion& reg, const Fold& fold);
     void splitSectors(const RegionizerDecodedInputs& in);
     void splitRegions(const std::vector<PFInputRegion>& out);
