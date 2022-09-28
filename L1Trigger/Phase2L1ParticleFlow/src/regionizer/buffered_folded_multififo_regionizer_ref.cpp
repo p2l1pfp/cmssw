@@ -33,13 +33,13 @@ void l1ct::BufferedFoldedMultififoRegionizerEmulator::findEtaBounds_(const l1ct:
                                                                      const std::vector<PFInputRegion>& reg,
                                                                      l1ct::glbeta_t& etaMin,
                                                                      l1ct::glbeta_t& etaMax) {
-  etaMin = reg[0].region.hwEtaCenter - reg[0].region.hwEtaHalfWidth - reg[0].region.hwEtaHalfWidth - sec.hwEtaCenter;
-  etaMax = reg[0].region.hwEtaCenter + reg[0].region.hwEtaHalfWidth + reg[0].region.hwEtaHalfWidth - sec.hwEtaCenter;
+  etaMin = reg[0].region.hwEtaCenter - reg[0].region.hwEtaHalfWidth - reg[0].region.hwEtaExtra - sec.hwEtaCenter;
+  etaMax = reg[0].region.hwEtaCenter + reg[0].region.hwEtaHalfWidth + reg[0].region.hwEtaExtra - sec.hwEtaCenter;
   for (const auto& r : reg) {
     etaMin = std::min<l1ct::glbeta_t>(
-        etaMin, r.region.hwEtaCenter - r.region.hwEtaHalfWidth - r.region.hwEtaHalfWidth - sec.hwEtaCenter);
+        etaMin, r.region.hwEtaCenter - r.region.hwEtaHalfWidth - r.region.hwEtaExtra - sec.hwEtaCenter);
     etaMax = std::max<l1ct::glbeta_t>(
-        etaMax, r.region.hwEtaCenter + r.region.hwEtaHalfWidth + r.region.hwEtaHalfWidth - sec.hwEtaCenter);
+        etaMax, r.region.hwEtaCenter + r.region.hwEtaHalfWidth + r.region.hwEtaExtra - sec.hwEtaCenter);
   }
 }
 void l1ct::BufferedFoldedMultififoRegionizerEmulator::initSectorsAndRegions(const RegionizerDecodedInputs& in,
@@ -51,22 +51,14 @@ void l1ct::BufferedFoldedMultififoRegionizerEmulator::initSectorsAndRegions(cons
     findEtaBounds_(fold_[ie].sectors.track[0].region, fold_[ie].regions, etaMin, etaMax);
     for (unsigned int isec = 0; isec < NTK_SECTORS; ++isec) {
       tkBuffers_[2 * isec + ie] = l1ct::multififo_regionizer::EtaBuffer<l1ct::TkObjEmu>(nclocks_ / 2, etaMin, etaMax);
-      if (isec == 0)
-        std::cout << "Tk Buffers for endcap " << ie << " with eta range [" << etaMin.to_int() << ", " << etaMax.to_int()
-                  << "]" << std::endl;
     }
     findEtaBounds_(fold_[ie].sectors.hadcalo[0].region, fold_[ie].regions, etaMin, etaMax);
     for (unsigned int isec = 0; isec < NCALO_SECTORS; ++isec) {
       caloBuffers_[2 * isec + ie] =
           l1ct::multififo_regionizer::EtaBuffer<l1ct::HadCaloObjEmu>(nclocks_ / 2, etaMin, etaMax);
-      if (isec == 0)
-        std::cout << "Calo Buffers for endcap " << ie << " with eta range [" << etaMin.to_int() << ", "
-                  << etaMax.to_int() << "]" << std::endl;
     }
     findEtaBounds_(fold_[ie].sectors.muon.region, fold_[ie].regions, etaMin, etaMax);
     muBuffers_[ie] = l1ct::multififo_regionizer::EtaBuffer<l1ct::MuObjEmu>(nclocks_ / 2, etaMin, etaMax);
-    std::cout << "Mu Buffers for endcap " << ie << " with eta range [" << etaMin.to_int() << ", " << etaMax.to_int()
-              << "]" << std::endl;
   }
 }
 // clock-cycle emulation

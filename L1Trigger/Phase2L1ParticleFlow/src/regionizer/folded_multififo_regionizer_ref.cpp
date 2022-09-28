@@ -119,11 +119,7 @@ void l1ct::FoldedMultififoRegionizerEmulator::initSectorsAndRegions(const Region
   init_ = true;
   splitSectors(in);
   splitRegions(out);
-  std::cout << "Initializing folded  with " << in.track.size() << " tk sectors, " << out.size() << " regions"
-            << std::endl;
   for (auto& f : fold_) {
-    std::cout << "Initializing fold " << f.index << " with " << f.sectors.track.size() << " tk sectors, "
-              << f.regions.size() << " regions" << std::endl;
     f.regionizer->initSectorsAndRegions(f.sectors, f.regions);
   }
   nregions_ = out.size();
