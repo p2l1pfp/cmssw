@@ -42,7 +42,7 @@ from L1Trigger.Phase2L1ParticleFlow.L1SeedConePFJetProducer_cfi import L1SeedCon
 from L1Trigger.Phase2L1ParticleFlow.DeregionizerProducer_cfi import DeregionizerProducer
 from L1Trigger.Phase2L1ParticleFlow.l1ctJetFileWriter_cfi import l1ctSeededConeJetFileWriter
 process.l1ctLayer2Deregionizer = DeregionizerProducer.clone()
-process.l1ctLayer2SeedConeJetsCorrected = L1SeedConePFJetEmulatorProducer.clone(L1PFObject = cms.InputTag('l1ctLayer2Deregionizer', 'Puppi'),
+process.l1ctLayer2SeedConeJetsCorrected = L1SeedConePFJetEmulatorProducer.clone(L1PFObjects = cms.InputTag('l1ctLayer2Deregionizer', 'Puppi'),
                                                                                 doCorrections = cms.bool(True),
                                                                                 correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root"),
                                                                                 correctorDir = cms.string('L1PuppiSC4EmuJets'))
