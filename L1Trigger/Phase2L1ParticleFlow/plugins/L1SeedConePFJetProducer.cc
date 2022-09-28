@@ -189,21 +189,20 @@ std::vector<l1t::PFJet> L1SeedConePFJetProducer::convertHWToEDM(
     std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap) const {
   std::vector<l1t::PFJet> edmJets;
   std::for_each(hwJets.begin(), hwJets.end(), [&](L1SCJetEmu::Jet jet) {
+    if(_doCorrections){
+      float correctedPt = _corrector.correctedPt(jet.floatPt(), jet.floatEta());
+      jet.hwPt = correctedPt;
+    }
+    l1gt::Jet gtJet = jet.toGT();
     l1t::PFJet edmJet(
-        jet.floatPt(), jet.floatEta(), jet.floatPhi(), /*mass=*/0., jet.intPt(), jet.intEta(), jet.intPhi());
+        l1gt::Scales::floatPt(gtJet.v3.pt), l1gt::Scales::floatEta(gtJet.v3.eta), l1gt::Scales::floatPhi(gtJet.v3.phi), /*mass=*/0.,
+                              gtJet.v3.pt.V, gtJet.v3.eta.V, gtJet.v3.phi.V);
+    edmJet.setEncodedJet(jet.toGT().pack());
     // get back the references to the constituents
     std::vector<edm::Ptr<l1t::PFCandidate>> constituents;
     std::for_each(jet.constituents.begin(), jet.constituents.end(), [&](auto constituent) {
       edmJet.addConstituent(constituentMap[constituent.srcCand]);
     });
-    // Do the correction before encoding and sorting, as in the firmware
-    if(_doCorrections){
-      float correctedPt = _corrector.correctedPt(edmJet.pt(), edmJet.eta());
-      edmJet.calibratePt(correctedPt);
-      jet.hwPt = correctedPt;
-    }
-    l1gt::Jet gtJet = jet.toGT();
-    edmJet.setEncodedJet(jet.toGT().pack());
     edmJets.push_back(edmJet);
   });
   return edmJets;
