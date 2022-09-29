@@ -599,8 +599,8 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkJetDisplaced(const edm::Handle<l1t
 }
 
 void L1Analysis::L1AnalysisPhaseIIStep1::SetTkMET(const edm::Handle<std::vector<l1t::EtSum> > trackerMET) {
-  l1extra_.trackerMET = trackerMET->begin()->hwPt() * l1tmetemu::kStepMET;
-  l1extra_.trackerMETPhi = trackerMET->begin()->hwPhi() * l1tmetemu::kStepMETPhi - M_PI;
+  l1extra_.trackerMET = trackerMET->begin()->hwPt() * l1tmetemu::kStepMETwordEt;
+  l1extra_.trackerMETPhi = trackerMET->begin()->hwPhi() * l1tmetemu::kStepMETwordPhi;
 }
 
 void L1Analysis::L1AnalysisPhaseIIStep1::SetTkMHT(const edm::Handle<std::vector<l1t::EtSum> > trackerMHT) {

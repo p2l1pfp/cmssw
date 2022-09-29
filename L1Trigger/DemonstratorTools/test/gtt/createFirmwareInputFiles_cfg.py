@@ -80,9 +80,14 @@ process.L1TrackSelectionProducer.l1VerticesEmulationInputTag = cms.InputTag("Ver
 process.L1TrackJetsEmulation.VertexInputTag = cms.InputTag("VertexProducer", "l1verticesEmulation")
 process.L1TrackerEmuEtMiss.L1VertexInputTag = cms.InputTag("VertexProducer", "l1verticesEmulation")
 process.L1TrackerEmuEtMiss.debug = options.debug
+process.L1TrackerEmuHTMiss.debug = (options.debug > 0)
 
 if options.debug:
     process.MessageLogger.cerr.INFO.limit = cms.untracked.int32(1000000000)
+    process.MessageLogger.suppressInfo = cms.untracked.vstring('CondDBESSource', 'PoolDBESSource')
+    process.MessageLogger.cerr.CondDBESSource = cms.untracked.PSet(
+        limit = cms.untracked.int32(0)
+    )
 
 process.GTTFileWriter.format = cms.untracked.string(options.format)
 # process.GTTFileWriter.outputFilename = cms.untracked.string("myOutputFile.txt")
