@@ -63,19 +63,19 @@ namespace l1ct {
         std::vector<T> objs;
         extractEGObjEmu(pfregions[i].region, outregions[i], objs);
         if (debug_)
-          std::cout << "objs size " << objs.size() << "\n";
+          dbgCout() << "objs size " << objs.size() << "\n";
         resize_input(objs);
         objs_in.push_back(objs);
         if (debug_)
-          std::cout << "objs (re)size and total objs size " << objs.size() << " " << objs_in.size() << "\n";
+          dbgCout() << "objs (re)size and total objs size " << objs.size() << " " << objs_in.size() << "\n";
       }
 
       merge(objs_in, eg_sorted_inBoard);
 
       if (debug_) {
-        std::cout << "objs.size() size " << eg_sorted_inBoard.size() << "\n";
+        dbgCout() << "objs.size() size " << eg_sorted_inBoard.size() << "\n";
         for (const auto& out : eg_sorted_inBoard)
-          std::cout << "kinematics of sorted objects " << out.hwPt << " " << out.hwEta << " " << out.hwPhi << "\n";
+          dbgCout() << "kinematics of sorted objects " << out.hwPt << " " << out.hwEta << " " << out.hwPhi << "\n";
       }
     }
 
@@ -122,15 +122,15 @@ namespace l1ct {
       out = in_region1;
       if (debug_)
         for (const auto& tmp : out)
-          std::cout << "out " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
+          dbgCout() << "out " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
       std::reverse(out.begin(), out.end());
       if (debug_)
         for (const auto& tmp : out)
-          std::cout << "out reverse " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
+          dbgCout() << "out reverse " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
       std::copy(in_region2.begin(), in_region2.end(), std::back_inserter(out));
       if (debug_)
         for (const auto& tmp : out)
-          std::cout << "out inserted " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
+          dbgCout() << "out inserted " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
 
       hybridBitonicMergeRef(&out[0], out.size(), 0, false);
 
@@ -138,7 +138,7 @@ namespace l1ct {
         out.resize(nOut);
         if (debug_)
           for (const auto& tmp : out)
-            std::cout << "final " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
+            dbgCout() << "final " << tmp.hwPt << " " << tmp.hwEta << " " << tmp.hwPhi << "\n";
       }
     }
 
