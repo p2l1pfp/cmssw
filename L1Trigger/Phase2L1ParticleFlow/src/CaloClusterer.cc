@@ -756,10 +756,10 @@ l1tpf_calo::GridSelector::GridSelector(std::vector<double> etaBounds,
     : etaBounds_(etaBounds),
       phiBounds_(phiBounds),
       maxClustersEtaPhi_(maxClusters),
-      regionPtIndices_(maxClusters.size() > 0 ? maxClusters.size() : 1) {}
+      regionPtIndices_(!maxClusters.empty() ? maxClusters.size() : 1) {}
 
 void l1tpf_calo::GridSelector::fill(float pt, float eta, float phi, unsigned int index) {
-  if (maxClustersEtaPhi_.size() > 0) {
+  if (!maxClustersEtaPhi_.empty()) {
     unsigned int etai = etaBounds_.size();
     for (unsigned int ie = 0; ie < etaBounds_.size() - 1; ie++) {
       if (eta >= etaBounds_[ie] && eta < etaBounds_[ie + 1]) {
@@ -784,10 +784,10 @@ void l1tpf_calo::GridSelector::fill(float pt, float eta, float phi, unsigned int
 
 std::vector<unsigned int> l1tpf_calo::GridSelector::returnSorted() {
   std::vector<unsigned int> indices;
-  for (unsigned int ir = 0; ir < (maxClustersEtaPhi_.size() > 0 ? maxClustersEtaPhi_.size() : 1); ir++) {
-    std::sort(regionPtIndices_[ir].begin(), regionPtIndices_[ir].end(), std::greater<std::pair<float, unsigned int>>());
-    for (unsigned int ic = 0; ic < regionPtIndices_[ir].size(); ic++) {
-      indices.push_back(regionPtIndices_[ir][ic].second);
+  for (auto &regionPtIndex : regionPtIndices_) {
+    std::sort(regionPtIndex.begin(), regionPtIndex.end(), std::greater<std::pair<float, unsigned int>>());
+    for (const auto &p : regionPtIndex) {
+      indices.push_back(p.second);
     }
   }
   return indices;
