@@ -2,6 +2,7 @@
 #define buffered_folded_multififo_regionizer_ref_h
 
 #include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/folded_multififo_regionizer_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/dbgPrintf.h"
 #include <memory>
 
 namespace edm {
@@ -134,8 +135,9 @@ void l1ct::multififo_regionizer::EtaBuffer<T>::maybe_push(const T& t) {
     if (items_[iwrite_].size() < size_) {
       items_[iwrite_].push_back(t);
     } else {
-      std::cout << "WARNING: sector buffer is full for " << typeid(T).name() << ", pt = " << t.intPt()
-                << ", eta = " << t.intEta() << ", phi = " << t.intPhi() << std::endl;
+      // uncommenting the message below may be useful for debugging
+      //dbgCout() << "WARNING: sector buffer is full for " << typeid(T).name() << ", pt = " << t.intPt()
+      //          << ", eta = " << t.intEta() << ", phi = " << t.intPhi() << "\n";
     }
   }
 }
