@@ -10,6 +10,10 @@
 
 #include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
 #include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
+#include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
+#include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
+
+
 using namespace l1ct;
 
 #ifdef CMSSW_GIT_HASH
