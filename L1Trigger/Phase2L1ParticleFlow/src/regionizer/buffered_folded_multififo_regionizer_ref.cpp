@@ -63,14 +63,6 @@ void l1ct::BufferedFoldedMultififoRegionizerEmulator::initSectorsAndRegions(cons
     }
   }
 }
-// clock-cycle emulation
-#if 0
-bool l1ct::BufferedFoldedMultififoRegionizerEmulator::step(bool newEvent,
-                                                   const std::vector<l1ct::HadCaloObjEmu>& links,
-                                                   std::vector<l1ct::HadCaloObjEmu>& out,
-                                                   bool mux) {
-}
-#endif
 
 template <typename T>
 void l1ct::BufferedFoldedMultififoRegionizerEmulator::fillLinksPosNeg_(
