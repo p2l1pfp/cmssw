@@ -31,6 +31,7 @@ namespace l1ct {
     std::vector<double> dEtaValues;
     std::vector<double> dPhiValues;
     float trkQualityPtMin;  // GeV
+    bool doCompositeTkEle;
     bool writeEgSta;
 
     struct IsoParameters {
@@ -55,7 +56,7 @@ namespace l1ct {
     EGIsoEleObjEmu::IsoType hwIsoTypeTkEle;
     EGIsoObjEmu::IsoType hwIsoTypeTkEm;
 
-    bool doCompositeTkEle;
+    //bool doCompositeTkEle;
     struct CompIDParameters {
       CompIDParameters(const edm::ParameterSet &);
       CompIDParameters(double hoeMin, double hoeMax, double tkptMin, double tkptMax, double srrtotMin, double srrtotMax, double detaMin, double detaMax, double dptMin, double dptMax, double meanzMin, double meanzMax, double dphiMin, double dphiMax, double tkchi2Min, double tkchi2Max, double tkz0Min, double tkz0Max, double tknstubsMin, double tknstubsMax, double BDTcut_wp97p5, double BDTcut_wp95p0)
@@ -115,6 +116,7 @@ namespace l1ct {
                         const std::vector<double> &dEtaValues = {0.015, 0.01},
                         const std::vector<double> &dPhiValues = {0.07, 0.07},
                         float trkQualityPtMin = 10.,
+			bool doCompositeTkEle = false,
                         bool writeEgSta = false,
                         const IsoParameters &tkIsoParams_tkEle = {2., 0.6, 0.03, 0.2},
                         const IsoParameters &tkIsoParams_tkEm = {2., 0.6, 0.07, 0.3},
@@ -124,7 +126,6 @@ namespace l1ct {
                         bool doPfIso = false,
                         EGIsoEleObjEmu::IsoType hwIsoTypeTkEle = EGIsoEleObjEmu::IsoType::TkIso,
                         EGIsoObjEmu::IsoType hwIsoTypeTkEm = EGIsoObjEmu::IsoType::TkIsoPV,
-                        bool doCompositeTkEle = false,
                         const CompIDParameters &myCompIDparams = {-1.0, 1566.547607421875, 1.9501149654388428, 11102.0048828125, 0.0, 0.01274710614234209, -0.24224889278411865, 0.23079538345336914, 0.010325592942535877, 184.92538452148438, 325.0653991699219, 499.6089782714844, -6.281332015991211, 6.280326843261719, 0.024048099294304848, 1258.37158203125, -14.94140625, 14.94140625, 4.0, 6.0, 0.5406244, 0.9693441},
                         int debug = 0)
 
@@ -147,6 +148,7 @@ namespace l1ct {
           dEtaValues(dEtaValues),
           dPhiValues(dPhiValues),
           trkQualityPtMin(trkQualityPtMin),
+	  doCompositeTkEle(doCompositeTkEle),
           writeEgSta(writeEgSta),
           tkIsoParams_tkEle(tkIsoParams_tkEle),
           tkIsoParams_tkEm(tkIsoParams_tkEm),
@@ -156,7 +158,6 @@ namespace l1ct {
           doPfIso(doPfIso),
           hwIsoTypeTkEle(hwIsoTypeTkEle),
           hwIsoTypeTkEm(hwIsoTypeTkEm),
-          doCompositeTkEle(doCompositeTkEle),
           myCompIDparams(myCompIDparams),
           debug(debug) {}
   };
@@ -383,7 +384,7 @@ namespace l1ct {
                            z0_t z0) const;
 
     PFTkEGAlgoEmuConfig cfg;
-    std::unique_ptr<conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0>> composite_bdt_;
+    conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0> * composite_bdt_;
     int debug_;
   };
 }  // namespace l1ct
