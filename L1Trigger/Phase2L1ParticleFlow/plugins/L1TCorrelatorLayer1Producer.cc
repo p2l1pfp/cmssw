@@ -38,6 +38,7 @@
 #include "DataFormats/L1Trigger/interface/EGamma.h"
 #include "DataFormats/L1TCorrelator/interface/TkEm.h"
 #include "DataFormats/L1TCorrelator/interface/TkEmFwd.h"
+#include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 
 //--------------------------------------------------------------------------------------------------
 class L1TCorrelatorLayer1Producer : public edm::stream::EDProducer<> {
@@ -72,7 +73,6 @@ private:
   std::unique_ptr<l1ct::PFTkEGAlgoEmulator> l1tkegalgo_;
   std::unique_ptr<l1ct::PFTkEGSorterEmulator> l1tkegsorter_;
 
-  bool writeEgSta_;
   // Region dump
   const std::string regionDumpName_;
   bool writeRawHgcalCluster_;
@@ -176,7 +176,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
 #if 0  // LATER
   produces<l1t::PFCandidateCollection>("TKVtx");
 #endif
-#if 1  // LATER
+#if 0  // LATER
   produces<std::vector<l1t::PFTrack>>("DecodedTK");
 #endif
 
@@ -365,7 +365,7 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
   iEvent.put(fetchHadCalo(), "Calo");
   iEvent.put(fetchTracks(), "TK");
   
-  #if 1
+  #if 0
     iEvent.put(fetchDecodedTracks(), "DecodedTK");
   #endif
 
@@ -593,6 +593,7 @@ void L1TCorrelatorLayer1Producer::addTrack(const l1t::PFTrack &t, l1t::PFTrackRe
   int isec = t.track()->phiSector() + (t.eta() >= 0 ? 9 : 0);
   rawsectors[isec].obj.push_back(t.trackWord().getTrackWord());
   addDecodedTrack(sectors[isec], t);
+  std::cout << "tracks added!" << std::endl;
   trackRefMap_[&t] = ref;
 }
 void L1TCorrelatorLayer1Producer::addMuon(const l1t::SAMuon &mu, l1t::PFCandidate::MuonRef ref) {
@@ -616,6 +617,7 @@ void L1TCorrelatorLayer1Producer::addEmCalo(const l1t::PFCluster &c, l1t::PFClus
   for (auto &sec : event_.decoded.emcalo) {
     if (sec.region.contains(c.eta(), c.phi())) {
       addDecodedEmCalo(sec, c);
+      std::cout << "em added" << std::endl;
     }
   }
   clusterRefMap_[&c] = ref;
@@ -640,7 +642,7 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
     tkAndSel.second = t.quality() > 0;
   }
   // CMSSW-only extra info
-  tkAndSel.first.hwChi2 = round(t.chi2() * 10);
+  tkAndSel.first.hwChi2 =  l1ct::Scales::makeChi2(t.chi2());
   tkAndSel.first.hwStubs = t.nStubs();
   tkAndSel.first.simPt = t.pt();
   tkAndSel.first.simCaloEta = t.caloEta();
@@ -650,6 +652,9 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
   tkAndSel.first.simZ0 = t.vertex().Z();
   tkAndSel.first.simD0 = t.vertex().Rho();
   tkAndSel.first.src = &t;
+  std::cout << "tk chi2: orig " << t.chi2() << " new: " << tkAndSel.first.floatChi2() << std::endl;
+  std::cout << "tk nstubs: orig " << t.nStubs() << " new: " << tkAndSel.first.hwStubs << std::endl;
+
   // If the track fails, we set its pT to zero, so that the decoded tracks are still aligned with the raw tracks
   // Downstream, the regionizer will just ignore zero-momentum tracks
   if (!tkAndSel.second)
@@ -716,6 +721,17 @@ void L1TCorrelatorLayer1Producer::addDecodedEmCalo(l1ct::DetectorSector<l1ct::Em
   calo.hwPhi = l1ct::Scales::makePhi(sec.region.localPhi(c.phi()));
   calo.hwPtErr = l1ct::Scales::makePtFromFloat(c.ptError());
   calo.hwEmID = c.hwEmID();
+  std::cout << "FLAG:: " << l1tkegalgo_->writeEgSta() << std::endl;
+  // FIXME: we reuse a flag which is meant for something else just to distiguish the endcap from the barrel
+  // we will eventually need something else
+  if(l1tkegalgo_->writeEgSta()) {
+  calo.hwSrrTot = l1ct::Scales::makeSrrTot(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->sigmaRRTot());
+  calo.hwMeanZ = l1ct::Scales::makeMeanZ(abs(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->zBarycenter()));
+  calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
+  std::cout << "srr tot orig: " << dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->sigmaRRTot() << " new: " << calo.floatSrrTot() << std::endl;
+  std::cout << "meanz tot orig: " << abs(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->zBarycenter()) << " new: " << calo.floatMeanZ() << std::endl;
+  std::cout << "hoe tot orig: " << c.hOverE() << " new: " << calo.floatHoe() << std::endl;
+  }
   calo.src = &c;
   sec.obj.push_back(calo);
 }
