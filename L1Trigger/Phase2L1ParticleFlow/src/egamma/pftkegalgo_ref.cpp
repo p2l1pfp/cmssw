@@ -8,8 +8,6 @@
 #include <iostream>
 #include <bitset>
 
-#include "L1Trigger/Phase2L1ParticleFlow/src/dbgPrintf.h"
-#include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 #include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
 #include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
 
@@ -259,35 +257,21 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   const auto &calo = emcalo[cand.cluster_idx];
   const auto &tk = track[cand.track_idx];
 
-  // FIXME: using these two floats crashes code...
-  float srrtot_f = dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->sigmaRRTot();
-  float meanz_f = abs(dynamic_cast<const l1t::HGCalMulticluster*>(calo.src->constituentsAndFractions()[0].first.get())->zBarycenter());
-
   // Call and normalize input feature values, then cast to ap_fixed.
   // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
   // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
-  ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe = (calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> hoe = (calo.floatHoe()-params.hoeMin)/(params.hoeMax-params.hoeMin);
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkpt = (tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin);
-  ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot = (srrtot_f-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> srrtot = (calo.floatSrrTot()-params.srrtotMin)/(params.srrtotMax-params.srrtotMin);
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> deta = (tk.floatEta() - calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin);
   // FIXME: do we really need dpt to be a ratio?
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> dpt = ((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin);
-  ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz = (meanz_f-params.meanzMin)/(params.meanzMax-params.meanzMin);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> meanz = (calo.floatMeanZ()-params.meanzMin)/(params.meanzMax-params.meanzMin);
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> dphi = (deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin);
-  ap_fixed<22,3,AP_RND_CONV,AP_SAT> chi2 = (tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> chi2 = (tk.floatChi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min);
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> tkz0 = (tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min);
-  ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs = (tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
-  // std::cout<<"hoe\t"<<calo.src->hOverE()<<"\t"<<(calo.src->hOverE()-params.hoeMin)/(params.hoeMax-params.hoeMin)<<std::endl;
-  // std::cout<<"tkpt\t"<<tk.floatPt()<<"\t"<<(tk.floatPt()-params.tkptMin)/(params.tkptMax-params.tkptMin)<<std::endl;
-  // std::cout<<"srrtot\t"<<srrtot<<"\t"<<(srrtot-params.srrtotMin)/(params.srrtotMax-params.srrtotMin)<<std::endl;
-  // std::cout<<"deta\t"<<tk.floatEta()-calo.floatEta()<<"\t"<<(tk.floatEta()-calo.floatEta()-params.detaMin)/(params.detaMax-params.detaMin)<<std::endl;
-  // std::cout<<"dpt\t"<<tk.floatPt()/calo.floatPt()<<"\t"<<((tk.floatPt()/calo.floatPt())-params.dptMin)/(params.dptMax-params.dptMin)<<std::endl;
-  // std::cout<<"meanz\t"<<meanz<<"\t"<<(meanz-params.meanzMin)/(params.meanzMax-params.meanzMin)<<std::endl;
-  // std::cout<<"dphi\t"<<deltaPhi(tk.floatPhi(), calo.floatPhi())<<"\t"<<(deltaPhi(tk.floatPhi(), calo.floatPhi()) -params.dphiMin)/(params.dphiMax-params.dphiMin)<<std::endl;
-  // std::cout<<"chi2\t"<<tk.src->chi2()<<"\t"<<(tk.src->chi2()-params.tkchi2Min)/(params.tkchi2Max-params.tkchi2Min)<<std::endl;
-  // std::cout<<"tkz0\t"<<tk.floatZ0()<<"\t"<<(tk.floatZ0()-params.tkz0Min)/(params.tkz0Max-params.tkz0Min)<<std::endl;
-  // std::cout<<"nstubs\t"<<tk.src->nStubs()<<"\t"<<(tk.src->nStubs()-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin)<<std::endl;
-
+  ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs = (tk.hwStubs-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
+  
   // Run BDT inference
   vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs } ;
   auto bdt_score = composite_bdt_->decision_function(inputs);
