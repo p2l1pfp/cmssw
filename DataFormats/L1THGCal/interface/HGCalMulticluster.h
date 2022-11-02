@@ -33,7 +33,7 @@ namespace l1t {
       hOverEValid_ = true;
     }
 
-    enum EnergyInterpretation { EM = 0 };
+    enum EnergyInterpretation { EM = 0, EM_CORE = 1, H_EARLY = 2 };
 
     void saveEnergyInterpretation(const HGCalMulticluster::EnergyInterpretation eInt, double energy);
 

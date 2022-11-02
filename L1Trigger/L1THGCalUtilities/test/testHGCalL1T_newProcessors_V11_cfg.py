@@ -76,6 +76,9 @@ process = custom_tower_standalone(process)
 
 process.hgcl1tpg_step = cms.Path(process.L1THGCalTriggerPrimitives)
 
+# Change to custom geometry
+from L1Trigger.L1THGCal.customTriggerGeometry import custom_geometry_V11_Imp3
+process = custom_geometry_V11_Imp3(process)
 
 # load ntuplizer
 process.load('L1Trigger.L1THGCalUtilities.hgcalTriggerNtuples_cff')

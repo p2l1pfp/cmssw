@@ -26,6 +26,12 @@ def custom_ntuples_standalone_clustering(process):
            ntuple.NtupleName=='HGCalTriggerNtupleHGCClusters' or \
            ntuple.NtupleName=='HGCalTriggerNtupleHGCMulticlusters':
             ntuple.Multiclusters = cms.InputTag('l1tHGCalBackEndLayer2Producer:HGCalBackendLayer2Processor3DClusteringSA')
+
+    # Include HW cluster properties in ntupliser
+    for ntuple in ntuples:    
+        if ntuple.NtupleName.value() == 'HGCalTriggerNtupleHGCMulticlusters':
+            ntuple.FillHWClusterProperties = True
+
     return process
 
 
