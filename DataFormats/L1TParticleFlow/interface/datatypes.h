@@ -41,11 +41,10 @@ namespace l1ct {
   typedef ap_uint<4> egquality_t;
   typedef ap_uint<3> stub_t;
   // FIXME: random choice for the various bitwidth below!!!!
-  typedef ap_ufixed<14, 10, AP_TRN, AP_SAT> chi2_t;
+  typedef ap_ufixed<12, 10, AP_TRN, AP_SAT> chi2_t;
   typedef ap_ufixed<10, 1, AP_TRN, AP_SAT> srrtot_t;
-  typedef ap_uint<8> meanz_t; // mean - SCALE_MEANZ = 320
-  typedef ap_ufixed<13, 11, AP_TRN, AP_SAT> hoe_t;
-
+  typedef ap_uint<8> meanz_t;  // mean - SCALE_MEANZ = 320
+  typedef ap_ufixed<10, 5, AP_TRN, AP_SAT> hoe_t;
 
   // FIXME: adjust range 10-11bits -> 1/4 - 1/2TeV is probably more than enough for all reasonable use cases
   typedef ap_ufixed<11, 9, AP_TRN, AP_SAT> iso_t;
@@ -175,9 +174,9 @@ namespace l1ct {
     inline float floatPuppiW(puppiWgt_t puppiw) { return puppiw.to_float() * PUPPIW_LSB; }
     inline float floatIso(iso_t iso) { return iso.to_float(); }
     inline float floatChi2(chi2_t chi2) { return chi2.to_float(); }
-    inline float floatSrrTot(srrtot_t srrtot) {return srrtot.to_float(); };
-    inline float floatMeanZ(meanz_t meanz) {return meanz + MEANZ_SCALE; };
-    inline float floatHoe(hoe_t hoe) {return hoe.to_float(); };
+    inline float floatSrrTot(srrtot_t srrtot) { return srrtot.to_float(); };
+    inline float floatMeanZ(meanz_t meanz) { return meanz + MEANZ_SCALE; };
+    inline float floatHoe(hoe_t hoe) { return hoe.to_float(); };
 
     inline pt_t makePt(int pt) { return ap_ufixed<16, 14>(pt) >> 2; }
     inline dpt_t makeDPt(int dpt) { return ap_fixed<18, 16>(dpt) >> 2; }
@@ -212,7 +211,6 @@ namespace l1ct {
     inline srrtot_t makeSrrTot(float var) { return srrtot_t(var); };
     inline meanz_t makeMeanZ(float var) { return round(var - MEANZ_SCALE); };
     inline hoe_t makeHoe(float var) { return hoe_t(var); };
-
 
     inline float maxAbsEta() { return ((1 << (eta_t::width - 1)) - 1) * ETAPHI_LSB; }
     inline float maxAbsPhi() { return ((1 << (phi_t::width - 1)) - 1) * ETAPHI_LSB; }

@@ -596,7 +596,6 @@ void L1TCorrelatorLayer1Producer::addTrack(const l1t::PFTrack &t, l1t::PFTrackRe
   int isec = t.track()->phiSector() + (t.eta() >= 0 ? 9 : 0);
   rawsectors[isec].obj.push_back(t.trackWord().getTrackWord());
   addDecodedTrack(sectors[isec], t);
-  std::cout << "tracks added!" << std::endl;
   trackRefMap_[&t] = ref;
 }
 void L1TCorrelatorLayer1Producer::addMuon(const l1t::SAMuon &mu, l1t::PFCandidate::MuonRef ref) {
@@ -620,7 +619,6 @@ void L1TCorrelatorLayer1Producer::addEmCalo(const l1t::PFCluster &c, l1t::PFClus
   for (auto &sec : event_.decoded.emcalo) {
     if (sec.region.contains(c.eta(), c.phi())) {
       addDecodedEmCalo(sec, c);
-      std::cout << "em added" << std::endl;
     }
   }
   clusterRefMap_[&c] = ref;
@@ -655,9 +653,7 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
   tkAndSel.first.simZ0 = t.vertex().Z();
   tkAndSel.first.simD0 = t.vertex().Rho();
   tkAndSel.first.src = &t;
-  std::cout << "tk chi2: orig " << t.chi2() << " new: " << tkAndSel.first.floatChi2() << std::endl;
-  std::cout << "tk nstubs: orig " << t.nStubs() << " new: " << tkAndSel.first.hwStubs << std::endl;
-
+  
   // If the track fails, we set its pT to zero, so that the decoded tracks are still aligned with the raw tracks
   // Downstream, the regionizer will just ignore zero-momentum tracks
   if (!tkAndSel.second)
@@ -693,6 +689,9 @@ void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::H
   calo.hwPhi = l1ct::Scales::makePhi(sec.region.localPhi(c.phi()));
   calo.hwEmPt = l1ct::Scales::makePtFromFloat(c.emEt());
   calo.hwEmID = c.hwEmID();
+  calo.hwSrrTot = l1ct::Scales::makeSrrTot(c.sigmaRR());
+- calo.hwMeanZ = l1ct::Scales::makeMeanZ(c.absZBarycenter());
+- calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
   calo.src = &c;
   sec.obj.push_back(calo);
 }
@@ -712,29 +711,22 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   cwrd(81, 73) = w_phi;
   cwrd(115, 106) = w_qual;
 
+  // FIXME: cluster-shape variables use by composite-ID need to be added here
+
   sec.obj.push_back(cwrd);
 }
 
 void L1TCorrelatorLayer1Producer::addDecodedEmCalo(l1ct::DetectorSector<l1ct::EmCaloObjEmu> &sec,
                                                    const l1t::PFCluster &c) {
   l1ct::EmCaloObjEmu calo;
+  // set the endcap-sepcific variables to default value:
+  calo.clear();
   calo.hwPt = l1ct::Scales::makePtFromFloat(c.pt());
   calo.hwEta = l1ct::Scales::makeGlbEta(c.eta()) -
                sec.region.hwEtaCenter;  // important to enforce that the region boundary is on a discrete value
   calo.hwPhi = l1ct::Scales::makePhi(sec.region.localPhi(c.phi()));
   calo.hwPtErr = l1ct::Scales::makePtFromFloat(c.ptError());
   calo.hwEmID = c.hwEmID();
-  std::cout << "FLAG:: " << l1tkegalgo_->writeEgSta() << std::endl;
-  // FIXME: we reuse a flag which is meant for something else just to distiguish the endcap from the barrel
-  // we will eventually need something else
-  if(l1tkegalgo_->writeEgSta()) {
-  calo.hwSrrTot = l1ct::Scales::makeSrrTot(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->sigmaRRTot());
-  calo.hwMeanZ = l1ct::Scales::makeMeanZ(abs(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->zBarycenter()));
-  calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
-  std::cout << "srr tot orig: " << dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->sigmaRRTot() << " new: " << calo.floatSrrTot() << std::endl;
-  std::cout << "meanz tot orig: " << abs(dynamic_cast<const l1t::HGCalMulticluster*>(c.constituentsAndFractions()[0].first.get())->zBarycenter()) << " new: " << calo.floatMeanZ() << std::endl;
-  std::cout << "hoe tot orig: " << c.hOverE() << " new: " << calo.floatHoe() << std::endl;
-  }
   calo.src = &c;
   sec.obj.push_back(calo);
 }
