@@ -7,9 +7,10 @@
 #include <memory>
 #include <iostream>
 #include <bitset>
+#include <vector>
 
-#include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
-#include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
+// #include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
+// #include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
 
 
 using namespace l1ct;
@@ -84,8 +85,14 @@ composite_bdt_(nullptr),
 debug_(cfg.debug) {
   if(cfg.doCompositeTkEle) {
     //FIXME: make the name of the file configurable
-    auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json").fullPath();
-    composite_bdt_ = std::make_unique<conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0>> (resolvedFileName);
+#ifdef CMSSW_GIT_HASH
+	  auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json").fullPath();
+#else
+          auto resolvedFileName = "compositeID.json";      
+#endif
+    std::cout<<resolvedFileName<<std::endl;
+	  composite_bdt_ = new conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0> (resolvedFileName);
+    std::cout<<"declared bdt"<<std::endl;
   }
 }
 
@@ -196,12 +203,15 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
   //FIXME: should be configurable
   const int nCAND_PER_CLUSTER = 4;
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
+  std::cout<<"doing loose dR matching"<<std::endl;
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
+    std::cout<<"cluster "<<ic<<std::endl;
     auto &calo = emcalo[ic];
 
     std::vector<CompositeCandidate> candidates;
 
     for (unsigned int itk = 0; itk < nTrackMax; ++itk) {
+      std::cout<<"track "<<itk<<std::endl;
       const auto &tk = track[itk];
       if (tk.floatPt() <= cfg.trkQualityPtMin)
         continue;
@@ -219,12 +229,13 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           candidates.push_back(cand);
       }
     }
+    std::cout << "Constructed candidates, now sorting" << std::endl;
     // FIXME: find best sort criteria, for now we use dpt
     std::sort(candidates.begin(), candidates.end(), 
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
                 { return a.dpt < b.dpt; });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
-    std::cout << "# composit candidates: " << nCandPerCluster << std::endl;
+    std::cout << "# composite candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
 
     float bdtWP_MVA = cfg.myCompIDparams.BDTcut_wp97p5;
@@ -273,7 +284,7 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   ap_fixed<22,3,AP_RND_CONV,AP_SAT> nstubs = (tk.hwStubs-params.tknstubsMin)/(params.tknstubsMax-params.tknstubsMin);
   
   // Run BDT inference
-  vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs } ;
+  std::vector<ap_fixed<22,3,AP_RND_CONV,AP_SAT>> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs } ;
   auto bdt_score = composite_bdt_->decision_function(inputs);
 
   float bdt_score_CON = bdt_score[0];
@@ -309,7 +320,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
                   << std::endl;
     }
   }
-
+  std::cout<<"running"<<std::endl;
   // FIXME: can be removed in the endcap since now running with the "interceptor".
   // Might still be needed in barrel
   // filter and select first N elements of input clusters
@@ -322,6 +333,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
   std::vector<float> emCaloTkBdtScore(emcalo_sel.size(), -999);
+  std::cout<<"about to start matching"<<std::endl;
 
   if(cfg.doCompositeTkEle) {
     link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, emCaloTkBdtScore);
