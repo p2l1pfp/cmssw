@@ -35,6 +35,8 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       dEtaValues(pset.getParameter<std::vector<double>>("dEtaValues")),
       dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
       trkQualityPtMin(pset.getParameter<double>("trkQualityPtMin")),
+      doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
+      nCOMPCAND_PER_CLUSTER(pset.getParameter<uint32_t>("nCOMPCAND_PER_CLUSTER")),
       writeEgSta(pset.getParameter<bool>("writeEGSta")),
       tkIsoParams_tkEle(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEle")),
       tkIsoParams_tkEm(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEm")),
@@ -44,8 +46,7 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       doPfIso(pset.getParameter<bool>("doPfIso")),
       hwIsoTypeTkEle(static_cast<EGIsoEleObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEle"))),
       hwIsoTypeTkEm(static_cast<EGIsoObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEm"))),
-      doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
-      myCompIDparams(pset.getParameter<edm::ParameterSet>("compositeParametersTkEle")),
+      compIDparams(pset.getParameter<edm::ParameterSet>("compositeParametersTkEle")),
       debug(pset.getUntrackedParameter<uint32_t>("debug", 0)) {}
 
 l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet &pset)
@@ -200,8 +201,6 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
                                         const std::vector<TkObjEmu> &track,
                                         std::vector<int> &emCalo2tk, 
                                         std::vector<float> &emCaloTkBdtScore) const {
-  //FIXME: should be configurable
-  const int nCAND_PER_CLUSTER = 4;
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
   std::cout<<"doing loose dR matching"<<std::endl;
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
@@ -234,18 +233,18 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     std::sort(candidates.begin(), candidates.end(), 
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
                 { return a.dpt < b.dpt; });
-    unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), nCAND_PER_CLUSTER);
+    unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), cfg.nCOMPCAND_PER_CLUSTER);
     std::cout << "# composite candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
 
-    float bdtWP_MVA = cfg.myCompIDparams.BDTcut_wp97p5;
+    float bdtWP_MVA = cfg.compIDparams.BDTcut_wp97p5;
     float bdtWP_XGB = 1. / (1. + std::sqrt((1. - bdtWP_MVA) / (1. + bdtWP_MVA))); // Convert WP value from ROOT.TMVA to XGboost
     float maxScore = -999;
     int ibest = -1;
     for(unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
       std::vector<EmCaloObjEmu> emcalo_sel = emcalo;
-      float score = compute_composite_score(cand, emcalo_sel, track, cfg.myCompIDparams);
+      float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
       if(score > maxScore) {
       // if((score > bdtWP_XGB) && (score > maxScore)) {
         maxScore = score;
