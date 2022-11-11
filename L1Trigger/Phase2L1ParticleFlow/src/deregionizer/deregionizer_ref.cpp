@@ -81,15 +81,13 @@ static void debugPrint(const std::string &header, const std::vector<l1ct::PuppiO
 
 void l1ct::DeregionizerEmulator::run(std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> in,
                                      std::vector<l1ct::PuppiObjEmu> &out,
-                                     std::vector<l1ct::PuppiObjEmu> &truncated
-){
-  
+                                     std::vector<l1ct::PuppiObjEmu> &truncated) {
   for (int i = 0, n = in.size(); i < n; i++) {
     std::vector<std::vector<l1ct::PuppiObjEmu>> pupsOnClock = in[i];
     std::vector<l1ct::PuppiObjEmu> intermediateTruncated;
     // Merge PF regions from this cycle. No truncation happens here
     std::vector<l1ct::PuppiObjEmu> buffer;
-    for(const auto& pupsOnClockOnBoard : pupsOnClock){
+    for (const auto &pupsOnClockOnBoard : pupsOnClock) {
       buffer = mergeXtoY(buffer, pupsOnClockOnBoard);
     }
 

@@ -41,8 +41,8 @@ private:
 DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
     : config_(iConfig),
       token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
-      linkConfigs_(iConfig.getUntrackedParameter<std::vector<edm::ParameterSet>>(
-          "linkConfigs", std::vector<edm::ParameterSet>())),
+      linkConfigs_(iConfig.getUntrackedParameter<std::vector<edm::ParameterSet>>("linkConfigs",
+                                                                                 std::vector<edm::ParameterSet>())),
       nInputFramesPerBX_(iConfig.getParameter<uint32_t>("nInputFramesPerBX")),
       emulator_(iConfig),
       input_(linkConfigs_) {
