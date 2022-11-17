@@ -31,24 +31,27 @@
  * L1T firmware
  * --- */
 
-l1tpf::corrector::corrector(const std::string &filename, float emfMax, bool debug, bool emulate) : emfMax_(emfMax), emulate_(emulate) {
+l1tpf::corrector::corrector(const std::string &filename, float emfMax, bool debug, bool emulate)
+    : emfMax_(emfMax), emulate_(emulate) {
   if (!filename.empty())
     init_(filename, "", debug, emulate);
 }
 
-l1tpf::corrector::corrector(const std::string &filename, const std::string &directory, float emfMax, bool debug, bool emulate)
+l1tpf::corrector::corrector(
+    const std::string &filename, const std::string &directory, float emfMax, bool debug, bool emulate)
     : emfMax_(emfMax), emulate_(emulate) {
   if (!filename.empty())
     init_(filename, directory, debug, emulate);
 }
 
-l1tpf::corrector::corrector(TDirectory *src, float emfMax, bool debug, bool emulate) : emfMax_(emfMax), emulate_(emulate) {
+l1tpf::corrector::corrector(TDirectory *src, float emfMax, bool debug, bool emulate)
+    : emfMax_(emfMax), emulate_(emulate) {
   init_(src, debug);
 }
 
 void l1tpf::corrector::init_(const std::string &filename, const std::string &directory, bool debug, bool emulate) {
   std::string resolvedFileName = filename;
-  if (filename[0] != '/'){
+  if (filename[0] != '/') {
 #ifdef CMSSW_GIT_HASH
     resolvedFileName = edm::FileInPath(filename).fullPath();
 #else
@@ -56,7 +59,7 @@ void l1tpf::corrector::init_(const std::string &filename, const std::string &dir
 #endif
   }
   TFile *lFile = TFile::Open(resolvedFileName.c_str());
-  if (!lFile || lFile->IsZombie()){
+  if (!lFile || lFile->IsZombie()) {
 #ifdef CMSSW_GIT_HASH
     throw cms::Exception("Configuration", "cannot read file " + filename);
 #else
@@ -65,15 +68,15 @@ void l1tpf::corrector::init_(const std::string &filename, const std::string &dir
   }
 
   TDirectory *dir = directory.empty() ? lFile : lFile->GetDirectory(directory.c_str());
-  if (!dir){
-#ifdef CMSSW_GIT_HASH 
+  if (!dir) {
+#ifdef CMSSW_GIT_HASH
     throw cms::Exception("Configuration", "cannot find directory '" + directory + "' in file " + filename);
 #else
-    throw std::runtime_error("Cannot find directory '" + directory +"' in file " + filename);
+    throw std::runtime_error("Cannot find directory '" + directory + "' in file " + filename);
 #endif
   }
   init_(dir, debug);
-  if(emulate)
+  if (emulate)
     initEmulation_(dir, debug);
 
   lFile->Close();
@@ -81,7 +84,7 @@ void l1tpf::corrector::init_(const std::string &filename, const std::string &dir
 
 void l1tpf::corrector::init_(TDirectory *lFile, bool debug) {
   TH1 *index = (TH1 *)lFile->Get("INDEX");
-  if (!index){
+  if (!index) {
 #ifdef CMSSW_GIT_HASH
     throw cms::Exception("Configuration")
         << "invalid input file " << lFile->GetPath() << ": INDEX histogram not found.\n";
@@ -122,7 +125,7 @@ void l1tpf::corrector::init_(TDirectory *lFile, bool debug) {
         snprintf(buff, 31, "eta_bin%d", ieta + 1);
       }
       TGraph *graph = graphs[buff];
-      if (debug){
+      if (debug) {
 #ifdef CMSSW_GIT_HASH
         edm::LogPrint("corrector") << "   eta bin " << ieta << " emf bin " << iemf << " graph " << buff
                                    << (graph ? " <valid>" : " <nil>") << "\n";
@@ -163,11 +166,9 @@ void l1tpf::corrector::initEmulation_(TDirectory *lFile, bool debug) {
     TH1 *hist = hists[buff];
     if (debug)
 #ifdef CMSSW_GIT_HASH
-      edm::LogPrint("corrector") << "   eta bin " << ieta << " hist " << buff
-                                  << (hist ? " <valid>" : " <nil>") << "\n";
+      edm::LogPrint("corrector") << "   eta bin " << ieta << " hist " << buff << (hist ? " <valid>" : " <nil>") << "\n";
 #else
-    std::cout << "   eta bin " << ieta << " hist " << buff
-              << (hist ? " <valid>" : " <nil>") << "\n";
+      std::cout << "   eta bin " << ieta << " hist " << buff << (hist ? " <valid>" : " <nil>") << "\n";
 #endif
     if (hist) {
       nhists++;
@@ -234,30 +235,29 @@ float l1tpf::corrector::correctedPt(float pt, float emPt, float eta) const {
   unsigned int iemf =
       is2d_ && abseta < 3.0 ? std::min(std::max<unsigned>(1, index_->GetYaxis()->FindBin(emf)), nemf_) - 1 : 0;
   float ptcorr = 0;
-  if (!emulate_) { // not emulation - read from the TGraph as normal
+  if (!emulate_) {  // not emulation - read from the TGraph as normal
     TGraph *graph = corrections_[ieta * nemf_ + iemf];
     if (!graph) {
 #ifdef CMSSW_GIT_HASH
       throw cms::Exception("RuntimeError") << "Error trying to read calibration for eta " << eta << " emf " << emf
-                                          << " which are not available." << std::endl;
+                                           << " which are not available." << std::endl;
 #else
       std::stringstream ss;
-      ss << "Error trying to read calibration for eta " << eta << " emf " << emf
-         << " which are not available." << std::endl;
+      ss << "Error trying to read calibration for eta " << eta << " emf " << emf << " which are not available."
+         << std::endl;
       throw std::runtime_error(ss.str());
 #endif
     }
     ptcorr = std::min<float>(graph->Eval(total), 4 * total);
-  }else{ // emulation - read from the pt binned histogram
-    TH1 * hist = correctionsEmulated_[ieta];
+  } else {  // emulation - read from the pt binned histogram
+    TH1 *hist = correctionsEmulated_[ieta];
     if (!hist) {
 #ifdef CMSSW_GIT_HASH
-      throw cms::Exception("RuntimeError") << "Error trying to read emulated calibration for eta " << eta
-                                          << " which are not available." << std::endl;
+      throw cms::Exception("RuntimeError")
+          << "Error trying to read emulated calibration for eta " << eta << " which are not available." << std::endl;
 #else
       std::stringstream ss;
-      ss << "Error trying to read emulated calibration for eta " << eta
-         << " which are not available." << std::endl;
+      ss << "Error trying to read emulated calibration for eta " << eta << " which are not available." << std::endl;
       throw std::runtime_error(ss.str());
 #endif
     }

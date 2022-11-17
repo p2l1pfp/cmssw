@@ -16,7 +16,11 @@ namespace l1tpf {
   public:
     corrector() : is2d_(false), neta_(0), nemf_(0), emfMax_(-1), emulate_(false) {}
     corrector(const std::string &iFile, float emfMax = -1, bool debug = false, bool emulate = false);
-    corrector(const std::string &iFile, const std::string &directory, float emfMax = -1, bool debug = false, bool emulate = false);
+    corrector(const std::string &iFile,
+              const std::string &directory,
+              float emfMax = -1,
+              bool debug = false,
+              bool emulate = false);
     corrector(TDirectory *src, float emfMax = -1, bool debug = false, bool emulate = false);
     // create an empty corrector (you'll need to fill the graphs later)
     corrector(const TH1 *index, float emfMax = -1);

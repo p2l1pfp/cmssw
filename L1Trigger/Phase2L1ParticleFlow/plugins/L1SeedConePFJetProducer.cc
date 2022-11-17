@@ -43,8 +43,7 @@ private:
 
   l1t::PFJet makeJet_SW(const std::vector<edm::Ptr<l1t::PFCandidate>>& parts) const;
 
-  std::pair<std::vector<L1SCJetEmu::Particle>,
-                   std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>>>
+  std::pair<std::vector<L1SCJetEmu::Particle>, std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>>>
   convertEDMToHW(std::vector<edm::Ptr<l1t::PFCandidate>>& edmParticles) const;
 
   std::vector<l1t::PFJet> convertHWToEDM(
@@ -61,8 +60,9 @@ L1SeedConePFJetProducer::L1SeedConePFJetProducer(const edm::ParameterSet& cfg)
       _emulator(L1SCJetEmu(_debug, _coneSize, _nJets)),
       _l1PFToken(consumes<std::vector<l1t::PFCandidate>>(cfg.getParameter<edm::InputTag>("L1PFObjects"))) {
   produces<l1t::PFJetCollection>();
-  if(_doCorrections){
-    _corrector = l1tpf::corrector(cfg.getParameter<std::string>("correctorFile"), cfg.getParameter<std::string>("correctorDir"), -1., _debug, _HW);
+  if (_doCorrections) {
+    _corrector = l1tpf::corrector(
+        cfg.getParameter<std::string>("correctorFile"), cfg.getParameter<std::string>("correctorDir"), -1., _debug, _HW);
   }
 }
 
@@ -126,7 +126,7 @@ l1t::PFJet L1SeedConePFJetProducer::makeJet_SW(const std::vector<edm::Ptr<l1t::P
     jet.addConstituent(*it);
   }
 
-  if(_doCorrections){
+  if (_doCorrections) {
     jet.calibratePt(_corrector.correctedPt(jet.pt(), jet.eta()));
   }
 
@@ -189,14 +189,18 @@ std::vector<l1t::PFJet> L1SeedConePFJetProducer::convertHWToEDM(
     std::unordered_map<const l1t::PFCandidate*, edm::Ptr<l1t::PFCandidate>> constituentMap) const {
   std::vector<l1t::PFJet> edmJets;
   std::for_each(hwJets.begin(), hwJets.end(), [&](L1SCJetEmu::Jet jet) {
-    if(_doCorrections){
+    if (_doCorrections) {
       float correctedPt = _corrector.correctedPt(jet.floatPt(), jet.floatEta());
       jet.hwPt = correctedPt;
     }
     l1gt::Jet gtJet = jet.toGT();
-    l1t::PFJet edmJet(
-        l1gt::Scales::floatPt(gtJet.v3.pt), l1gt::Scales::floatEta(gtJet.v3.eta), l1gt::Scales::floatPhi(gtJet.v3.phi), /*mass=*/0.,
-                              gtJet.v3.pt.V, gtJet.v3.eta.V, gtJet.v3.phi.V);
+    l1t::PFJet edmJet(l1gt::Scales::floatPt(gtJet.v3.pt),
+                      l1gt::Scales::floatEta(gtJet.v3.eta),
+                      l1gt::Scales::floatPhi(gtJet.v3.phi),
+                      /*mass=*/0.,
+                      gtJet.v3.pt.V,
+                      gtJet.v3.eta.V,
+                      gtJet.v3.phi.V);
     edmJet.setEncodedJet(jet.toGT().pack());
     // get back the references to the constituents
     std::vector<edm::Ptr<l1t::PFCandidate>> constituents;
