@@ -41,7 +41,7 @@ from L1Trigger.Phase2L1ParticleFlow.L1SeedConePFJetProducer_cfi import L1SeedCon
 from L1Trigger.Phase2L1ParticleFlow.DeregionizerProducer_cfi import DeregionizerProducer
 from L1Trigger.Phase2L1ParticleFlow.l1ctJetFileWriter_cfi import l1ctSeededConeJetFileWriter
 process.l1ctLayer2Deregionizer = DeregionizerProducer.clone()
-process.l1ctLayer2SeedConeJets = L1SeedConePFJetEmulatorProducer.clone(L1PFObject = cms.InputTag('l1ctLayer2Deregionizer', 'Puppi'))
+process.l1ctLayer2SeedConeJets = L1SeedConePFJetEmulatorProducer.clone(L1PFObjects = cms.InputTag('l1ctLayer2Deregionizer', 'Puppi'))
 process.l1ctLayer2SeedConeJetWriter = l1ctSeededConeJetFileWriter.clone(jets = "l1ctLayer2SeedConeJets")
 
 process.l1ctLayer1Barrel9 = process.l1ctLayer1Barrel.clone()
