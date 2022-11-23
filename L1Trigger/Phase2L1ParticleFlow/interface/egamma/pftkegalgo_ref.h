@@ -5,6 +5,7 @@
 #include "DataFormats/L1TParticleFlow/interface/egamma.h"
 #include "DataFormats/L1TParticleFlow/interface/pf.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/conifer.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/common/inversion.h"
 
 namespace edm {
   class ParameterSet;
@@ -388,7 +389,7 @@ namespace l1ct {
                            z0_t z0) const;
 
     PFTkEGAlgoEmuConfig cfg;
-    conifer::BDT<ap_fixed<22,3,AP_RND_CONV,AP_SAT>,ap_fixed<22,3,AP_RND_CONV,AP_SAT>,0> * composite_bdt_;
+    conifer::BDT<ap_fixed<21,12,AP_RND_CONV,AP_SAT>,ap_fixed<12,3,AP_RND_CONV,AP_SAT>,0> * composite_bdt_;
     int debug_;
   };
 }  // namespace l1ct
