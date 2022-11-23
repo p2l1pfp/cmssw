@@ -25,7 +25,7 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const ap_uint<256>
   // FIXME: variables use by composite-ID need to be added here
   out.hwSrrTot = w_srrtot * l1ct::srrtot_t(l1ct::Scales::SRRTOT_LSB);
   out.hwMeanZ = l1ct::meanz_t(w_meanz - l1ct::Scales::MEANZ_SCALE);
-  calo.hwHoe = w_hoe * l1ct::hoe_t(l1ct::Scales::HOE_LSB);
+  out.hwHoe = w_hoe * l1ct::hoe_t(l1ct::Scales::HOE_LSB);
 
   return out;
 }
