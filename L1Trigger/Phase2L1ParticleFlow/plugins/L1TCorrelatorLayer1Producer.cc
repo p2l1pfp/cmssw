@@ -687,8 +687,12 @@ void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::H
   calo.hwEmPt = l1ct::Scales::makePtFromFloat(c.emEt());
   calo.hwEmID = c.hwEmID();
   calo.hwSrrTot = l1ct::Scales::makeSrrTot(c.sigmaRR());
-- calo.hwMeanZ = l1ct::Scales::makeMeanZ(c.absZBarycenter());
-- calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
+  calo.hwMeanZ = c.absZBarycenter() < 320. ? l1ct::meanz_t(0) : l1ct::Scales::makeMeanZ(c.absZBarycenter());
+  calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
+  // std::cout << "[addDecodedHadCalo] eta: " << calo.hwEta << " phi: " << calo.hwPhi << std::endl;
+  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << calo.hwHoe << std::endl;
+  // std::cout << "                    hwMeanZ IN: " << c.absZBarycenter() << " OUT: " << calo.hwMeanZ << std::endl;
+  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << calo.hwSrrTot << std::endl;
   calo.src = &c;
   sec.obj.push_back(calo);
 }
@@ -719,6 +723,11 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   // hoe = word 1 bits 63-52 (currently spare)
   cwrd(213, 201) = w_srrtot;
   cwrd(94, 83) = w_meanz;
+
+  // std::cout << "[addRawHgcalCluster] meanz IN: " << c.absZBarycenter() << " OUT: " << w_meanz << std::endl;
+  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << w_hoe << std::endl;
+  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << w_srrtot << std::endl;
+  // std::cout << " .   eta: " << w_eta << " phi: " << w_phi << std::endl;
   // FIXME: we use a spare space in the word for hoe which is not in the current interface
   cwrd(127, 116) = w_hoe;
 
