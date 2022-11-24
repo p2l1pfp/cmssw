@@ -209,9 +209,9 @@ namespace l1ct {
 
     inline int makeDR2FromFloatDR(float dr) { return ceil(dr * dr / ETAPHI_LSB / ETAPHI_LSB); }
     inline chi2_t makeChi2(float chi2) { return chi2_t(chi2); }
-    inline srrtot_t makeSrrTot(float var) { return srrtot_t(var); };
+    inline srrtot_t makeSrrTot(float var) { return srrtot_t(SRRTOT_LSB*round(var/SRRTOT_LSB)); };
     inline meanz_t makeMeanZ(float var) { return round(var - MEANZ_SCALE); };
-    inline hoe_t makeHoe(float var) { return hoe_t(var); };
+    inline hoe_t makeHoe(float var) { return hoe_t(HOE_LSB*round(var/HOE_LSB)); };
 
     inline float maxAbsEta() { return ((1 << (eta_t::width - 1)) - 1) * ETAPHI_LSB; }
     inline float maxAbsPhi() { return ((1 << (phi_t::width - 1)) - 1) * ETAPHI_LSB; }
