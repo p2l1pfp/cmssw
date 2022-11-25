@@ -164,12 +164,10 @@ namespace l1ct {
     dxy_t hwDxy;
     tkquality_t hwQuality;
     stub_t hwStubs;
-    redChi2Bin_t hwRedChi2RZ; // 4 bits
-    redChi2Bin_t hwRedChi2RPhi; // 4 bits
+    redChi2Bin_t hwRedChi2RZ;    // 4 bits
+    redChi2Bin_t hwRedChi2RPhi;  // 4 bits
     //FIXME: is this actually filled? 3 bits would be enough
-    redChi2Bin_t hwRedChi2Bend; // 4 bits
-    // FIXME: this variable is actually not in the track word or not in this format...
-    chi2_t hwChi2;
+    redChi2Bin_t hwRedChi2Bend;  // 4 bits
 
     enum TkQuality { PFLOOSE = 1, PFTIGHT = 2 };
     bool isPFLoose() const { return hwQuality[0]; }
@@ -180,9 +178,8 @@ namespace l1ct {
     inline bool operator==(const TkObj &other) const {
       return hwPt == other.hwPt && hwEta == other.hwEta && hwPhi == other.hwPhi && hwDEta == other.hwDEta &&
              hwDPhi == other.hwDPhi && hwZ0 == other.hwZ0 && hwDxy == other.hwDxy && hwCharge == other.hwCharge &&
-             hwQuality == other.hwQuality && hwChi2 == other.hwChi2 && hwStubs == other.hwStubs &&
-             hwRedChi2RZ == other.hwRedChi2RZ && hwRedChi2RPhi == other.hwRedChi2RPhi &&
-             hwRedChi2Bend == other.hwRedChi2Bend;
+             hwQuality == other.hwQuality && hwStubs == other.hwStubs && hwRedChi2RZ == other.hwRedChi2RZ &&
+             hwRedChi2RPhi == other.hwRedChi2RPhi && hwRedChi2Bend == other.hwRedChi2Bend;
     }
 
     inline bool operator>(const TkObj &other) const { return hwPt > other.hwPt; }
@@ -202,7 +199,6 @@ namespace l1ct {
       hwRedChi2RZ = 0;
       hwRedChi2RPhi = 0;
       hwRedChi2Bend = 0;
-      hwChi2 = 0;
     }
 
     int intPt() const { return Scales::intPt(hwPt); }
@@ -220,11 +216,10 @@ namespace l1ct {
     float floatVtxPhi() const { return Scales::floatPhi(hwVtxPhi()); }
     float floatZ0() const { return Scales::floatZ0(hwZ0); }
     float floatDxy() const { return Scales::floatDxy(hwDxy); }
-    float floatChi2() const { return Scales::floatChi2(hwChi2); }
 
     static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 +
                                 z0_t::width + dxy_t::width + tkquality_t::width + stub_t::width + redChi2Bin_t::width +
-                                redChi2Bin_t::width + redChi2Bin_t::width + chi2_t::width;
+                                redChi2Bin_t::width + redChi2Bin_t::width;
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;
       unsigned int start = 0;
@@ -241,7 +236,6 @@ namespace l1ct {
       pack_into_bits(ret, start, hwRedChi2RZ);
       pack_into_bits(ret, start, hwRedChi2RPhi);
       pack_into_bits(ret, start, hwRedChi2Bend);
-      pack_into_bits(ret, start, hwChi2);
       return ret;
     }
     inline static TkObj unpack(const ap_uint<BITWIDTH> &src) {
@@ -260,7 +254,6 @@ namespace l1ct {
       unpack_from_bits(src, start, ret.hwRedChi2RZ);
       unpack_from_bits(src, start, ret.hwRedChi2RPhi);
       unpack_from_bits(src, start, ret.hwRedChi2Bend);
-      unpack_from_bits(src, start, ret.hwChi2);
       return ret;
     }
   };

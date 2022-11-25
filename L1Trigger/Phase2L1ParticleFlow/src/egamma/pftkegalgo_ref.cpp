@@ -12,7 +12,6 @@
 // #include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
 // #include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
 
-
 using namespace l1ct;
 
 #ifdef CMSSW_GIT_HASH
@@ -81,17 +80,17 @@ l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::Paramet
 
 #endif
 
-PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config) : cfg(config), 
-composite_bdt_(nullptr), 
-debug_(cfg.debug) {
-  if(cfg.doCompositeTkEle) {
+PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
+    : cfg(config), composite_bdt_(nullptr), debug_(cfg.debug) {
+  if (cfg.doCompositeTkEle) {
     //FIXME: make the name of the file configurable
 #ifdef CMSSW_GIT_HASH
-	  auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json").fullPath();
+    auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json").fullPath();
 #else
-          auto resolvedFileName = "compositeID.json";
+    auto resolvedFileName = "compositeID.json";
 #endif
-	  composite_bdt_ = new conifer::BDT<ap_fixed<21,12,AP_RND_CONV,AP_SAT>,ap_fixed<12,3,AP_RND_CONV,AP_SAT>,0> (resolvedFileName);
+    composite_bdt_ = new conifer::BDT<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, 0>(
+        resolvedFileName);
   }
 }
 
@@ -155,7 +154,6 @@ void PFTkEGAlgoEmulator::link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emc
   }
 }
 
-
 void PFTkEGAlgoEmulator::link_emCalo2tk_elliptic(const PFRegionEmu &r,
                                                  const std::vector<EmCaloObjEmu> &emcalo,
                                                  const std::vector<TkObjEmu> &track,
@@ -193,12 +191,11 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_elliptic(const PFRegionEmu &r,
   }
 }
 
-
 void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
-                                        const std::vector<EmCaloObjEmu> &emcalo,
-                                        const std::vector<TkObjEmu> &track,
-                                        std::vector<int> &emCalo2tk, 
-                                        std::vector<float> &emCaloTkBdtScore) const {
+                                                  const std::vector<EmCaloObjEmu> &emcalo,
+                                                  const std::vector<TkObjEmu> &track,
+                                                  std::vector<int> &emCalo2tk,
+                                                  std::vector<float> &emCaloTkBdtScore) const {
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
@@ -212,45 +209,46 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
 
       float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
       float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
-      float dR = sqrt((d_phi * d_phi ) + (d_eta * d_eta ));
+      float dR = sqrt((d_phi * d_phi) + (d_eta * d_eta));
 
-      if (dR<0.2){
-          // Only store indices, dR and dpT for now. The other quantities are computed only for the best nCandPerCluster.
-          CompositeCandidate cand;
-          cand.cluster_idx = ic;
-          cand.track_idx = itk;
-          cand.dpt = fabs(tk.floatPt() - calo.floatPt());
-          candidates.push_back(cand);
+      if (dR < 0.2) {
+        // Only store indices, dR and dpT for now. The other quantities are computed only for the best nCandPerCluster.
+        CompositeCandidate cand;
+        cand.cluster_idx = ic;
+        cand.track_idx = itk;
+        cand.dpt = fabs(tk.floatPt() - calo.floatPt());
+        candidates.push_back(cand);
       }
     }
     // FIXME: find best sort criteria, for now we use dpt
-    std::sort(candidates.begin(), candidates.end(), 
-              [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
-                { return a.dpt < b.dpt; });
+    std::sort(candidates.begin(),
+              candidates.end(),
+              [](const CompositeCandidate &a, const CompositeCandidate &b) -> bool { return a.dpt < b.dpt; });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), cfg.nCOMPCAND_PER_CLUSTER);
-    if(nCandPerCluster == 0) continue;
+    if (nCandPerCluster == 0)
+      continue;
 
     float bdtWP_MVA = cfg.compIDparams.BDTcut_wp97p5;
-    float bdtWP_XGB = 1. / (1. + std::sqrt((1. - bdtWP_MVA) / (1. + bdtWP_MVA))); // Convert WP value from ROOT.TMVA to XGboost
+    float bdtWP_XGB =
+        1. / (1. + std::sqrt((1. - bdtWP_MVA) / (1. + bdtWP_MVA)));  // Convert WP value from ROOT.TMVA to XGboost
     float maxScore = -999;
     int ibest = -1;
-    for(unsigned int icand = 0; icand < nCandPerCluster; icand++) {
+    for (unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
       std::vector<EmCaloObjEmu> emcalo_sel = emcalo;
       float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
-      if(score > maxScore) {
-      // if((score > bdtWP_XGB) && (score > maxScore)) {
+      if (score > maxScore) {
+        // if((score > bdtWP_XGB) && (score > maxScore)) {
         maxScore = score;
         ibest = icand;
       }
     }
-    if(ibest != -1) {
+    if (ibest != -1) {
       emCalo2tk[ic] = candidates[ibest].track_idx;
       emCaloTkBdtScore[ic] = maxScore;
     }
   }
 }
-
 
 float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
                                                   const std::vector<EmCaloObjEmu> &emcalo,
@@ -263,29 +261,29 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   // Call and normalize input feature values, then cast to ap_fixed.
   // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
   // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> hoe = calo.hwHoe;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> tkpt = tk.hwPt;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> srrtot = calo.hwSrrTot;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> deta = tk.hwEta - calo.hwEta;
-  ap_fixed<18,9> calo_invPt = invert_with_shift<pt_t, ap_fixed<18,9>, 1024>(calo.hwPt); // TODO: this is a guess
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> dpt = tk.hwPt * calo_invPt;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> meanz = calo.hwMeanZ;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> dphi = tk.hwPhi - calo.hwPhi;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> chi2 = tk.hwChi2;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> tkz0 = tk.hwZ0;
-  ap_fixed<21,12,AP_RND_CONV,AP_SAT> nstubs = tk.hwStubs;
-  
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> hoe = calo.hwHoe;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> tkpt = tk.hwPt;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> srrtot = calo.hwSrrTot;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> deta = tk.hwEta - calo.hwEta;
+  ap_fixed<18, 9> calo_invPt = invert_with_shift<pt_t, ap_fixed<18, 9>, 1024>(calo.hwPt);  // TODO: this is a guess
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> dpt = tk.hwPt * calo_invPt;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> meanz = calo.hwMeanZ;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> dphi = tk.hwPhi - calo.hwPhi;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> chi2 = tk.hwRedChi2RPhi;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> tkz0 = tk.hwZ0;
+  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> nstubs = tk.hwStubs;
+
   // Run BDT inference
-  std::vector<ap_fixed<21,12,AP_RND_CONV,AP_SAT>> inputs = { hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs } ;
-  std::vector<ap_fixed<12,3,AP_RND_CONV,AP_SAT>> bdt_score = composite_bdt_->decision_function(inputs);
+  std::vector<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>> inputs = {
+      hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs};
+  std::vector<ap_fixed<12, 3, AP_RND_CONV, AP_SAT>> bdt_score = composite_bdt_->decision_function(inputs);
 
   float bdt_score_CON = bdt_score[0];
-  float bdt_score_XGB = 1/(1+exp(-bdt_score_CON)); // Map Conifer score to XGboost score. (same as scipy.expit)
+  float bdt_score_XGB = 1 / (1 + exp(-bdt_score_CON));  // Map Conifer score to XGboost score. (same as scipy.expit)
 
   // std::cout<<"BDT score of composite candidate = "<<bdt_score_XGB<<std::endl;
   return bdt_score_XGB;
 }
-
 
 void PFTkEGAlgoEmulator::sel_emCalo(unsigned int nmax_sel,
                                     const std::vector<EmCaloObjEmu> &emcalo,
@@ -325,12 +323,12 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
   std::vector<float> emCaloTkBdtScore(emcalo_sel.size(), -999);
 
-  if(cfg.doCompositeTkEle) {
+  if (cfg.doCompositeTkEle) {
     link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, emCaloTkBdtScore);
   } else {
     link_emCalo2tk_elliptic(in.region, emcalo_sel, in.track, emCalo2tk);
   }
-  
+
   out.egsta.clear();
   std::vector<EGIsoObjEmu> egobjs;
   std::vector<EGIsoEleObjEmu> egeleobjs;
