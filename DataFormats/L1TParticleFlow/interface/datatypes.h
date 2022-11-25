@@ -44,6 +44,7 @@ namespace l1ct {
   typedef ap_ufixed<10, 1, AP_TRN, AP_SAT> srrtot_t;
   typedef ap_uint<8> meanz_t;  // mean - SCALE_MEANZ = 320
   typedef ap_ufixed<10, 5, AP_TRN, AP_SAT> hoe_t;
+  typedef ap_uint<4> redChi2Bin_t;
 
   // FIXME: adjust range 10-11bits -> 1/4 - 1/2TeV is probably more than enough for all reasonable use cases
   typedef ap_ufixed<11, 9, AP_TRN, AP_SAT> iso_t;
@@ -156,8 +157,8 @@ namespace l1ct {
     constexpr float DXY_LSB = 0.05;
     constexpr float PUPPIW_LSB = 1.0 / 256;
     constexpr float MEANZ_SCALE = 320.;
-    constexpr float SRRTOT_LSB = pow(2,-9);
-    constexpr float HOE_LSB = pow(2,-5);
+    constexpr float SRRTOT_LSB = pow(2, -9);
+    constexpr float HOE_LSB = pow(2, -5);
 
     inline float floatPt(pt_t pt) { return pt.to_float(); }
     inline float floatPt(dpt_t pt) { return pt.to_float(); }
@@ -209,9 +210,9 @@ namespace l1ct {
 
     inline int makeDR2FromFloatDR(float dr) { return ceil(dr * dr / ETAPHI_LSB / ETAPHI_LSB); }
     inline chi2_t makeChi2(float chi2) { return chi2_t(chi2); }
-    inline srrtot_t makeSrrTot(float var) { return srrtot_t(SRRTOT_LSB*round(var/SRRTOT_LSB)); };
+    inline srrtot_t makeSrrTot(float var) { return srrtot_t(SRRTOT_LSB * round(var / SRRTOT_LSB)); };
     inline meanz_t makeMeanZ(float var) { return round(var - MEANZ_SCALE); };
-    inline hoe_t makeHoe(float var) { return hoe_t(HOE_LSB*round(var/HOE_LSB)); };
+    inline hoe_t makeHoe(float var) { return hoe_t(HOE_LSB * round(var / HOE_LSB)); };
 
     inline float maxAbsEta() { return ((1 << (eta_t::width - 1)) - 1) * ETAPHI_LSB; }
     inline float maxAbsPhi() { return ((1 << (phi_t::width - 1)) - 1) * ETAPHI_LSB; }

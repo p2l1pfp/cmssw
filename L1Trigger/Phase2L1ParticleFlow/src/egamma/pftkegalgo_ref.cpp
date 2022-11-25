@@ -91,9 +91,7 @@ debug_(cfg.debug) {
 #else
           auto resolvedFileName = "compositeID.json";
 #endif
-    std::cout<<resolvedFileName<<std::endl;
 	  composite_bdt_ = new conifer::BDT<ap_fixed<21,12,AP_RND_CONV,AP_SAT>,ap_fixed<12,3,AP_RND_CONV,AP_SAT>,0> (resolvedFileName);
-    std::cout<<"declared bdt"<<std::endl;
   }
 }
 
@@ -202,15 +200,12 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
                                         std::vector<int> &emCalo2tk, 
                                         std::vector<float> &emCaloTkBdtScore) const {
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
-  std::cout<<"doing loose dR matching"<<std::endl;
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
-    std::cout<<"cluster "<<ic<<std::endl;
     auto &calo = emcalo[ic];
 
     std::vector<CompositeCandidate> candidates;
 
     for (unsigned int itk = 0; itk < nTrackMax; ++itk) {
-      std::cout<<"track "<<itk<<std::endl;
       const auto &tk = track[itk];
       if (tk.floatPt() <= cfg.trkQualityPtMin)
         continue;
@@ -228,13 +223,11 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
           candidates.push_back(cand);
       }
     }
-    std::cout << "Constructed candidates, now sorting" << std::endl;
     // FIXME: find best sort criteria, for now we use dpt
     std::sort(candidates.begin(), candidates.end(), 
               [](const CompositeCandidate & a, const CompositeCandidate & b) -> bool
                 { return a.dpt < b.dpt; });
     unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), cfg.nCOMPCAND_PER_CLUSTER);
-    std::cout << "# composite candidates: " << nCandPerCluster << std::endl;
     if(nCandPerCluster == 0) continue;
 
     float bdtWP_MVA = cfg.compIDparams.BDTcut_wp97p5;
@@ -319,7 +312,6 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
                   << std::endl;
     }
   }
-  std::cout<<"running"<<std::endl;
   // FIXME: can be removed in the endcap since now running with the "interceptor".
   // Might still be needed in barrel
   // filter and select first N elements of input clusters
@@ -332,7 +324,6 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
   std::vector<float> emCaloTkBdtScore(emcalo_sel.size(), -999);
-  std::cout<<"about to start matching"<<std::endl;
 
   if(cfg.doCompositeTkEle) {
     link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, emCaloTkBdtScore);
