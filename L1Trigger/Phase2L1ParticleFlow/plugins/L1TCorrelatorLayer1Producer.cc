@@ -643,7 +643,7 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
     tkAndSel.second = t.quality() > 0;
   }
   // CMSSW-only extra info
-  tkAndSel.first.hwChi2 = l1ct::Scales::makeChi2(t.chi2());
+  tkAndSel.first.hwChi2 = round(t.chi2() * 10);
   tkAndSel.first.simPt = t.pt();
   tkAndSel.first.simCaloEta = t.caloEta();
   tkAndSel.first.simCaloPhi = t.caloPhi();
@@ -728,17 +728,13 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   cwrd(213, 201) = w_srrtot;
   cwrd(94, 83) = w_meanz;
 
-  std::cout << "[addRawHgcalCluster] meanz IN: " << c.absZBarycenter() << " OUT: " << w_meanz << std::endl;
-  std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << w_hoe << std::endl;
-  std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << w_srrtot << std::endl;
-  std::cout << " .   eta: " << w_eta << " phi: " << w_phi << std::endl;
+  // std::cout << "[addRawHgcalCluster] meanz IN: " << c.absZBarycenter() << " OUT: " << w_meanz << std::endl;
+  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << w_hoe << std::endl;
+  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << w_srrtot << std::endl;
+  // std::cout << " .   eta: " << w_eta << " phi: " << w_phi << std::endl;
   // FIXME: we use a spare space in the word for hoe which is not in the current interface
   cwrd(127, 116) = w_hoe.range();
 
-  ap_uint<12> w_hoe_u = cwrd(127, 116);
-  l1ct::hoe_t hoe_u = w_hoe_u * l1ct::hoe_t(l1ct::Scales::HOE_LSB);
-  std::cout << "HOW in: " << c.hOverE() << " out: " << w_hoe << " unpack IN: " << w_hoe_u << " out: " << hoe_u
-            << std::endl;
   sec.obj.push_back(cwrd);
 }
 

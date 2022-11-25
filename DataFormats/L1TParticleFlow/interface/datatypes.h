@@ -40,7 +40,6 @@ namespace l1ct {
   typedef ap_uint<13> tk2calo_dq_t;
   typedef ap_uint<4> egquality_t;
   typedef ap_uint<3> stub_t;
-  typedef ap_ufixed<12, 10, AP_TRN, AP_SAT> chi2_t;
   typedef ap_ufixed<10, 1, AP_TRN, AP_SAT> srrtot_t;
   typedef ap_uint<8> meanz_t;  // mean - SCALE_MEANZ = 320
   typedef ap_ufixed<10, 5, AP_TRN, AP_SAT> hoe_t;
@@ -175,7 +174,6 @@ namespace l1ct {
     inline float floatDxy(dxy_t dxy) { return dxy.to_float() * DXY_LSB; }
     inline float floatPuppiW(puppiWgt_t puppiw) { return puppiw.to_float() * PUPPIW_LSB; }
     inline float floatIso(iso_t iso) { return iso.to_float(); }
-    inline float floatChi2(chi2_t chi2) { return chi2.to_float(); }
     inline float floatSrrTot(srrtot_t srrtot) { return srrtot.to_float(); };
     inline float floatMeanZ(meanz_t meanz) { return meanz + MEANZ_SCALE; };
     inline float floatHoe(hoe_t hoe) { return hoe.to_float(); };
@@ -209,7 +207,6 @@ namespace l1ct {
     inline iso_t makeIso(float iso) { return iso_t(0.25 * round(iso * 4)); }
 
     inline int makeDR2FromFloatDR(float dr) { return ceil(dr * dr / ETAPHI_LSB / ETAPHI_LSB); }
-    inline chi2_t makeChi2(float chi2) { return chi2_t(chi2); }
     inline srrtot_t makeSrrTot(float var) { return srrtot_t(SRRTOT_LSB * round(var / SRRTOT_LSB)); };
     inline meanz_t makeMeanZ(float var) { return round(var - MEANZ_SCALE); };
     inline hoe_t makeHoe(float var) { return hoe_t(HOE_LSB * round(var / HOE_LSB)); };
