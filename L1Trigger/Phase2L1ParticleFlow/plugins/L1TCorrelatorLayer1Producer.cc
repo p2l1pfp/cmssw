@@ -176,7 +176,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
 #if 0  // LATER
   produces<l1t::PFCandidateCollection>("TKVtx");
 #endif
-#if 0  // LATER
+#ifdef PUT_DECODED_TK
   produces<std::vector<l1t::PFTrack>>("DecodedTK");
 #endif
 
@@ -365,8 +365,8 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
   iEvent.put(fetchHadCalo(), "Calo");
   iEvent.put(fetchTracks(), "TK");
 
-#if 0
-    iEvent.put(fetchDecodedTracks(), "DecodedTK");
+#ifdef PUT_DECODED_TK
+  iEvent.put(fetchDecodedTracks(), "DecodedTK");
 #endif
 
   // Then do the vertexing, and save it out
@@ -688,10 +688,10 @@ void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::H
   calo.hwSrrTot = l1ct::Scales::makeSrrTot(c.sigmaRR());
   calo.hwMeanZ = c.absZBarycenter() < 320. ? l1ct::meanz_t(0) : l1ct::Scales::makeMeanZ(c.absZBarycenter());
   calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
-  std::cout << "[addDecodedHadCalo] eta: " << calo.hwEta << " phi: " << calo.hwPhi << std::endl;
-  std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << calo.hwHoe << std::endl;
-  std::cout << "                    hwMeanZ IN: " << c.absZBarycenter() << " OUT: " << calo.hwMeanZ << std::endl;
-  std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << calo.hwSrrTot << std::endl;
+  // std::cout << "[addDecodedHadCalo] eta: " << calo.hwEta << " phi: " << calo.hwPhi << std::endl;
+  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << calo.hwHoe << std::endl;
+  // std::cout << "                    hwMeanZ IN: " << c.absZBarycenter() << " OUT: " << calo.hwMeanZ << std::endl;
+  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << calo.hwSrrTot << std::endl;
   calo.src = &c;
   sec.obj.push_back(calo);
 }
@@ -709,9 +709,9 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   ap_uint<12> w_meanz = round(c.absZBarycenter());
   // FIXME: the calibration can actually make hoe become negative....we add a small protection for now
   // We use ap_ufixed to handle saturation and rounding
-  ap_ufixed<12, 7, AP_RND_CONV, AP_SAT> w_hoe = c.hOverE();
+  ap_ufixed<10, 5, AP_RND_CONV, AP_SAT> w_hoe = c.hOverE();
 
-  cwrd(13, 0) = w_pt;
+  cwrd(13, 0) = w_pt.range();
   cwrd(27, 14) = w_empt;
   cwrd(72, 64) = w_eta;
   cwrd(81, 73) = w_phi;
@@ -730,8 +730,12 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << w_srrtot << std::endl;
   std::cout << " .   eta: " << w_eta << " phi: " << w_phi << std::endl;
   // FIXME: we use a spare space in the word for hoe which is not in the current interface
-  cwrd(127, 116) = w_hoe;
+  cwrd(127, 116) = w_hoe.range();
 
+  ap_uint<12> w_hoe_u = cwrd(127, 116);
+  l1ct::hoe_t hoe_u = w_hoe_u * l1ct::hoe_t(l1ct::Scales::HOE_LSB);
+  std::cout << "HOW in: " << c.hOverE() << " out: " << w_hoe << " unpack IN: " << w_hoe_u << " out: " << hoe_u
+            << std::endl;
   sec.obj.push_back(cwrd);
 }
 

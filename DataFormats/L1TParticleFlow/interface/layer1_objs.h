@@ -163,12 +163,12 @@ namespace l1ct {
     z0_t hwZ0;
     dxy_t hwDxy;
     tkquality_t hwQuality;
-    // FIXME: these variables are actually not in the track word or not in this format...
     stub_t hwStubs;
-    redChi2Bin_t hwRedChi2RZ;
-    redChi2Bin_t hwRedChi2RPhi;
+    redChi2Bin_t hwRedChi2RZ; // 4 bits
+    redChi2Bin_t hwRedChi2RPhi; // 4 bits
     //FIXME: is this actually filled? 3 bits would be enough
-    redChi2Bin_t hwRedChi2Bend;
+    redChi2Bin_t hwRedChi2Bend; // 4 bits
+    // FIXME: this variable is actually not in the track word or not in this format...
     chi2_t hwChi2;
 
     enum TkQuality { PFLOOSE = 1, PFTIGHT = 2 };
