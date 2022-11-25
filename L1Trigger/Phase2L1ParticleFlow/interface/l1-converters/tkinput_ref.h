@@ -151,6 +151,15 @@ namespace l1ct {
     const std::vector<int> &tanlLUT() const { return tanlLUT_; }
     const std::vector<l1ct::pt_t> &ptLUT() const { return ptLUT_; }
 
+    unsigned int countSetBits(unsigned int n) const {
+      unsigned int count = 0;
+      while (n) {
+        n &= (n - 1);
+        count++;
+      }
+      return count;
+    }
+
   protected:
     // utilities
     template <int N>

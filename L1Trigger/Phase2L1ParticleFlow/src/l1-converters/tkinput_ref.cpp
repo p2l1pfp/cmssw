@@ -162,7 +162,6 @@ std::pair<l1ct::TkObjEmu, bool> l1ct::TrackInputEmulator::decodeTrack(ap_uint<96
         fDEta = floatDEtaHGCal(z0, Rinv, tanl);
         fDPhi = floatDPhiHGCal(z0, Rinv, tanl);
       }
-
       ret.hwDPhi = std::round(fDPhi);
       ret.hwDEta = std::round(fDEta);
       ret.hwPhi = std::round(fvtxPhi - fDPhi * ret.intCharge());
@@ -171,6 +170,11 @@ std::pair<l1ct::TkObjEmu, bool> l1ct::TrackInputEmulator::decodeTrack(ap_uint<96
       ret.hwZ0 = l1ct::Scales::makeZ0(floatZ0(z0));
     }
 
+    ap_uint<7> w_hitPattern = tkword(15, 9);
+    ret.hwStubs = countSetBits(w_hitPattern);
+    ret.hwRedChi2RZ = tkword(35, 32);
+    ret.hwRedChi2RPhi = tkword(67, 64);
+    ret.hwRedChi2Bend = tkword(18, 16);
     oksel = ret.hwQuality != 0;
   }
   return std::make_pair(ret, oksel);
