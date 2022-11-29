@@ -55,28 +55,7 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMax")) {}
 
 l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
-    : CompIDParameters(pset.getParameter<double>("hoeMin"),
-                       pset.getParameter<double>("hoeMax"),
-                       pset.getParameter<double>("tkptMin"),
-                       pset.getParameter<double>("tkptMax"),
-                       pset.getParameter<double>("srrtotMin"),
-                       pset.getParameter<double>("srrtotMax"),
-                       pset.getParameter<double>("detaMin"),
-                       pset.getParameter<double>("detaMax"),
-                       pset.getParameter<double>("dptMin"),
-                       pset.getParameter<double>("dptMax"),
-                       pset.getParameter<double>("meanzMin"),
-                       pset.getParameter<double>("meanzMax"),
-                       pset.getParameter<double>("dphiMin"),
-                       pset.getParameter<double>("dphiMax"),
-                       pset.getParameter<double>("tkchi2Min"),
-                       pset.getParameter<double>("tkchi2Max"),
-                       pset.getParameter<double>("tkz0Min"),
-                       pset.getParameter<double>("tkz0Max"),
-                       pset.getParameter<double>("tknstubsMin"),
-                       pset.getParameter<double>("tknstubsMax"),
-                       pset.getParameter<double>("BDTcut_wp97p5"),
-                       pset.getParameter<double>("BDTcut_wp95p0")) {}
+    : CompIDParameters(pset.getParameter<double>("BDTcut_wp97p5"), pset.getParameter<double>("BDTcut_wp95p0")) {}
 
 #endif
 
