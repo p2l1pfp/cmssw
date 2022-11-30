@@ -30,23 +30,19 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '123X_mcRun4_realistic_v3', '')
 
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer2EG_cff')
-process.load('L1Trigger.L1TTrackMatch.l1tGTTInputProducer_cfi')
-process.load('L1Trigger.VertexFinder.l1tVertexProducer_cfi')
-process.l1tVertexFinderEmulator = process.l1tVertexProducer.clone()
-process.l1tVertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
-process.l1tVertexFinderEmulator.l1TracksInputTag = cms.InputTag("l1tGTTInputProducer", "Level1TTTracksConverted")
-from L1Trigger.Phase2L1GMT.gmt_cfi import l1tStandaloneMuons
-process.l1tSAMuonsGmt = l1tStandaloneMuons.clone()
+process.load('L1Trigger.Phase2L1ParticleFlow.l1pfJetMet_cff')
+process.load('L1Trigger.L1TTrackMatch.L1GTTInputProducer_cfi')
+process.load('L1Trigger.VertexFinder.VertexProducer_cff')
+process.L1VertexFinderEmulator = process.VertexProducer.clone()
+process.L1VertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
+process.L1VertexFinderEmulator.l1TracksInputTag = cms.InputTag("L1GTTInputProducer", "Level1TTTracksConverted")
+from L1Trigger.Phase2L1GMT.gmt_cfi import standaloneMuons
+process.L1SAMuonsGmt = standaloneMuons.clone()
 
-from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetProducer_cfi import l1tSeedConePFJetEmulatorProducer
-from L1Trigger.Phase2L1ParticleFlow.l1tDeregionizerProducer_cfi import l1tDeregionizerProducer
-from L1Trigger.Phase2L1ParticleFlow.l1tJetFileWriter_cfi import l1tSeededConeJetFileWriter
-process.l1tLayer2Deregionizer = l1tDeregionizerProducer.clone()
-process.l1tLayer2SeedConeJetsCorrected = l1tSeedConePFJetEmulatorProducer.clone(L1PFObject = cms.InputTag('l1tLayer2Deregionizer', 'Puppi'),
-                                                                                doCorrections = cms.bool(True),
-                                                                                correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root"),
-                                                                                correctorDir = cms.string('L1PuppiSC4EmuJets'))
-process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(jets = "l1tLayer2SeedConeJetsCorrected")
+from L1Trigger.Phase2L1ParticleFlow.l1ctJetFileWriter_cfi import l1ctSeededConeJetFileWriter
+l1ctLayer2SCJetsProducts = cms.untracked.VPSet([cms.PSet(jets=cms.InputTag("sc4PFL1PuppiCorrectedEmulator")),
+                                              cms.PSet(jets=cms.InputTag("sc8PFL1PuppiCorrectedEmulator"))])
+process.l1ctLayer2SeedConeJetWriter = l1ctSeededConeJetFileWriter.clone(collections = l1ctLayer2SCJetsProducts)
 
 process.l1tLayer1Barrel9 = process.l1tLayer1Barrel.clone()
 process.l1tLayer1Barrel9.puAlgo.nFinalSort = 32
@@ -68,19 +64,22 @@ process.l1tLayer1HGCalNoTK.patternWriters = cms.untracked.VPSet(*hgcalNoTKWriter
 process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
 
 process.runPF = cms.Path( 
-        process.l1tSAMuonsGmt +
-        process.l1tGTTInputProducer +
-        process.l1tVertexFinderEmulator +
-        process.l1tLayer1Barrel +
-        #process.l1tLayer1Barrel9 +
-        process.l1tLayer1HGCal +
-        process.l1tLayer1HGCalNoTK +
-        process.l1tLayer1HF +
-        process.l1tLayer1 +
-        process.l1tLayer2Deregionizer +
-        process.l1tLayer2SeedConeJetsCorrected +
-        process.l1tLayer2SeedConeJetWriter +
-        process.l1tLayer2EG
+        process.L1SAMuonsGmt +
+        process.L1GTTInputProducer +
+        process.L1VertexFinderEmulator +
+        process.l1ctLayer1Barrel +
+        #process.l1ctLayer1Barrel9 +
+        process.l1ctLayer1HGCal +
+        process.l1ctLayer1HGCalNoTK +
+        process.l1ctLayer1HF +
+        process.l1ctLayer1 +
+        process.l1ctLayer2Deregionizer +
+        process.sc4PFL1PuppiCorrectedEmulator +
+        process.sc4PFL1PuppiCorrectedEmulatorMHT +
+        process.sc8PFL1PuppiCorrectedEmulator +
+        process.sc8PFL1PuppiCorrectedEmulatorMHT +
+        process.l1ctLayer2SeedConeJetWriter +
+        process.l1ctLayer2EG
     )
 process.runPF.associate(process.L1TLayer1TaskInputsTask)
 
