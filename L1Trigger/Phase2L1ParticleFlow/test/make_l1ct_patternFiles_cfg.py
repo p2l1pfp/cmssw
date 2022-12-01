@@ -78,10 +78,10 @@ process.runPF = cms.Path(
         process.l1ctLayer1HGCalNoTK +
         process.l1ctLayer1HF +
         process.l1ctLayer1 +
-        process.l1ctLayer2EG +
         process.l1ctLayer2Deregionizer +
         process.l1ctLayer2SeedConeJetsCorrected +
-        process.l1ctLayer2SeedConeJetWriter
+        process.l1ctLayer2SeedConeJetWriter +
+        process.l1ctLayer2EG
     )
 process.runPF.associate(process.l1ctLayer1TaskInputsTask)
 
