@@ -881,7 +881,7 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchTr
 
 std::unique_ptr<std::vector<l1t::PFTrack>> L1TCorrelatorLayer1Producer::fetchDecodedTracks() const {
   auto ret = std::make_unique<std::vector<l1t::PFTrack>>();
-  for (const auto r : event_.decoded.track) {
+  for (const auto &r : event_.decoded.track) {
     const auto &reg = r.region;
     for (const auto &p : r.obj) {
       if (p.hwPt == 0 || !reg.isFiducial(p))
