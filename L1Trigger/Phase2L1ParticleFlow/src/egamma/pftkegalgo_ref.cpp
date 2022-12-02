@@ -68,8 +68,9 @@ PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
 #else
     auto resolvedFileName = "compositeID.json";
 #endif
-    composite_bdt_ = new conifer::BDT<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, 0>(
-        resolvedFileName);
+    composite_bdt_ =
+        new conifer::BDT<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(
+            resolvedFileName);
   }
 }
 
@@ -214,7 +215,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     int ibest = -1;
     for (unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
-      std::vector<EmCaloObjEmu> emcalo_sel = emcalo;
+      const std::vector<EmCaloObjEmu> &emcalo_sel = emcalo;
       float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
       if (score > maxScore) {
         // if((score > bdtWP_XGB) && (score > maxScore)) {
