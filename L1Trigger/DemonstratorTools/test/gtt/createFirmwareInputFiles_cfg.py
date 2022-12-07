@@ -44,33 +44,51 @@ for filePath in options.inputFiles:
 
 process = cms.Process("GTTFileWriter")
 
-process.load('Configuration.Geometry.GeometryExtended2026D49Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2026D49_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D77Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D77_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:upgradePLS3', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic', '')
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 
-process.source = cms.Source("PoolSource", fileNames = cms.untracked.vstring(inputFiles) )
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring(inputFiles),
+    inputCommands = cms.untracked.vstring("keep *", "drop l1tTkPrimaryVertexs_L1TkPrimaryVertex__*")
+)
 process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents) )
 process.options = cms.untracked.PSet(
     numberOfThreads = cms.untracked.uint32(options.threads),
     numberOfStreams = cms.untracked.uint32(options.streams if options.streams>0 else 0)
 )
 
-process.load("L1Trigger.TrackFindingTracklet.L1HybridEmulationTracks_cff")
 process.load('L1Trigger.L1TTrackMatch.L1GTTInputProducer_cfi')
 process.load('L1Trigger.VertexFinder.VertexProducer_cff')
+process.load("L1Trigger.L1TTrackMatch.L1TrackSelectionProducer_cfi")
+process.load("L1Trigger.L1TTrackMatch.L1TrackJetEmulationProducer_cfi")
+process.load("L1Trigger.L1TTrackMatch.L1TkHTMissEmulatorProducer_cfi")
+process.load("L1Trigger.L1TTrackMatch.L1TrackerEtMissEmulatorProducer_cfi")
 process.load('L1Trigger.DemonstratorTools.GTTFileWriter_cff')
 
 process.L1GTTInputProducer.debug = cms.int32(options.debug)
 process.VertexProducer.l1TracksInputTag = cms.InputTag("L1GTTInputProducer","Level1TTTracksConverted")
-process.VertexProducer.VertexReconstruction.Algorithm = cms.string("FastHistoEmulation")
+process.VertexProducer.VertexReconstruction.Algorithm = cms.string("fastHistoEmulation")
 process.VertexProducer.VertexReconstruction.VxMinTrackPt = cms.double(0.0)
 process.VertexProducer.debug = options.debug
+process.L1TrackSelectionProducer.processSimulatedTracks = cms.bool(False)
+process.L1TrackSelectionProducer.l1VerticesEmulationInputTag = cms.InputTag("VertexProducer", "l1verticesEmulation")
+process.L1TrackSelectionProducer.debug = options.debug
+process.L1TrackJetsEmulation.VertexInputTag = cms.InputTag("VertexProducer", "l1verticesEmulation")
+process.L1TrackerEmuEtMiss.L1VertexInputTag = cms.InputTag("VertexProducer", "l1verticesEmulation")
+process.L1TrackerEmuEtMiss.debug = options.debug
+process.L1TrackerEmuHTMiss.debug = (options.debug > 0)
+
 if options.debug:
     process.MessageLogger.cerr.INFO.limit = cms.untracked.int32(1000000000)
+    process.MessageLogger.suppressInfo = cms.untracked.vstring('CondDBESSource', 'PoolDBESSource')
+    process.MessageLogger.cerr.CondDBESSource = cms.untracked.PSet(
+        limit = cms.untracked.int32(0)
+    )
 
 process.GTTFileWriter.format = cms.untracked.string(options.format)
 # process.GTTFileWriter.outputFilename = cms.untracked.string("myOutputFile.txt")
@@ -78,4 +96,4 @@ process.GTTFileWriter.format = cms.untracked.string(options.format)
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 process.Timing = cms.Service("Timing", summaryOnly = cms.untracked.bool(True))
 
-process.p = cms.Path(process.L1HybridTracks * process.L1GTTInputProducer * process.VertexProducer * process.GTTFileWriter)
+process.p = cms.Path(process.L1GTTInputProducer * process.VertexProducer * process.L1TrackSelectionProducer * process.L1TrackJetsEmulation * process.L1TrackerEmuHTMiss * process.L1TrackerEmuEtMiss * process.GTTFileWriter)

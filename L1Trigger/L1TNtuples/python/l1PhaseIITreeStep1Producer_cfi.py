@@ -11,15 +11,14 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
    tkEGTokenHGC = cms.InputTag("l1ctLayer1EG","L1TkEleEE"),
    tkEMTokenHGC = cms.InputTag("l1ctLayer1EG","L1TkEmEE"),
 
-
-   muonKalman = cms.InputTag("simKBmtfDigis","BMTF"),
-   muonOverlap = cms.InputTag("simOmtfDigis","OMTF"),
-   muonEndcap = cms.InputTag("simEmtfDigis",""),
-   TkMuonToken = cms.InputTag("L1TkMuons",""),
+#   muonKalman = cms.InputTag("simKBmtfDigis","BMTF"), # we should remove all of these 
+#   muonOverlap = cms.InputTag("simOmtfDigis","OMTF"),
+#   muonEndcap = cms.InputTag("simEmtfDigis",""),
+#   TkMuonToken = cms.InputTag(""),#"L1TkMuons",""),  # removing this from the run 
 
    #Global muons
-   muonToken = cms.untracked.InputTag("simGmtStage2Digis", ""),
-   TkGlbMuonToken = cms.InputTag("L1TkGlbMuons",""),
+#   muonToken = cms.untracked.InputTag("simGmtStage2Digis", ""),
+#   TkGlbMuonToken = cms.InputTag(""),#L1TkGlbMuons",""), # removing this from the run 
 
    #GMT muons
    gmtMuonToken = cms.InputTag("L1SAMuonsGmt", "promptSAMuons"), #we use the prompt
@@ -41,9 +40,9 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
    l1PFMet = cms.InputTag("L1MetPfProducer",""), #emulator
 
 
-   zoPuppi = cms.InputTag("l1pfProducerBarrel","z0"), #simulation but this is not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   l1vertextdr = cms.InputTag("VertexProducer","l1vertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   l1vertices = cms.InputTag("VertexProducer","l1vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   #zoPuppi = cms.InputTag(""), # does not exist anymore! 
+   #l1vertextdr = cms.InputTag("VertexProducer","l1vertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   #l1vertices = cms.InputTag("VertexProducer","l1vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
    l1TkPrimaryVertex= cms.InputTag("L1VertexFinderEmulator","l1verticesEmulation"), #we need to rename this, but these are now emulated vertices!
 
    L1NNTauToken = cms.InputTag("L1NNTauProducerPuppi","L1PFTausNN"), # default collection, emulated 

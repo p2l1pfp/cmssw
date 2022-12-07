@@ -62,6 +62,10 @@ process.source = cms.Source ("PoolSource",
                             )
 
 process.source.inputCommands = cms.untracked.vstring("keep *","drop l1tTkPrimaryVertexs_L1TkPrimaryVertex__*")
+process.Timing = cms.Service("Timing",
+  summaryOnly = cms.untracked.bool(False),
+  useJobReport = cms.untracked.bool(True)
+)
 
 process.TFileService = cms.Service("TFileService", fileName = cms.string('GTTObjects_ttbar200PU.root'), closeFileFast = cms.untracked.bool(True))
 
@@ -107,6 +111,7 @@ process.pPV = cms.Path(process.L1VertexFinder)
 process.L1VertexFinderEmulator = process.VertexProducer.clone()
 process.L1VertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
 process.L1VertexFinderEmulator.l1TracksInputTag = cms.InputTag("L1GTTInputProducer","Level1TTTracksConverted")
+process.L1VertexFinderEmulator.VertexReconstruction.VxMinTrackPt = cms.double(0.0)
 process.pPVemu = cms.Path(process.L1VertexFinderEmulator)
 
 process.L1TrackFastJets.L1PrimaryVertexTag = cms.InputTag("L1VertexFinder", "l1vertices")

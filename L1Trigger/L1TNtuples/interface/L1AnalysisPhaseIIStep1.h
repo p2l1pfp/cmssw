@@ -34,6 +34,7 @@
 #include "DataFormats/L1TMuonPhase2/interface/SAMuon.h"
 #include "DataFormats/L1TMuonPhase2/interface/MuonStub.h"
 #include "DataFormats/L1TMuonPhase2/interface/TrackerMuon.h"
+#include "L1Trigger/Phase2L1GMT/interface/Constants.h"
 
 #include "DataFormats/L1TCorrelator/interface/TkMuon.h"
 #include "DataFormats/L1TCorrelator/interface/TkMuonFwd.h"
@@ -108,6 +109,7 @@ namespace L1Analysis {
                  const edm::Handle<l1t::TkEmCollection> tkEMHGC,
                  unsigned maxL1Extra);
 
+/*
     void SetMuonKF(const edm::Handle<l1t::RegionalMuonCandBxCollection> muonKF,
                    unsigned maxL1Extra,
                    unsigned int muonDetector);
@@ -119,6 +121,7 @@ namespace L1Analysis {
 
     void SetMuon(const edm::Handle<l1t::MuonBxCollection> muon, unsigned maxL1Extra);
     void SetTkGlbMuon(const edm::Handle<l1t::TkGlbMuonCollection> TkGlbMuon, unsigned maxL1Extra);
+*/
 
     void SetGmtMuon(const edm::Handle<std::vector<l1t::SAMuon>> gmtMuon, unsigned maxL1Extra);
     void SetGmtTkMuon(const edm::Handle<std::vector<l1t::TrackerMuon>> gmtTkMuon, unsigned maxL1Extra);
@@ -175,6 +178,15 @@ namespace L1Analysis {
         // to not have to store the chosen fitParams for all objects in this tree producer as a configuration.
         // (it would be cleaner if all objects save the Z directly as well as the pointer to the track, or if
         // it is clear that the default is 4 unless specifically stated)
+
+    const float lsb_pt = Phase2L1GMT::LSBpt;
+    const float lsb_phi = Phase2L1GMT::LSBphi;
+    const float lsb_eta = Phase2L1GMT::LSBeta;
+    const float lsb_z0 = Phase2L1GMT::LSBGTz0;
+    const float lsb_d0 = Phase2L1GMT::LSBGTd0;
+    const float lsb_SA_z0 = Phase2L1GMT::LSBSAz0;
+    const float lsb_SA_d0 = Phase2L1GMT::LSBSAd0;
+
   };
 }  // namespace L1Analysis
 #endif

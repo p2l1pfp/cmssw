@@ -166,7 +166,7 @@ private:
   edm::EDGetTokenT<std::vector<l1t::EtSum>> scPFL1PuppiMHT_;
 
 
-  edm::EDGetTokenT<float> z0PuppiToken_;
+  //edm::EDGetTokenT<float> z0PuppiToken_;
   //edm::EDGetTokenT<l1t::VertexCollection> l1vertextdrToken_;
   //edm::EDGetTokenT<l1t::VertexCollection> l1verticesToken_;
   edm::EDGetTokenT<l1t::VertexWordCollection> l1TkPrimaryVertexToken_;
@@ -199,14 +199,15 @@ L1PhaseIITreeStep1Producer::L1PhaseIITreeStep1Producer(const edm::ParameterSet& 
   tkEGTokenHGC_ = consumes<l1t::TkElectronCollection>(iConfig.getParameter<edm::InputTag>("tkEGTokenHGC"));
   tkEMTokenHGC_ = consumes<l1t::TkEmCollection>(iConfig.getParameter<edm::InputTag>("tkEMTokenHGC"));
 
-  muonKalman_ = consumes<l1t::RegionalMuonCandBxCollection>(iConfig.getParameter<edm::InputTag>("muonKalman"));
+/*  muonKalman_ = consumes<l1t::RegionalMuonCandBxCollection>(iConfig.getParameter<edm::InputTag>("muonKalman"));
   muonOverlap_ = consumes<l1t::RegionalMuonCandBxCollection>(iConfig.getParameter<edm::InputTag>("muonOverlap"));
   muonEndcap_ = consumes<l1t::EMTFTrackCollection>(iConfig.getParameter<edm::InputTag>("muonEndcap"));
   TkMuonToken_ = consumes<l1t::TkMuonCollection>(iConfig.getParameter<edm::InputTag>("TkMuonToken"));
+*/
 
   //global muons
-  muonToken_ = consumes<l1t::MuonBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("muonToken"));
-  TkGlbMuonToken_ = consumes<l1t::TkGlbMuonCollection>(iConfig.getParameter<edm::InputTag>("TkGlbMuonToken"));
+//  muonToken_ = consumes<l1t::MuonBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("muonToken"));
+//  TkGlbMuonToken_ = consumes<l1t::TkGlbMuonCollection>(iConfig.getParameter<edm::InputTag>("TkGlbMuonToken"));
 
   gmtMuonToken_ = consumes<std::vector<l1t::SAMuon>>(iConfig.getParameter<edm::InputTag>("gmtMuonToken"));
   gmtTkMuonToken_ = consumes<std::vector<l1t::TrackerMuon>>(iConfig.getParameter<edm::InputTag>("gmtTkMuonToken"));
@@ -222,7 +223,9 @@ L1PhaseIITreeStep1Producer::L1PhaseIITreeStep1Producer(const edm::ParameterSet& 
   l1pfPhase1L1TJetSums_ =
       consumes<std::vector<l1t::EtSum>>(iConfig.getParameter<edm::InputTag>("l1pfPhase1L1TJetSums"));
 
-  z0PuppiToken_ = consumes<float>(iConfig.getParameter<edm::InputTag>("zoPuppi"));
+  //z0PuppiToken_ = consumes<float>(iConfig.getParameter<edm::InputTag>("zoPuppi"));
+  // -> Gone after cleaning the simulated info  
+
   //l1vertextdrToken_ = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertextdr"));
   //l1verticesToken_  = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertices"));
   l1TkPrimaryVertexToken_ =
@@ -273,7 +276,7 @@ L1PhaseIITreeStep1Producer::~L1PhaseIITreeStep1Producer() {
 void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   l1Extra->Reset();
 
-  edm::Handle<l1t::RegionalMuonCandBxCollection> muonsKalman;
+/*  edm::Handle<l1t::RegionalMuonCandBxCollection> muonsKalman;
   iEvent.getByToken(muonKalman_, muonsKalman);
 
   edm::Handle<l1t::RegionalMuonCandBxCollection> muonsOverlap;
@@ -290,6 +293,7 @@ void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::Ev
 
   iEvent.getByToken(muonToken_, muon);
   iEvent.getByToken(TkGlbMuonToken_, TkGlbMuon);
+*/
 
   edm::Handle<std::vector<l1t::SAMuon>> gmtMuon;
   edm::Handle<std::vector<l1t::TrackerMuon>> gmtTkMuon;
@@ -337,9 +341,10 @@ void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::Ev
 
   // now also fill vertices
 
-  edm::Handle<float> z0Puppi;
+/*  edm::Handle<float> z0Puppi;
   iEvent.getByToken(z0PuppiToken_, z0Puppi);
   float Z0 = *z0Puppi;
+*/
 
   // edm::Handle<std::vector<l1t::Vertex> > l1vertextdr;
   // edm::Handle<std::vector<l1t::Vertex> > l1vertices;
@@ -423,11 +428,11 @@ void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::Ev
 */
 
   if (l1TkPrimaryVertex.isValid() && !l1TkPrimaryVertex->empty()) {
-    l1Extra->SetVertices(Z0, l1TkPrimaryVertex);
+    l1Extra->SetVertices(0, l1TkPrimaryVertex); // We should change this function 
   } else {
     edm::LogWarning("MissingProduct") << "One of the L1TVertex collections is not valid " << std::endl;
     std::cout << "Getting the vertices!" << std::endl;
-    std::cout << Z0 << " " << l1TkPrimaryVertex->size() << std::endl;
+    std::cout << 0 << " " << l1TkPrimaryVertex->size() << std::endl;
   }
 
   if (caloTau.isValid()) {
@@ -515,7 +520,7 @@ void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::Ev
     edm::LogWarning("MissingProduct") << "L1PhaseII seededCone PuppiMHT not found. Branch will not be filled" << std::endl;
   }
 
-
+/*
   if (muonsKalman.isValid()) {
     l1Extra->SetMuonKF(muonsKalman, maxL1Extra_, 1);
   } else {
@@ -553,6 +558,7 @@ void L1PhaseIITreeStep1Producer::analyze(const edm::Event& iEvent, const edm::Ev
   } else {
     edm::LogWarning("MissingProduct") << "L1PhaseII TkGlbMuons not found. Branch will not be filled" << std::endl;
   }
+*/
 
   if (gmtMuon.isValid()) {
     l1Extra->SetGmtMuon(gmtMuon, maxL1Extra_);
