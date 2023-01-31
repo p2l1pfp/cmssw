@@ -65,9 +65,7 @@ PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
 #else
     auto resolvedFileName = "compositeID.json";
 #endif
-    composite_bdt_ =
-        new conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(
-            resolvedFileName);
+    composite_bdt_ = new conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(resolvedFileName);
   }
 }
 
@@ -251,8 +249,7 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   bdt_feature_t nstubs = tk.hwStubs;
 
   // Run BDT inference
-  std::vector<bdt_feature_t> inputs = {
-      hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs};
+  std::vector<bdt_feature_t> inputs = {hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs};
   std::vector<ap_fixed<12, 3, AP_RND_CONV, AP_SAT>> bdt_score = composite_bdt_->decision_function(inputs);
 
   float bdt_score_CON = bdt_score[0];
