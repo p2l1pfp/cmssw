@@ -158,6 +158,8 @@ namespace l1ct {
 
     bool writeEgSta() const { return cfg.writeEgSta; }
 
+    typedef ap_fixed<21, 12, AP_RND_CONV, AP_SAT> bdt_feature_t;
+
   private:
     void link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo, std::vector<int> &emCalo2emCalo) const;
 
@@ -355,7 +357,7 @@ namespace l1ct {
                            z0_t z0) const;
 
     PFTkEGAlgoEmuConfig cfg;
-    conifer::BDT<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false> *composite_bdt_;
+    conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false> *composite_bdt_;
     int debug_;
   };
 }  // namespace l1ct

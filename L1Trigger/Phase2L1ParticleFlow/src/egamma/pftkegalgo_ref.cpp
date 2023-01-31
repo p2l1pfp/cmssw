@@ -66,7 +66,7 @@ PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
     auto resolvedFileName = "compositeID.json";
 #endif
     composite_bdt_ =
-        new conifer::BDT<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(
+        new conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(
             resolvedFileName);
   }
 }
@@ -186,14 +186,14 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
 
       float d_phi = deltaPhi(tk.floatPhi(), calo.floatPhi());
       float d_eta = tk.floatEta() - calo.floatEta();  // We only use it squared
-      float dR = sqrt((d_phi * d_phi) + (d_eta * d_eta));
+      float dR = std::sqrt((d_phi * d_phi) + (d_eta * d_eta));
 
       if (dR < 0.2) {
         // Only store indices, dR and dpT for now. The other quantities are computed only for the best nCandPerCluster.
         CompositeCandidate cand;
         cand.cluster_idx = ic;
         cand.track_idx = itk;
-        cand.dpt = fabs(tk.floatPt() - calo.floatPt());
+        cand.dpt = std::abs(tk.floatPt() - calo.floatPt());
         candidates.push_back(cand);
       }
     }
@@ -238,20 +238,20 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   // Call and normalize input feature values, then cast to ap_fixed.
   // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
   // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> hoe = calo.hwHoe;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> tkpt = tk.hwPt;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> srrtot = calo.hwSrrTot;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> deta = tk.hwEta - calo.hwEta;
+  bdt_feature_t hoe = calo.hwHoe;
+  bdt_feature_t tkpt = tk.hwPt;
+  bdt_feature_t srrtot = calo.hwSrrTot;
+  bdt_feature_t deta = tk.hwEta - calo.hwEta;
   ap_fixed<18, 9> calo_invPt = invert_with_shift<pt_t, ap_fixed<18, 9>, 1024>(calo.hwPt);  // TODO: this is a guess
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> dpt = tk.hwPt * calo_invPt;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> meanz = calo.hwMeanZ;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> dphi = tk.hwPhi - calo.hwPhi;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> chi2 = tk.hwRedChi2RPhi;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> tkz0 = tk.hwZ0;
-  ap_fixed<21, 12, AP_RND_CONV, AP_SAT> nstubs = tk.hwStubs;
+  bdt_feature_t dpt = tk.hwPt * calo_invPt;
+  bdt_feature_t meanz = calo.hwMeanZ;
+  bdt_feature_t dphi = tk.hwPhi - calo.hwPhi;
+  bdt_feature_t chi2 = tk.hwRedChi2RPhi;
+  bdt_feature_t tkz0 = tk.hwZ0;
+  bdt_feature_t nstubs = tk.hwStubs;
 
   // Run BDT inference
-  std::vector<ap_fixed<21, 12, AP_RND_CONV, AP_SAT>> inputs = {
+  std::vector<bdt_feature_t> inputs = {
       hoe, tkpt, srrtot, deta, dpt, meanz, dphi, chi2, tkz0, nstubs};
   std::vector<ap_fixed<12, 3, AP_RND_CONV, AP_SAT>> bdt_score = composite_bdt_->decision_function(inputs);
 
