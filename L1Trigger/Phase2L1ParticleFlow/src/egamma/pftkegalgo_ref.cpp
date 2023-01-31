@@ -9,9 +9,6 @@
 #include <bitset>
 #include <vector>
 
-#include "DataFormats/L1TParticleFlow/interface/PFTrack.h"
-#include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
-
 using namespace l1ct;
 
 #ifdef CMSSW_GIT_HASH
