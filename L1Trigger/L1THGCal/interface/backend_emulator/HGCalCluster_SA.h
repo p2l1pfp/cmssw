@@ -2,10 +2,17 @@
 #define L1Trigger_L1THGCal_HGCalCluster_SA_h
 
 #include "HGCalTriggerCell_SA.h"
+#include "HGCalHistoClusteringConfig_SA.h"
+#include "DataFormats/L1THGCal/interface/HGCalCluster_HW.h"
 
 #include <vector>
 #include <memory>
 #include <iostream>
+#include <bitset>
+#include <array>
+
+#include "ap_int.h"
+
 namespace l1thgcfirmware {
 
   class HGCalCluster {
@@ -65,6 +72,13 @@ namespace l1thgcfirmware {
           e_h_early_over_e_fraction_(0) {}
 
     ~HGCalCluster() {}
+
+    // Firmware representation of cluster sum (input to cluster properties step)
+    static constexpr int clusterSumWordLength = 64;
+    static constexpr int nWordsPerClusterSum = 8;
+    static constexpr int allClusterSumWordsLength = clusterSumWordLength * nWordsPerClusterSum;
+    typedef uint64_t ClusterSumWord;
+    typedef std::array<ClusterSumWord, nWordsPerClusterSum> ClusterSumWords;
 
     std::pair<unsigned int, unsigned int> sigma_energy(unsigned int N_TC_W,
                                                        unsigned long int Sum_W2,
@@ -192,6 +206,17 @@ namespace l1thgcfirmware {
     // Operators
     const HGCalCluster& operator+=(HGCalCluster& hc);
 
+    // Format data into firmware representation
+    ClusterWords formatClusterWords( const ClusterAlgoConfig& config );
+    void formatFirstWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+    void formatSecondWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+    void formatThirdWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+    void formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+
+    // Format data into firmware representation
+    void clearClusterSumWords();
+    ClusterSumWords formatClusterSumWords( const ClusterAlgoConfig& config );
+
   private:
     unsigned int clock_;
     unsigned int index_;
@@ -250,6 +275,12 @@ namespace l1thgcfirmware {
     // Extra variables, not available in firmware
     // Perhaps move to separate "extra" class?
     HGCalTriggerCellSAShrPtrCollection constituents_;
+
+    // Firmware representation of cluster as sent on links to L1T
+    // ClusterWords packedData_;
+
+    // Firmware representation of cluster sum (input to cluster properties)
+    ClusterSumWords packedData_clustersSums_;
   };
 
   typedef std::vector<HGCalCluster> HGCalClusterSACollection;

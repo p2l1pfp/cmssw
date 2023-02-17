@@ -138,15 +138,11 @@ void HGCalHistoClustering::clusterizer(const HGCalTriggerCellSAPtrCollection& tr
       }
     }
 
+    vector<unsigned int> readoutFlagClocks;
+
     for (const auto& a : accepted) {
       if (a->dataValid()) {
-        // Firmware does support layer-dependent delta R threshold
-        // But all thresholds currently set to same value
-        // And python emulator just has one threshold, which is why it's not configurable here yet
-        // i.e. I directly translated what is implemented in the python emulator, not the actual firmware
-        unsigned int dR2Cut = config_.deltaR2Cut();
         unsigned int T = 0;
-
         for (unsigned int iCol = a->column() - config_.nColumnsForClustering();
              iCol < a->column() + config_.nColumnsForClustering() + 1;
              ++iCol) {
@@ -164,7 +160,6 @@ void HGCalHistoClustering::clusterizer(const HGCalTriggerCellSAPtrCollection& tr
             }
             for (auto& tc : triggerCellBuffers[iCol][row]) {
               clock[iCol] += 1;
-
               unsigned int r1 = tc->rOverZ();
               unsigned int r2 = a->Y();
               int dR = r1 - r2;
@@ -179,6 +174,7 @@ void HGCalHistoClustering::clusterizer(const HGCalTriggerCellSAPtrCollection& tr
               if (clock[iCol] > T)
                 T = clock[iCol];
 
+              unsigned int dR2Cut = config_.getDeltaR2Threshold(tc->layer());
               if (dR2 < dR2Cut) {
                 clusteredTriggerCells[iCol].push_back(tc);
               } else {
@@ -207,19 +203,27 @@ void HGCalHistoClustering::clusterizer(const HGCalTriggerCellSAPtrCollection& tr
           }
         }
 
+        unsigned int readoutFlagClock = 0;
         for (unsigned int iCol = a->column() - config_.nColumnsForClustering();
              iCol < a->column() + config_.nColumnsForClustering() + 1;
              ++iCol) {
           clock[iCol] = T + 1;
 
           CentroidHelperPtr readoutFlag = make_unique<CentroidHelper>(T - 2, iCol, true);
+          while ( std::find(readoutFlagClocks.begin(), readoutFlagClocks.end(), readoutFlag->clock()) != readoutFlagClocks.end() ) {
+            readoutFlag->setClock(readoutFlag->clock() + 1);
+          }
+          readoutFlagClock = readoutFlag->clock();
+
           const unsigned stepLatency = 14;
-          if (readoutFlag->clock() == config_.clusterizerMagicTime() + stepLatency) {
+          if (readoutFlag->clock() ==
+              config_.clusterizerMagicTime() + stepLatency) {  // Magic numbers - latency of which particular step?
             readoutFlag->setClock(readoutFlag->clock() + 1);
           }
 
           readoutFlags[iCol].push_back(move(readoutFlag));
         }
+        readoutFlagClocks.push_back(readoutFlagClock);
       }
     }
   }

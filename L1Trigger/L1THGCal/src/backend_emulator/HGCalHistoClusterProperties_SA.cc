@@ -71,6 +71,7 @@ void HGCalHistoClusterProperties::clusterSum(const HGCalClusterSAPtrCollection& 
 void HGCalHistoClusterProperties::clusterProperties(HGCalClusterSAPtrCollection& clusterSums) const {
   unsigned int nTCs = 0;
   for (auto& c : clusterSums) {
+
     if (c->n_tc_w() == 0)
       continue;
     std::pair<unsigned int, unsigned int> sigmaEnergy = sigma_energy(c->n_tc_w(), c->w2(), c->w());
@@ -88,16 +89,23 @@ void HGCalHistoClusterProperties::clusterProperties(HGCalClusterSAPtrCollection&
     std::pair<unsigned int, unsigned int> Mean_roz = mean_coordinate(c->wroz(), c->w());
     c->set_mean_roz_quotient(Mean_roz.first);
     c->set_mean_roz_fraction(Mean_roz.second);
-    std::pair<unsigned int, unsigned int> Sigma_z = sigma_coordinate(c->w(), c->wz2(), c->wz());
+
+    const double sigma_z_scale = 0.08225179463624954;
+    std::pair<unsigned int, unsigned int> Sigma_z = sigma_coordinate(c->w(), c->wz2(), c->wz(), sigma_z_scale);
     c->set_sigma_z_quotient(Sigma_z.first);
     c->set_sigma_z_fraction(Sigma_z.second);
-    std::pair<unsigned int, unsigned int> Sigma_phi = sigma_coordinate(c->w(), c->wphi2(), c->wphi());
+
+    const double sigma_phi_scale = 0.907465934753418;
+    std::pair<unsigned int, unsigned int> Sigma_phi = sigma_coordinate(c->w(), c->wphi2(), c->wphi(), sigma_phi_scale);
     c->set_sigma_phi_quotient(Sigma_phi.first);
     c->set_sigma_phi_fraction(Sigma_phi.second);
+
     std::pair<unsigned int, unsigned int> Sigma_eta = sigma_coordinate(c->w(), c->weta2(), c->weta());
     c->set_sigma_eta_quotient(Sigma_eta.first);
     c->set_sigma_eta_fraction(Sigma_eta.second);
-    std::pair<unsigned int, unsigned int> Sigma_roz = sigma_coordinate(c->w(), c->wroz2(), c->wroz());
+
+    const double sigma_roz_scale = 0.5073223114013672;
+    std::pair<unsigned int, unsigned int> Sigma_roz = sigma_coordinate(c->w(), c->wroz2(), c->wroz(), sigma_roz_scale);
     c->set_sigma_roz_quotient(Sigma_roz.first);
     c->set_sigma_roz_fraction(Sigma_roz.second);
     std::vector<int> layeroutput = showerLengthProperties(c->layerbits());
@@ -129,7 +137,14 @@ std::pair<unsigned int, unsigned int> HGCalHistoClusterProperties::sigma_energy(
   }
   double intpart;
   const unsigned shift = 2;  // Shift by one bit, pow(2,1)
-  double frac = modf(sqrt(N / D), &intpart) * shift;
+
+  double sigma_e = sqrt(N / D);
+  const double sigma_e_scale = 0.008982944302260876;
+  sigma_e *= sigma_e_scale;
+
+  double frac = modf(sigma_e, &intpart) * shift;
+
+
   return {(unsigned int)intpart, (unsigned int)frac};
 }
 
@@ -146,7 +161,8 @@ std::pair<unsigned int, unsigned int> HGCalHistoClusterProperties::mean_coordina
 
 std::pair<unsigned int, unsigned int> HGCalHistoClusterProperties::sigma_coordinate(unsigned int Sum_W,
                                                                                     unsigned long int Sum_Wc2,
-                                                                                    unsigned int Sum_Wc) const {
+                                                                                    unsigned int Sum_Wc,
+                                                                                    double scale ) const {
   unsigned long int N = Sum_W * Sum_Wc2 - pow(Sum_Wc, 2);
   unsigned long int D = pow(Sum_W, 2);
   if (D == 0) {
@@ -154,7 +170,11 @@ std::pair<unsigned int, unsigned int> HGCalHistoClusterProperties::sigma_coordin
   }
   double intpart;
   const unsigned shift = 2;  // Shift by one bit, pow(2,1)
-  double frac = modf((double)sqrt(N / D), &intpart) * shift;
+
+  double sigma_coord = sqrt(N / D);
+  sigma_coord *= scale;
+  double frac = modf(sigma_coord, &intpart) * shift;
+  // std::cout << "Sigma coord : " << sigma_coord << " " << intpart << " " << frac << " " <<  modf(sigma_coord, &intpart) << " " << shift << std::endl;
   return {(unsigned int)intpart, (unsigned int)frac};
 }
 

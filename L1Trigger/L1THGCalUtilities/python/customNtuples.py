@@ -31,7 +31,7 @@ def custom_ntuples_standalone_clustering(process):
     for ntuple in ntuples:    
         if ntuple.NtupleName.value() == 'HGCalTriggerNtupleHGCMulticlusters':
             ntuple.FillHWClusterProperties = True
-
+            ntuple.FillLayerInfo = True
     return process
 
 

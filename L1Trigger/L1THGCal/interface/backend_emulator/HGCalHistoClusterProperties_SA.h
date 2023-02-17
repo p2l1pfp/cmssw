@@ -32,7 +32,8 @@ namespace l1thgcfirmware {
     std::pair<unsigned int, unsigned int> mean_coordinate(unsigned int Sum_Wc, unsigned int Sum_W) const;
     std::pair<unsigned int, unsigned int> sigma_coordinate(unsigned int Sum_W,
                                                            unsigned long int Sum_Wc2,
-                                                           unsigned int Sum_Wc) const;
+                                                           unsigned int Sum_Wc,
+                                                           double scale = 0) const;
     std::pair<unsigned int, unsigned int> energy_ratio(unsigned int E_N, unsigned int E_D) const;
     std::vector<int> showerLengthProperties(unsigned long int layerBits) const;
 

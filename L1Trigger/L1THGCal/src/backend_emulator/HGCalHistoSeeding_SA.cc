@@ -10,9 +10,11 @@ HGCalHistoSeeding::HGCalHistoSeeding(const ClusterAlgoConfig& config) : config_(
 void HGCalHistoSeeding::runSeeding(const HGCalTriggerCellSAPtrCollection& triggerCellsIn,
                                    HGCalHistogramCellSAPtrCollection& histogramOut) const {
   HGCalHistogramCellSAPtrCollection histoCells;
+  // std::cout << "TC to HC" << std::endl;
   triggerCellToHistogramCell(triggerCellsIn, histoCells);
+  // std::cout << "Make hist" << std::endl;
   makeHistogram(histoCells, histogramOut);
-
+  // std::cout << "Smearing" << std::endl;
   // Smearing
   smearHistogram1D(histogramOut);
   normalizeArea(histogramOut);

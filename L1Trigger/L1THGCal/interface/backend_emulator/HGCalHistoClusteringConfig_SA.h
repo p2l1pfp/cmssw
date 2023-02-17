@@ -134,8 +134,10 @@ namespace l1thgcfirmware {
     unsigned int firstSeedBin() const { return firstSeedBin_; }
     void setNColumnFifoVeto(const unsigned nColumnFifoVeto) { nColumnFifoVeto_ = nColumnFifoVeto; }
     unsigned int nColumnFifoVeto() const { return nColumnFifoVeto_; }
-    void setDeltaR2Cut(const unsigned deltaR2Cut) { deltaR2Cut_ = deltaR2Cut; }
-    unsigned int deltaR2Cut() const { return deltaR2Cut_; }
+
+    void setDeltaR2Thresholds(const std::vector<unsigned int> dr2Thresholds) { dr2Thresholds_ = dr2Thresholds; }
+    unsigned int getDeltaR2Threshold(const unsigned layer) const { return dr2Thresholds_.at(layer); }
+
     void setNColumnsForClustering(const unsigned nColumnsForClustering) {
       nColumnsForClustering_ = nColumnsForClustering;
     }
@@ -143,7 +145,7 @@ namespace l1thgcfirmware {
     void setNRowsForClustering(const unsigned nRowsForClustering) { nRowsForClustering_ = nRowsForClustering; }
     unsigned int nRowsForClustering() const { return nRowsForClustering_; }
 
-    void setThresholdParams(const unsigned int a, const unsigned int b, const int c) {
+    void setThresholdParams(const unsigned int a, const int b, const int c) {
       thresholdMaximaParam_a_ = a;
       thresholdMaximaParam_b_ = b;
       thresholdMaximaParam_c_ = c;
@@ -216,6 +218,9 @@ namespace l1thgcfirmware {
     void setSaturation(const unsigned saturation) { saturation_ = saturation; }
     unsigned int saturation() const { return saturation_; }
 
+    unsigned int rozToEtaLUT(unsigned int iBin) const { return rozToEtaLUT_.at(iBin); }
+    unsigned int sigmaRozToSigmaEtaLUT(unsigned int iBin) const { return sigmaRozToSigmaEtaLUT_.at(iBin); }
+
     void setNTriggerLayers(const unsigned n) { nTriggerLayers_ = n; }
     unsigned int nTriggerLayers() const { return nTriggerLayers_; }
 
@@ -225,8 +230,10 @@ namespace l1thgcfirmware {
 
   private:
     void initializeSmearingKernelConstants(unsigned int bins, unsigned int offset, unsigned int height);
-    void initializeThresholdMaximaConstants(unsigned int bins, unsigned int a, unsigned int b, int c);
+    void initializeThresholdMaximaConstants(unsigned int bins, unsigned int a, int b, int c);
     void initializeCosLUT();
+    void initializeRoZToEtaLUT();
+    void initializeSigmaRoZToSigmaEtaLUT();
 
     unsigned int histogramOffset_;
     unsigned int clusterizerOffset_;
@@ -274,7 +281,7 @@ namespace l1thgcfirmware {
 
     // Threshold maxima parameters
     unsigned int thresholdMaximaParam_a_;
-    unsigned int thresholdMaximaParam_b_;
+    int thresholdMaximaParam_b_;
     int thresholdMaximaParam_c_;
     std::vector<int> thresholdMaximaConstants_;
 
@@ -286,7 +293,7 @@ namespace l1thgcfirmware {
     unsigned int nColumnsPerFifo_;
     unsigned int firstSeedBin_;
     unsigned int nColumnFifoVeto_;
-    unsigned int deltaR2Cut_;
+    std::vector<unsigned int> dr2Thresholds_;
     unsigned int nColumnsForClustering_;
     unsigned int nRowsForClustering_;
     unsigned int clusterizerMagicTime_;
@@ -302,6 +309,10 @@ namespace l1thgcfirmware {
     std::vector<unsigned int> layerWeights_E_H_early_;
     unsigned int correction_;
     unsigned int saturation_;
+
+    // Parameters for cluster properties calculator
+    std::vector<unsigned int> rozToEtaLUT_;
+    std::vector<unsigned int> sigmaRozToSigmaEtaLUT_;
 
     // Trigger geometry info
     unsigned int nTriggerLayers_;
