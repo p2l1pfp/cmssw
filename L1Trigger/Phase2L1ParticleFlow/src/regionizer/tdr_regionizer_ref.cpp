@@ -8,74 +8,90 @@
 
 l1ct::TDRRegionizerEmulator::TDRRegionizerEmulator(const edm::ParameterSet& iConfig)
     : TDRRegionizerEmulator(
-          /*netaslices=*/3,
           iConfig.getParameter<uint32_t>("nTrack"),
           iConfig.getParameter<uint32_t>("nCalo"),
           iConfig.getParameter<uint32_t>("nEmCalo"),
           iConfig.getParameter<uint32_t>("nMu"),
           iConfig.getParameter<int32_t>("nClocks"),
+          iConfig.getParameter<std::vector<int32_t> >("bigRegionEdges"),
           iConfig.getParameter<bool>("doSort")) {
   debug_ = iConfig.getUntrackedParameter<bool>("debug", false);
 }
 #endif
 
-l1ct::TDRRegionizerEmulator::TDRRegionizerEmulator(unsigned int netaslices,
-                                                   unsigned int ntk,
-                                                   unsigned int ncalo,
-                                                   unsigned int nem,
-                                                   unsigned int nmu,
-                                                   int nclocks,
+l1ct::TDRRegionizerEmulator::TDRRegionizerEmulator(uint32_t ntk,
+                                                   uint32_t ncalo,
+                                                   uint32_t nem,
+                                                   uint32_t nmu,
+                                                   int32_t nclocks,
+                                                   std::vector<int32_t> bigRegionEdges,
                                                    bool dosort)
     : RegionizerEmulator(),
-      netaslices_(netaslices),
       ntk_(ntk),
       ncalo_(ncalo),
       nem_(nem),
       nmu_(nmu),
       nclocks_(nclocks),
+      bigRegionEdges_(bigRegionEdges),
       dosort_(dosort),
-      init_(false) {
-  assert(netaslices == 3);             //the setup here only works for 3 barrel boards
-  int etaoffsets[3] = {-228, 0, 228};  //this could be made generic perhaps, hardcoding for now
-  for (unsigned int i = 0; i < netaslices_; i++) {
-    tkRegionizers_.emplace_back(
-        (unsigned int)NETA_SMALL, (unsigned int)NUMBER_OF_SMALL_REGIONS, ntk, etaoffsets[i], 115, nclocks);
-    hadCaloRegionizers_.emplace_back(
-        (unsigned int)NETA_SMALL, (unsigned int)NUMBER_OF_SMALL_REGIONS, ncalo, etaoffsets[i], 115, nclocks);
-    emCaloRegionizers_.emplace_back(
-        (unsigned int)NETA_SMALL, (unsigned int)NUMBER_OF_SMALL_REGIONS, nem, etaoffsets[i], 115, nclocks);
-    muRegionizers_.emplace_back(
-        (unsigned int)NETA_SMALL, (unsigned int)NUMBER_OF_SMALL_REGIONS, nmu, etaoffsets[i], 115, nclocks);
-  }
+      netaInBR_(6),
+      nphiInBR_(3),
+      init_(false)
+{
+  nBigRegions_ = bigRegionEdges_.size() - 1;
+  MAX_TK_OBJ_ = nclocks_ * 2 / 3;  // 2 objects per 3 clocks
+  MAX_EMCALO_OBJ_ = nclocks_;  // 1 object per clock
+  MAX_HADCALO_OBJ_ = nclocks_;  // 1 object per clock
+  MAX_MU_OBJ_ = nclocks_;  // 1 object per clock  
 }
 
 l1ct::TDRRegionizerEmulator::~TDRRegionizerEmulator() {}
 
 void l1ct::TDRRegionizerEmulator::initSectorsAndRegions(const RegionizerDecodedInputs& in,
                                                         const std::vector<PFInputRegion>& out) {
+  if (debug_) {
+    dbgCout() << "doing init, out_size = " << out.size() << std::endl;
+  }
   assert(!init_);
   init_ = true;
   nregions_ = out.size();
+
+
+  for (unsigned int i = 0; i < nBigRegions_; i++) {
+    tkRegionizers_.emplace_back(
+        netaInBR_, nphiInBR_, nregions_, ntk_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+    hadCaloRegionizers_.emplace_back(
+        netaInBR_, nphiInBR_, nregions_, ncalo_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+    emCaloRegionizers_.emplace_back(
+        netaInBR_, nphiInBR_, nregions_, nem_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+    muRegionizers_.emplace_back(
+        netaInBR_, nphiInBR_, nregions_, nmu_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+  }
+
+  dbgCout() << "in.track.size() = " << in.track.size() << std::endl;
+  dbgCout() << "in.hadcalo.size() = " << in.hadcalo.size() << std::endl;
+  dbgCout() << "in.emcalo.size() = " << in.emcalo.size() << std::endl;
+
   if (ntk_) {
-    for (unsigned int i = 0; i < netaslices_; i++) {
+    for (unsigned int i = 0; i < nBigRegions_; i++) {
       tkRegionizers_[i].initSectors(in.track);
       tkRegionizers_[i].initRegions(out);
     }
   }
   if (ncalo_) {
-    for (unsigned int i = 0; i < netaslices_; i++) {
+    for (unsigned int i = 0; i < nBigRegions_; i++) {
       hadCaloRegionizers_[i].initSectors(in.hadcalo);
       hadCaloRegionizers_[i].initRegions(out);
     }
   }
   if (nem_) {
-    for (unsigned int i = 0; i < netaslices_; i++) {
+    for (unsigned int i = 0; i < nBigRegions_; i++) {
       emCaloRegionizers_[i].initSectors(in.emcalo);
       emCaloRegionizers_[i].initRegions(out);
     }
   }
   if (nmu_) {
-    for (unsigned int i = 0; i < netaslices_; i++) {
+    for (unsigned int i = 0; i < nBigRegions_; i++) {
       muRegionizers_[i].initSectors(in.muon);
       muRegionizers_[i].initRegions(out);
     }
@@ -95,7 +111,7 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
     const l1ct::DetectorSector<l1ct::TkObjEmu>& sec = in.track[il];
     for (unsigned int io = 0; io < sec.size(); io++) {
       links[il].push_back(sec[io]);
-      if (links[il].size() == MAX_TK_EVT) {
+      if (links[il].size() == MAX_TK_OBJ_) {
         break;
       }
     }
@@ -115,7 +131,7 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
     const l1ct::DetectorSector<l1ct::HadCaloObjEmu>& sec = in.hadcalo[il];
     for (unsigned int io = 0; io < sec.size(); io++) {
       links[il].push_back(sec[io]);
-      if (links[il].size() == MAX_CALO_EVT) {
+      if (links[il].size() == MAX_HADCALO_OBJ_) {
         break;
       }
     }
@@ -135,7 +151,7 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
     const l1ct::DetectorSector<l1ct::EmCaloObjEmu>& sec = in.emcalo[il];
     for (unsigned int io = 0; io < sec.size(); io++) {
       links[il].push_back(sec[io]);
-      if (links[il].size() == MAX_EMCALO_EVT) {
+      if (links[il].size() == MAX_EMCALO_OBJ_) {
         break;
       }
     }
@@ -153,7 +169,7 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
   const l1ct::DetectorSector<l1ct::MuObjEmu>& sec = in.muon;
   for (unsigned int io = 0; io < sec.size(); io++) {
     links[0].push_back(sec[io]);
-    if (links[0].size() == MAX_MU_EVT) {
+    if (links[0].size() == MAX_MU_OBJ_) {
       break;
     }
   }
@@ -162,8 +178,8 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
 void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::TkObjEmu>& emu, TkObj fw[NTK_SECTORS][NTK_LINKS]) {
   if (ntk_ == 0)
     return;
-  assert(emu.size() == NTK_SECTORS * NTK_LINKS * netaslices_);
-  for (unsigned int is = 0, idx = 0; is < NTK_SECTORS * netaslices_; ++is) {  // tf sectors
+  assert(emu.size() == NTK_SECTORS * NTK_LINKS * nBigRegions_);
+  for (unsigned int is = 0, idx = 0; is < NTK_SECTORS * nBigRegions_; ++is) {  // tf sectors
     for (unsigned int il = 0; il < NTK_LINKS; ++il, ++idx) {
       fw[is][il] = emu[idx];
     }
@@ -173,8 +189,8 @@ void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::HadCaloObjE
                                              HadCaloObj fw[NCALO_SECTORS][NCALO_LINKS]) {
   if (ncalo_ == 0)
     return;
-  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * netaslices_);
-  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * netaslices_; ++is) {  // tf sectors
+  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * nBigRegions_);
+  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * nBigRegions_; ++is) {  // tf sectors
     for (unsigned int il = 0; il < NCALO_LINKS; ++il, ++idx) {
       fw[is][il] = emu[idx];
     }
@@ -185,8 +201,8 @@ void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::EmCaloObjEm
                                              EmCaloObj fw[NCALO_SECTORS][NCALO_LINKS]) {
   if (nem_ == 0)
     return;
-  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * netaslices_);
-  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * netaslices_; ++is) {  // tf sectors
+  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * nBigRegions_);
+  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * nBigRegions_; ++is) {  // tf sectors
     for (unsigned int il = 0; il < NCALO_LINKS; ++il, ++idx) {
       fw[is][il] = emu[idx];
     }
@@ -203,8 +219,13 @@ void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::MuObjEmu>& 
 }
 
 void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) {
-  if (!init_)
+  if (debug_) {
+    dbgCout() << "TDRRegionizerEmulator::run called, out.size =  " << out.size() << std::endl;
+  }
+
+  if (!init_) {
     initSectorsAndRegions(in, out);
+  }
 
   std::vector<std::vector<l1ct::TkObjEmu>> tk_links_in;
   std::vector<std::vector<l1ct::EmCaloObjEmu>> em_links_in;
@@ -218,7 +239,7 @@ void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::ve
   fillLinks(in, mu_links_in);
   //this is overkill and could be improved, for now its ok (the sectors outside each board just wont do anything)
 
-  for (unsigned int ie = 0; ie < netaslices_; ie++) {
+  for (unsigned int ie = 0; ie < nBigRegions_; ie++) {
     //add objects from link
     tkRegionizers_[ie].reset();
     tkRegionizers_[ie].setPipes(tk_links_in);
@@ -251,7 +272,7 @@ void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::ve
     muRegionizers_[ie].run();
   }
 
-  for (unsigned int ie = 0; ie < netaslices_; ie++) {
+  for (unsigned int ie = 0; ie < nBigRegions_; ie++) {
     for (unsigned int ireg = 0; ireg < nregions_; ireg++) {
       std::vector<l1ct::TkObjEmu> out_tks = tkRegionizers_[ie].getSmallRegion(ireg);
       if (!out_tks.empty()) {

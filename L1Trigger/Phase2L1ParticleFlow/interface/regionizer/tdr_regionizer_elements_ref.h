@@ -25,24 +25,6 @@ namespace l1ct {
       return local_phi;
     }
 
-    struct RegionInfo {
-      RegionInfo(unsigned int idx, int regphi, int regeta) : index(idx), phi(regphi), eta(regeta) {}
-      unsigned int index;
-      int phi;
-      int eta;
-    };
-
-    inline bool sortRegionInfo(RegionInfo& a, RegionInfo& b) {
-      if (a.phi < b.phi)
-        return true;
-      if (a.phi > b.phi)
-        return false;
-      if (a.eta < b.eta)
-        return true;
-      if (a.eta > b.eta)
-        return false;
-      return false;
-    }
 
     template <typename T>
     class PipeObject {
@@ -124,10 +106,18 @@ namespace l1ct {
     public:
       Regionizer() {}
       Regionizer(
-          unsigned int neta, unsigned int nregions, unsigned int maxobjects, int etaoffset, int etawidth, int nclocks);
+          unsigned int neta, unsigned int nphi,  //the number of eta and phi SRs in a big region (board)
+          unsigned int nregions, // The total number of small regions in the full barrel
+          unsigned int maxobjects,
+          int bigRegionMin, int bigRegionMax,  // the phi range covered by this board
+          int nclocks);
+
       void initSectors(const std::vector<DetectorSector<T>>& sectors);
       void initSectors(const DetectorSector<T>& sector);
       void initRegions(const std::vector<PFInputRegion>& regions);
+
+      // is the given small region in the big region
+      bool isInBigRegion(const PFRegionEmu& reg) const;
 
       unsigned int getSize() { return pipes_.size(); }
       unsigned int getPipeSize(unsigned int index) { return getPipe(index).getSize(); }
@@ -180,8 +170,9 @@ namespace l1ct {
         for (unsigned int i = 0; i < nregions_; i++) {
           for (unsigned int j = 0; j < smallRegionObjects_[i].size(); j++) {
             dbgCout() << "\t" << i << " " << j << "\t" << smallRegionObjects_[i][j].hwPt.to_int() << "\t"
-                      << smallRegionObjects_[i][j].hwEta.to_int() + regionmap_[i].eta << "\t"
-                      << smallRegionObjects_[i][j].hwPhi.to_int() + regionmap_[i].phi << std::endl;
+                      // << smallRegionObjects_[i][j].hwEta.to_int() + regionmap_[i].eta << "\t"
+                      // << smallRegionObjects_[i][j].hwPhi.to_int() + regionmap_[i].phi 
+                       << std::endl;
           }
           dbgCout() << "-------------------------------" << std::endl;
         }
@@ -193,11 +184,34 @@ namespace l1ct {
       }
 
     private:
-      unsigned int neta_, nregions_, maxobjects_, nsectors_;
-      int etaoffset_, etawidth_, nclocks_;
+
+      // this function is for sorting small regions first in phi and then in eta.
+      // It takes regions_ indices
+      bool sortRegionsRegular(size_t a, size_t b) const;
+
+      /// The numbers of eta and phi in a big region (board)
+      unsigned int neta_, nphi_;
+      /// The total number of small regions in the barrel (not just in the board)
+      unsigned int nregions_;
+      /// The maximum number of objects to output per small region
+      unsigned int maxobjects_;
+      /// The number of input sectors for this type of device
+      unsigned int nsectors_;
+      /// the minimumum phi of this board
+      int bigRegionMin_;
+      /// the maximum phi of this board
+      int bigRegionMax_;
+      /// the number of clocks to receive one event
+      int nclocks_;
+
+      /// the region information assopciated with each input sector
       std::vector<l1ct::PFRegionEmu> sectors_;
+
+      /// the region information associated with each SR
       std::vector<l1ct::PFRegionEmu> regions_;
-      std::vector<RegionInfo> regionmap_;
+
+      /// indices of regions that are in the big region (board)
+      std::vector<size_t> regionmap_;
 
       std::vector<Pipe<T>> pipes_;
       std::vector<int> timeOfNextObject_;

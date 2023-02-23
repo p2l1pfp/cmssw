@@ -79,15 +79,17 @@ int l1ct::tdr_regionizer::Pipe<T>::getPipeIndexForObject(unsigned int index) {
 
 template <typename T>
 l1ct::tdr_regionizer::Regionizer<T>::Regionizer(
-    unsigned int neta, unsigned int nregions, unsigned int maxobjects, int etaoffset, int etawidth, int nclocks)
+    unsigned int neta, unsigned int nphi, unsigned int nregions, unsigned int maxobjects,
+    int bigRegionMin, int bigRegionMax, int nclocks)
     : neta_(neta),
+      nphi_(nphi),
       nregions_(nregions),
       maxobjects_(maxobjects),
       nsectors_(0),
-      etaoffset_(etaoffset),
-      etawidth_(etawidth),
+      bigRegionMin_(bigRegionMin),
+      bigRegionMax_(bigRegionMax),
       nclocks_(nclocks) {
-  smallRegionObjects_.resize(nregions);
+  smallRegionObjects_.resize(nregions_);
 }
 
 template <typename T>
@@ -109,18 +111,66 @@ void l1ct::tdr_regionizer::Regionizer<T>::initSectors(const DetectorSector<T>& s
   pipes_.resize(nsectors_);
 }
 
+
+// this function is for sorting small regions first
+// in phi and then in eta.
+template <typename T>
+bool l1ct::tdr_regionizer::Regionizer<T>::sortRegionsRegular(size_t a, size_t b) const {
+  auto phia = regions_[a].intPhiCenter();
+  auto phib = regions_[b].intPhiCenter();
+  if (bigRegionMax_ < bigRegionMin_) {
+    // the wraparound case
+    if (phia > bigRegionMin_ && phib < bigRegionMax_) {
+      return true;
+    } else if (phib > bigRegionMin_ && phia < bigRegionMax_) {
+      return false;
+    }
+  }
+  // regular phi
+  if (phia < phib) {
+    return true;
+  } else if (phia > phib) {
+    return false;
+  }
+
+  // if here, then phia == phib, move to eta
+  auto etaa = regions_[a].intEtaCenter();
+  auto etab = regions_[b].intEtaCenter();
+  if (etaa < etab) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+
 template <typename T>
 void l1ct::tdr_regionizer::Regionizer<T>::initRegions(const std::vector<PFInputRegion>& regions) {
   regions_.resize(regions.size());
-  regionmap_.clear();
   for (unsigned int i = 0; i < regions.size(); ++i) {
     regions_[i] = regions[i].region;
-    if (etaoffset_ - etawidth_ <= regions_[i].intEtaCenter() && regions_[i].intEtaCenter() < etaoffset_ + etawidth_) {
-      regionmap_.emplace_back(i, regions_[i].intPhiCenter(), regions_[i].intEtaCenter());
+    // dbgCout() << "region eta/phi: " << regions_[i].intEtaCenter() << " " << regions_[i].intPhiCenter()
+    //                 << ", eta half width = " << regions_[i].hwEtaHalfWidth.to_int()
+    //                 << ", phi half width = " << regions_[i].hwPhiHalfWidth.to_int()
+    //                 << ", eta extra = " << regions_[i].hwEtaExtra.to_int()
+    //                 << ", phi extra = " << regions_[i].hwPhiExtra.to_int() << std::endl;
+    if (isInBigRegion(regions_[i])) {
+      regionmap_.push_back(i);
     }
+    std::sort(regionmap_.begin(), regionmap_.end(), [this](size_t a, size_t b){return this->sortRegionsRegular(a, b);});
   }
-  assert(regionmap_.size() == nregions_);
-  std::sort(regionmap_.begin(), regionmap_.end(), sortRegionInfo);
+}
+
+template <typename T>
+bool l1ct::tdr_regionizer::Regionizer<T>::isInBigRegion(const PFRegionEmu& reg) const {
+  auto phi = reg.intPhiCenter();
+  if (bigRegionMax_ < bigRegionMin_) {
+    // the wraparound case
+    return phi > bigRegionMin_ || phi < bigRegionMax_; 
+  } else {
+    // the normal case
+    return phi > bigRegionMin_ && phi < bigRegionMax_; 
+  }
 }
 
 template <typename T>
@@ -140,10 +190,10 @@ bool l1ct::tdr_regionizer::Regionizer<T>::setIndicesOverlaps(const T& obj,
   etaoverlap = false;
   bool isset = false;
   for (unsigned int i = 0; i < nregions_; i++) {
-    int regphi = dphi_wrap(glbphi - regionmap_[i].phi);
-    int regeta = glbeta - regionmap_[i].eta;
+    int regphi = dphi_wrap(glbphi - regions_[i].intPhiCenter());
+    int regeta = glbeta - regions_[i].intEtaCenter();
 
-    if (regions_[regionmap_[i].index].isInside(regeta, regphi)) {
+    if (regions_[i].isInside(regeta, regphi)) {
       if (isset) {
         if (i / neta_ != phiindex)
           phioverlap = true;
