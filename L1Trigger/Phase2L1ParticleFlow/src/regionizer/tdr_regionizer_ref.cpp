@@ -227,6 +227,7 @@ void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::ve
     initSectorsAndRegions(in, out);
   }
 
+  // 2D arrays, sectors (links) first dimension, objects second
   std::vector<std::vector<l1ct::TkObjEmu>> tk_links_in;
   std::vector<std::vector<l1ct::EmCaloObjEmu>> em_links_in;
   std::vector<std::vector<l1ct::HadCaloObjEmu>> calo_links_in;
@@ -245,11 +246,14 @@ void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::ve
     tkRegionizers_[ie].setPipes(tk_links_in);
     tkRegionizers_[ie].initTimes();
     if (debug_) {
-      dbgCout() << ie << "SECTORS/LINKS " << ie << std::endl;
-      for (unsigned int i = 0; i < tk_links_in.size(); i++) {
-        for (unsigned int j = 0; j < tk_links_in[i].size(); j++) {
-          dbgCout() << "\t" << i << " " << j << "\t" << tk_links_in[i][j].hwPt.to_int() << "\t"
-                    << tk_links_in[i][j].hwEta.to_int() << "\t" << tk_links_in[i][j].hwPhi.to_int() << std::endl;
+      dbgCout() << "Big region: " << ie << " SECTORS/LINKS " << std::endl;
+      dbgCout() << "\tsector\titem\tpt\teta\tphi" << std::endl;
+      for (unsigned int sector = 0; sector < tk_links_in.size(); sector++) {
+        for (unsigned int j = 0; j < tk_links_in[sector].size(); j++) {
+          dbgCout() << "\t" << sector << "\t" << j 
+                    << "\t " << tk_links_in[sector][j].hwPt.to_int()
+                    << "\t" << tk_links_in[sector][j].hwEta.to_int()
+                    << "\t" << tk_links_in[sector][j].hwPhi.to_int() << std::endl;
         }
         dbgCout() << "-------------------------------" << std::endl;
       }

@@ -25,40 +25,36 @@ namespace l1ct {
       return local_phi;
     }
 
-
+    // These are done per-sector (= per-input link)
     template <typename T>
     class PipeObject {
     public:
       PipeObject() {}
       PipeObject(const T& obj,
-                 unsigned int phiindex,
-                 unsigned int etaindex,
-                 bool phioverlap,
-                 bool etaoverlap,
+                 std::vector<size_t> srIndices,
                  int glbphi,
                  int glbeta,
                  unsigned int clk);
 
-      const unsigned int getClock() { return linkobjclk_; }
+      unsigned int getClock() const { return linkobjclk_; }
       void setClock(unsigned int clock) { linkobjclk_ = clock; }
-      const unsigned int getPhi() { return phiindex_; }
-      const unsigned int getEta() { return etaindex_; }
-      const bool getPhiOverlap() { return phioverlap_; }
-      const bool getEtaOverlap() { return etaoverlap_; }
-      const unsigned int getCount() { return objcount_; }
+      const std::vector<size_t>& getSRIndices() const {return srIndices_; }
+      unsigned int getCount() const { return objcount_; }
       unsigned int getCountAndInc() { return objcount_++; }
       void incCount() { objcount_++; }
-      const int getPt() { return obj_.hwPt.to_int(); }
-      const int getGlbPhi() { return glbphi_; }
-      const int getGlbEta() { return glbeta_; }
+      int getPt() const { return obj_.hwPt.to_int(); }
+      int getGlbPhi() const { return glbphi_; }
+      int getGlbEta() const { return glbeta_; }
 
-      T getObj() { return obj_; }
+      T& getObj() { return obj_; }
+      const T& getObj() const { return obj_; }
 
     private:
       T obj_;
-      unsigned int phiindex_, etaindex_;
-      bool phioverlap_, etaoverlap_;
-      int glbphi_, glbeta_;
+      /// the SR linearized indices (can index regionmap_) where this object needs to go
+      std::vector<size_t> srIndices_;
+      /// The global eta and phi of the object (somewhat redundant with obj_)
+      int glbeta_, glbphi_;
       unsigned int linkobjclk_, objcount_;
     };
 
@@ -67,29 +63,30 @@ namespace l1ct {
     public:
       Pipe(unsigned int nphi = 9) : clkindex_(0), nphi_(nphi) {}
 
-      void addObj(
-          T obj, unsigned int phiindex, unsigned int etaindex, bool phioverlap, bool etaoverlap, int glbphi, int glbeta);
-      PipeObject<T>& getObj(unsigned int index) { return data_[index]; }
-      T getRawObj(unsigned int index) { return data_[index].getObj(); }
+      void addObj(T obj, std::vector<size_t> srs, int glbeta, int glbphi);
 
-      unsigned int getClock(unsigned int index = 0) { return getObj(index).getClock(); }
+      PipeObject<T>& getObj(unsigned int index) { return data_[index]; }
+      const PipeObject<T>& getObj(unsigned int index) const { return data_[index]; }
+
+      T& getRawObj(unsigned int index) { return data_[index].getObj(); }
+      const T& getRawObj(unsigned int index) const { return data_[index].getObj(); }
+
+      unsigned int getClock(unsigned int index = 0) const { return getObj(index).getClock(); }
       void setClock(unsigned int clock, unsigned int index = 0) { return getObj(index).setClock(clock); }
-      unsigned int getPhi(unsigned int index = 0) { return getObj(index).getPhi(); }
-      unsigned int getEta(unsigned int index = 0) { return getObj(index).getEta(); }
-      bool getPhiOverlap(unsigned int index = 0) { return getObj(index).getPhiOverlap(); }
-      bool getEtaOverlap(unsigned int index = 0) { return getObj(index).getEtaOverlap(); }
-      unsigned int getCount(unsigned int index = 0) { return getObj(index).getCount(); }
+      const std::vector<size_t>& getSRIndices(unsigned int index = 0) const { return getObj(index).getSRIndices(); }
+      unsigned int getCount(unsigned int index = 0) const { return getObj(index).getCount(); }
       unsigned int getCountAndInc(unsigned int index = 0) { return getObj(index).getCountAndInc(); }
       void incCount(unsigned int index = 0) { getObj(index).incCount(); }
       void erase(unsigned int index = 0) { data_.erase(data_.begin() + index); }
-      int getPt(unsigned int index = 0) { return getObj(index).getPt(); }
-      int getGlbPhi(unsigned int index = 0) { return getObj(index).getGlbPhi(); }
-      int getGlbEta(unsigned int index = 0) { return getObj(index).getGlbEta(); }
+      int getPt(unsigned int index = 0) const { return getObj(index).getPt(); }
+      int getGlbPhi(unsigned int index = 0) const { return getObj(index).getGlbPhi(); }
+      int getGlbEta(unsigned int index = 0) const { return getObj(index).getGlbEta(); }
 
       int getClosedIndexForObject(unsigned int index = 0);
-      int getPipeIndexForObject(unsigned int index = 0);
+      /// This returns the hardware pipe index (since there are one per SR pair)
+      size_t getPipeIndexForObject(unsigned int index = 0);
 
-      unsigned int getSize() { return data_.size(); }
+      unsigned int getPipeSize() const { return data_.size(); }
 
       void reset() {
         clkindex_ = 0;
@@ -97,6 +94,13 @@ namespace l1ct {
       }
 
     private:
+
+      /// SRs share RAMs (and hardware pipes)
+      static size_t constexpr SRS_PER_RAM = 2;
+      /// Because some SRs share pipes, this determines the pipe index for a linearize SR index
+      /// (This is based on the VHDL function, get_target_pipe_index_subindex)
+      size_t getHardwarePipeIndex(size_t srIndex) const {return srIndex / SRS_PER_RAM;}
+
       unsigned int clkindex_, nphi_;
       std::vector<PipeObject<T>> data_;
     };
@@ -119,26 +123,21 @@ namespace l1ct {
       // is the given small region in the big region
       bool isInBigRegion(const PFRegionEmu& reg) const;
 
-      unsigned int getSize() { return pipes_.size(); }
-      unsigned int getPipeSize(unsigned int index) { return getPipe(index).getSize(); }
+      unsigned int getSize() const { return pipes_.size(); }
+      unsigned int getPipeSize(unsigned int index) const { return getPipe(index).getPipeSize(); }
 
-      bool setIndicesOverlaps(const T& obj,
-                              unsigned int& phiindex,
-                              unsigned int& etaindex,
-                              bool& phioverlap,
-                              bool& etaoverlap,
-                              int& glbphi,
-                              int& glbeta,
-                              unsigned int index);
+      std::vector<size_t> getSmallRegions(int glbeta, int glbphi) const;
 
       void addToPipe(const T& obj, unsigned int index);
       void setPipe(const std::vector<T>& objvec, unsigned int index);
       void setPipes(const std::vector<std::vector<T>>& objvecvec);
+      const Pipe<T>& getPipe(unsigned int index) const { return pipes_[index]; }
       Pipe<T>& getPipe(unsigned int index) { return pipes_[index]; }
 
+      // linkIndex == sector
       int getPipeTime(int linkIndex, int linkTimeOfObject, int linkAlgoClockRunningTime);
       int popLinkObject(int linkIndex, int currentTimeOfObject);
-      int timeNextFromIndex(unsigned int index, int time) { return getPipeTime(index, pipes_[index].getClock(), time); }
+      int timeNextFromIndex(unsigned int linkIndex, int time) { return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), time); }
 
       void initTimes();
 
@@ -156,32 +155,7 @@ namespace l1ct {
 
       std::vector<T> getSmallRegion(unsigned int index);
 
-      void printDebug(int count) {
-        dbgCout() << count << "\tindex\tpt\teta\tphi" << std::endl;
-        dbgCout() << "PIPES" << std::endl;
-        for (unsigned int i = 0; i < getSize(); i++) {
-          for (unsigned int j = 0; j < getPipeSize(i); j++) {
-            dbgCout() << "\t" << i << " " << j << "\t" << getPipe(i).getPt(j) << "\t" << getPipe(i).getGlbEta(j) << "\t"
-                      << getPipe(i).getGlbPhi(j) << std::endl;
-          }
-          dbgCout() << "-------------------------------" << std::endl;
-        }
-        dbgCout() << "SMALL REGIONS" << std::endl;
-        for (unsigned int i = 0; i < nregions_; i++) {
-          for (unsigned int j = 0; j < smallRegionObjects_[i].size(); j++) {
-            dbgCout() << "\t" << i << " " << j << "\t" << smallRegionObjects_[i][j].hwPt.to_int() << "\t"
-                      // << smallRegionObjects_[i][j].hwEta.to_int() + regionmap_[i].eta << "\t"
-                      // << smallRegionObjects_[i][j].hwPhi.to_int() + regionmap_[i].phi 
-                       << std::endl;
-          }
-          dbgCout() << "-------------------------------" << std::endl;
-        }
-        dbgCout() << "TIMES" << std::endl;
-        for (unsigned int i = 0; i < timeOfNextObject_.size(); i++) {
-          dbgCout() << "  " << timeOfNextObject_[i];
-        }
-        dbgCout() << "\n-------------------------------" << std::endl;
-      }
+      void printDebug(int count) const;
 
     private:
 
@@ -213,7 +187,9 @@ namespace l1ct {
       /// indices of regions that are in the big region (board)
       std::vector<size_t> regionmap_;
 
+      /// One pipe per each sector (link). These do not correspond to the firmware pipes
       std::vector<Pipe<T>> pipes_;
+      /// One entry per sector (= link = pipe). If the pipe is empty, this is always -1
       std::vector<int> timeOfNextObject_;
       std::vector<std::vector<T>> smallRegionObjects_;  //keep count to see if small region is full
     };

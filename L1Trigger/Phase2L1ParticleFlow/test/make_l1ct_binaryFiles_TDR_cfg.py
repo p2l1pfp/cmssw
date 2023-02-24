@@ -91,7 +91,7 @@ process.l1tLayer1BarrelTDR.regionizerAlgoParameters = cms.PSet(
         nMu = cms.uint32(2),
         nClocks = cms.int32(162),
         doSort = cms.bool(False),
-        bigRegionOffsets = cms.vint32(-560, -80, 400, -560),
+        bigRegionEdges = cms.vint32(-560, -80, 400, -560),
         debug = cms.untracked.bool(True)
     )
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import *
