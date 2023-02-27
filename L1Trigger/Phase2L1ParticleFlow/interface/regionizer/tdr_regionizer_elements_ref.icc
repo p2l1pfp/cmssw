@@ -282,8 +282,9 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
 
     //'remove' the selected object from its link
     int nextTime = popLinkObject(minLinkIndex, timeOfNextObject_[minLinkIndex]);
-    if (nextTime > nclocks_)
+    if (nextTime > nclocks_) {
       break;
+    }
     timeOfNextObject_[minLinkIndex] = nextTime;
     ++loopCount;
   }  //end main loop
@@ -304,12 +305,15 @@ void l1ct::tdr_regionizer::Regionizer<T>::reset() {
 }
 
 template <typename T>
-std::vector<T> l1ct::tdr_regionizer::Regionizer<T>::getSmallRegion(unsigned int index) {
-  // for (unsigned int i = 0; i < nregions_; i++) {
-  //   if (regionmap_[i].index == index)
-  //     return smallRegionObjects_[i];
-  // }
-  return {};
+std::map<size_t, std::vector<T>> l1ct::tdr_regionizer::Regionizer<T>::fillRegions(bool doSort) {
+  std::map<size_t, std::vector<T>> srMap;
+  for (size_t sr = 0; sr < smallRegionObjects_.size(); sr++) {
+    srMap[regionmap_[sr]] = smallRegionObjects_[sr];
+    if (doSort) {
+      std::sort(srMap[regionmap_[sr]].begin(), srMap[regionmap_[sr]].end(), std::greater<>());
+    }
+  }
+  return srMap;
 }
 
 template <typename T>

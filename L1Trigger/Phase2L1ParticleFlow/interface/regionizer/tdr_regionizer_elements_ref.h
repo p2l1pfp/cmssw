@@ -3,8 +3,8 @@
 
 #include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
 
-#include <list>
 #include <vector>
+#include <map>
 #include <cassert>
 #include <algorithm>
 
@@ -143,13 +143,15 @@ namespace l1ct {
         return getHardwarePipeIndex(getPipeIndexForObject(linknum, index));
       }
 
+      /// 'put' object in small region
       void addToSmallRegion(unsigned int linkNum, unsigned int index = 0);
 
       void run(bool debug = false);
 
       void reset();
 
-      std::vector<T> getSmallRegion(unsigned int index);
+      /// Return a map of of the SRs indexed by SR index (covering only those from board)
+      std::map<size_t, std::vector<T>> fillRegions(bool doSort);
 
       void printDebug(int count) const;
 
@@ -194,7 +196,9 @@ namespace l1ct {
       std::vector<Pipe<T>> pipes_;
       /// One entry per sector (= link = pipe). If the pipe is empty, this is always -1
       std::vector<int> timeOfNextObject_;
-      std::vector<std::vector<T>> smallRegionObjects_;  //keep count to see if small region is full
+
+      /// The objects in each small region handled in board; Indexing corresponds to that in regionmap_
+      std::vector<std::vector<T>> smallRegionObjects_;
     };
 
   }  // namespace  tdr_regionizer
