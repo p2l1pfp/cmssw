@@ -175,48 +175,6 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
   }
 }
 
-void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::TkObjEmu>& emu, TkObj fw[NTK_SECTORS][NTK_LINKS]) {
-  if (ntk_ == 0)
-    return;
-  assert(emu.size() == NTK_SECTORS * NTK_LINKS * nBigRegions_);
-  for (unsigned int is = 0, idx = 0; is < NTK_SECTORS * nBigRegions_; ++is) {  // tf sectors
-    for (unsigned int il = 0; il < NTK_LINKS; ++il, ++idx) {
-      fw[is][il] = emu[idx];
-    }
-  }
-}
-void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::HadCaloObjEmu>& emu,
-                                             HadCaloObj fw[NCALO_SECTORS][NCALO_LINKS]) {
-  if (ncalo_ == 0)
-    return;
-  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * nBigRegions_);
-  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * nBigRegions_; ++is) {  // tf sectors
-    for (unsigned int il = 0; il < NCALO_LINKS; ++il, ++idx) {
-      fw[is][il] = emu[idx];
-    }
-  }
-}
-
-void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::EmCaloObjEmu>& emu,
-                                             EmCaloObj fw[NCALO_SECTORS][NCALO_LINKS]) {
-  if (nem_ == 0)
-    return;
-  assert(emu.size() == NCALO_SECTORS * NCALO_LINKS * nBigRegions_);
-  for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS * nBigRegions_; ++is) {  // tf sectors
-    for (unsigned int il = 0; il < NCALO_LINKS; ++il, ++idx) {
-      fw[is][il] = emu[idx];
-    }
-  }
-}
-
-void l1ct::TDRRegionizerEmulator::toFirmware(const std::vector<l1ct::MuObjEmu>& emu, MuObj fw[NMU_LINKS]) {
-  if (nmu_ == 0)
-    return;
-  assert(emu.size() == NMU_LINKS);
-  for (unsigned int il = 0, idx = 0; il < NMU_LINKS; ++il, ++idx) {
-    fw[il] = emu[idx];
-  }
-}
 
 void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) {
   if (debug_) {

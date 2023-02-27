@@ -24,20 +24,11 @@ namespace l1ct {
 
     ~TDRRegionizerEmulator() override;
 
-    static const unsigned int NTK_SECTORS = 9, NTK_LINKS = 1;  // max objects per sector per clock cycle
-    static const unsigned int NCALO_SECTORS = 3, NCALO_LINKS = 1;
-    static const unsigned int NEMCALO_SECTORS = 3, NEMCALO_LINKS = 1;
-    static const unsigned int NMU_LINKS = 1;
-
-    //assuming 96b for tracks, 64b for emcalo, calo, mu
-    //all at TMUX18, per link
-
-    // numbers of small regions
-
     void initSectorsAndRegions(const RegionizerDecodedInputs& in, const std::vector<PFInputRegion>& out) override;
 
-    // TODO: implement
     void run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) override;
+
+  private:
 
     // link emulation from decoded inputs (for simulation)
     void fillLinks(const RegionizerDecodedInputs& in, std::vector<std::vector<l1ct::TkObjEmu>>& links);
@@ -45,13 +36,6 @@ namespace l1ct {
     void fillLinks(const RegionizerDecodedInputs& in, std::vector<std::vector<l1ct::EmCaloObjEmu>>& links);
     void fillLinks(const RegionizerDecodedInputs& in, std::vector<std::vector<l1ct::MuObjEmu>>& links);
 
-    // convert links to firmware
-    void toFirmware(const std::vector<l1ct::TkObjEmu>& emu, TkObj fw[NTK_SECTORS][NTK_LINKS]);
-    void toFirmware(const std::vector<l1ct::HadCaloObjEmu>& emu, HadCaloObj fw[NCALO_SECTORS][NCALO_LINKS]);
-    void toFirmware(const std::vector<l1ct::EmCaloObjEmu>& emu, EmCaloObj fw[NCALO_SECTORS][NCALO_LINKS]);
-    void toFirmware(const std::vector<l1ct::MuObjEmu>& emu, MuObj fw[NMU_LINKS]);
-
-  private:
     /// The nubmer of barrel big regions (boards)
     uint32_t nBigRegions_;
     /// The maximum number of objects of each type to output per small region
