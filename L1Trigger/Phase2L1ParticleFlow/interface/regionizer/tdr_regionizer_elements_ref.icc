@@ -255,11 +255,10 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
 
     //do find object handling
     for (unsigned int sector = 0; sector < getSize(); ++sector) {
-      dbgCout() << "secotor = " << sector << ", timeOfNextObject_[sector] = " << timeOfNextObject_[sector]
-        << ", minLinkIndex = " << minLinkIndex << ", minTime = " << minTime << ", minPipeIndex = " << minPipeIndex << std::endl;
+      // dbgCout() << "secotor = " << sector << ", timeOfNextObject_[sector] = " << timeOfNextObject_[sector]
+      //   << ", minLinkIndex = " << minLinkIndex << ", minTime = " << minTime << ", minPipeIndex = " << minPipeIndex << std::endl;
       if (timeOfNextObject_[sector] >= 0 && (minLinkIndex == -1 || timeOfNextObject_[sector] < minTime)) {
         //found new 'selected' link object and pipe
-        dbgCout() << "   In if clause" << std::endl;
         minPipeIndex = getHardwarePipeIndexForObject(sector);
         minTime = timeOfNextObject_[sector];
         minLinkIndex = sector;
@@ -267,12 +266,11 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
                  && minPipeIndex == static_cast<int>(getHardwarePipeIndexForObject(sector))
                  && timeOfNextObject_[sector] == minTime) {
         //have pipe conflict, so need to wait a clock
-        dbgCout() << "   In else clause" << std::endl;
         ++timeOfNextObject_[sector];
       }
     }
 
-    dbgCout() << " After, minLinkIndex = " << minLinkIndex << ", minTime = " << minTime << ", minPipeIndex = " << minPipeIndex << std::endl;
+    // dbgCout() << " After, minLinkIndex = " << minLinkIndex << ", minTime = " << minTime << ", minPipeIndex = " << minPipeIndex << std::endl;
 
     if (minLinkIndex < 0)
       break;  //exit case
