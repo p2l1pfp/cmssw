@@ -32,49 +32,8 @@ inline void l1ct::tdr_regionizer::Pipe<l1ct::TkObjEmu>::addObj(l1ct::TkObjEmu ob
 }
 
 template <typename T>
-int l1ct::tdr_regionizer::Pipe<T>::getClosedIndexForObject(unsigned int index) {
-  // switch (getCount(index)) {
-  //   case 0:
-  //     return getPhi(index) * 2 + getEta(index);
-  //   case 1:
-  //     if (getPhiOverlap(index) && !getEtaOverlap(index))
-  //       return ((getPhi(index) + 1) % nphi_) * 2 + getEta(index);
-  //     else  //eta overlap, or 4-small-region overlap
-  //       return getPhi(index) * 2 + getEta(index) + 1;
-  //   case 2:
-  //     return ((getPhi(index) + 1) % nphi_) * 2 + getEta(index);
-  //   case 3:
-  //     return ((getPhi(index) + 1) % nphi_) * 2 + getEta(index) + 1;
-  //   default:
-  //     dbgCout() << "Impossible object count!" << std::endl;
-  //     exit(0);
-  // }
-  return 0;
-}
-
-template <typename T>
 size_t l1ct::tdr_regionizer::Pipe<T>::getPipeIndexForObject(unsigned int index) {
-  auto srIndices = getSRIndices(index);   // This is a vector of indices
-  auto numSRs = srIndices.size();
-  dbgCout() << "number SRs = " << numSRs << ", count = " << getCount(index) << std::endl;
-  assert (numSRs);
-  // switch (getCount(index)) {
-  //   case 0:
-  //     return getHardwarePipeIndex(srIndices[0]);
-  //   case 1:
-  //     (numSRs > 1) ? getHardwarePipeIndex(srIndices[1]) : getHardwarePipeIndex(srIndices[0]);;
-  //     if (getPhiOverlap(index) && !getEtaOverlap(index))
-  //       return (getPhi(index) + 1) % nphi_;
-  //     else
-  //       return getPhi(index);
-  //   case 2:
-  //   case 3:
-  //     return (getPhi(index) + 1) % nphi_;
-  //   default:
-  //     dbgCout() << "Impossible object count!" << std::endl;
-  //     exit(0);
-  // }
-  return getHardwarePipeIndex(srIndices[0]);
+  return getObj(index).getNextSRIndex();
 }
 
 template <typename T>
@@ -169,16 +128,16 @@ bool l1ct::tdr_regionizer::Regionizer<T>::isInBigRegion(const PFRegionEmu& reg) 
   auto phi = reg.intPhiCenter();
   if (bigRegionMax_ < bigRegionMin_) {
     // the wraparound case
-    return phi > bigRegionMin_ || phi < bigRegionMax_; 
+    return phi > bigRegionMin_ || phi < bigRegionMax_;
   } else {
     // the normal case
-    return phi > bigRegionMin_ && phi < bigRegionMax_; 
+    return phi > bigRegionMin_ && phi < bigRegionMax_;
   }
 }
 
 template <typename T>
 std::vector<size_t> l1ct::tdr_regionizer::Regionizer<T>::getSmallRegions(int glbeta,
-                                                                         int glbphi) const 
+                                                                         int glbphi) const
 {
   std::vector<size_t> srIndices; // the signal regions this object should go into
 
@@ -239,29 +198,21 @@ int l1ct::tdr_regionizer::Regionizer<T>::getPipeTime(int linkIndex,
 
 template <typename T>
 int l1ct::tdr_regionizer::Regionizer<T>::popLinkObject(int linkIndex, int currentTimeOfObject) {
-  // pipes_[linkIndex].incCount();
-
-  // //determine which object is next and at what time
-  // unsigned int countToBeDone = 1;
-  // if (pipes_[linkIndex].getPhiOverlap() && pipes_[linkIndex].getEtaOverlap())
-  //   countToBeDone = 4;
-  // else if (pipes_[linkIndex].getPhiOverlap() || pipes_[linkIndex].getEtaOverlap())
-  //   countToBeDone = 2;
-
-  // if (countToBeDone == pipes_[linkIndex].getCount()) {
-  //   //pop off leading object, done with it
-  //   pipes_[linkIndex].erase();
-
-  //   //get time of next object
-  //   if (getPipeSize(linkIndex))
-  //     return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), currentTimeOfObject);
-  //   else  //no more objects on link
-  //     return -1;
-  // } else {
-  //   //increment time for next overlapped object on this link
-  //   return currentTimeOfObject + 1;
-  // }
-  return -1;
+  auto& obj = pipes_[linkIndex].getObj();
+  obj.incCount();
+  if (obj.getCount() < obj.getSRIndices().size()) {
+    // Continue working on the same object, since it goes in multiple SRs due to overlaps
+    return currentTimeOfObject + 1;
+  } else {
+    // move on to next item in pipe
+    pipes_[linkIndex].erase();
+    //get time of next object
+    if (getPipeSize(linkIndex)) {
+      return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), currentTimeOfObject);
+    } else { //no more objects on link
+      return -1;
+    }
+  }
 }
 
 template <typename T>
@@ -277,11 +228,8 @@ void l1ct::tdr_regionizer::Regionizer<T>::initTimes() {
 
 template <typename T>
 void l1ct::tdr_regionizer::Regionizer<T>::addToSmallRegion(unsigned int linkNum, unsigned int index) {
-  // T theobj = pipes_[linkNum].getRawObj(index);
-  // unsigned int regind = getClosedIndexForObject(linkNum);
-  // theobj.hwPhi = dphi_wrap(pipes_[linkNum].getGlbPhi(index) - regionmap_[regind].phi);
-  // theobj.hwEta = pipes_[linkNum].getGlbEta(index) - regionmap_[regind].eta;
-  // smallRegionObjects_[regind].push_back(theobj);
+  auto pipeObj = pipes_[linkNum].getObj(index);
+  smallRegionObjects_[pipeObj.getNextSRIndex()].push_back(pipeObj.getRawObj());
 }
 
 template <typename T>
@@ -298,7 +246,7 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
 
     //do pipe-full handling
     for (unsigned int sector = 0; sector < getSize(); ++sector) {
-      if (timeOfNextObject_[sector] >= 0 && smallRegionObjects_[getClosedIndexForObject(sector)].size() == maxobjects_) {
+      if (timeOfNextObject_[sector] >= 0 && smallRegionObjects_[getPipeIndexForObject(sector)].size() == maxobjects_) {
         //pipe is full so proceed to next object
         //'remove' the selected object from its link
         timeOfNextObject_[sector] = popLinkObject(sector, timeOfNextObject_[sector]);
@@ -307,15 +255,17 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
 
     //do find object handling
     for (unsigned int sector = 0; sector < getSize(); ++sector) {
-      dbgCout() << "secotor = " << sector << ", timeOfNextObject_[sector] = " << timeOfNextObject_[sector] 
+      dbgCout() << "secotor = " << sector << ", timeOfNextObject_[sector] = " << timeOfNextObject_[sector]
         << ", minLinkIndex = " << minLinkIndex << ", minTime = " << minTime << ", minPipeIndex = " << minPipeIndex << std::endl;
       if (timeOfNextObject_[sector] >= 0 && (minLinkIndex == -1 || timeOfNextObject_[sector] < minTime)) {
         //found new 'selected' link object and pipe
         dbgCout() << "   In if clause" << std::endl;
-        minPipeIndex = getPipeIndexForObject(sector);
+        minPipeIndex = getHardwarePipeIndexForObject(sector);
         minTime = timeOfNextObject_[sector];
         minLinkIndex = sector;
-      } else if (getPipeSize(sector) && minLinkIndex >= 0 && minPipeIndex == getPipeIndexForObject(sector) && timeOfNextObject_[sector] == minTime) {
+      } else if (getPipeSize(sector) && minLinkIndex >= 0
+                 && minPipeIndex == static_cast<int>(getHardwarePipeIndexForObject(sector))
+                 && timeOfNextObject_[sector] == minTime) {
         //have pipe conflict, so need to wait a clock
         dbgCout() << "   In else clause" << std::endl;
         ++timeOfNextObject_[sector];
@@ -368,8 +318,8 @@ void l1ct::tdr_regionizer::Regionizer<T>::printDebug(int count) const {
   dbgCout() << count << "\tsector\titem\tpt\teta\tphi" << std::endl;
   for (unsigned int sector = 0; sector < getSize(); sector++) {
     for (unsigned int j = 0; j < getPipeSize(sector); j++) {
-      dbgCout() << "\t" << sector << "\t" << j << "\t" << getPipe(sector).getPt(j) << "\t" << getPipe(sector).getGlbEta(j) << "\t"
-                << getPipe(sector).getGlbPhi(j) << std::endl;
+      dbgCout() << "\t" << sector << "\t" << j << "\t" << pipes_[sector].getPt(j) << "\t" << pipes_[sector].getGlbEta(j) << "\t"
+                << pipes_[sector].getGlbPhi(j) << std::endl;
     }
     dbgCout() << "-------------------------------" << std::endl;
   }

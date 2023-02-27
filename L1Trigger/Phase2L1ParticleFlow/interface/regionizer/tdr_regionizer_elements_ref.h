@@ -39,15 +39,15 @@ namespace l1ct {
       unsigned int getClock() const { return linkobjclk_; }
       void setClock(unsigned int clock) { linkobjclk_ = clock; }
       const std::vector<size_t>& getSRIndices() const {return srIndices_; }
+      size_t getNextSRIndex() const {return srIndices_.at(objcount_); }
       unsigned int getCount() const { return objcount_; }
-      unsigned int getCountAndInc() { return objcount_++; }
       void incCount() { objcount_++; }
       int getPt() const { return obj_.hwPt.to_int(); }
       int getGlbPhi() const { return glbphi_; }
       int getGlbEta() const { return glbeta_; }
 
-      T& getObj() { return obj_; }
-      const T& getObj() const { return obj_; }
+      T& getRawObj() { return obj_; }
+      const T& getRawObj() const { return obj_; }
 
     private:
       T obj_;
@@ -65,17 +65,12 @@ namespace l1ct {
 
       void addObj(T obj, std::vector<size_t> srs, int glbeta, int glbphi);
 
-      PipeObject<T>& getObj(unsigned int index) { return data_[index]; }
-      const PipeObject<T>& getObj(unsigned int index) const { return data_[index]; }
-
-      T& getRawObj(unsigned int index) { return data_[index].getObj(); }
-      const T& getRawObj(unsigned int index) const { return data_[index].getObj(); }
+      PipeObject<T>& getObj(unsigned int index = 0) { return data_[index]; }
+      const PipeObject<T>& getObj(unsigned int index = 0) const { return data_[index]; }
 
       unsigned int getClock(unsigned int index = 0) const { return getObj(index).getClock(); }
       void setClock(unsigned int clock, unsigned int index = 0) { return getObj(index).setClock(clock); }
-      const std::vector<size_t>& getSRIndices(unsigned int index = 0) const { return getObj(index).getSRIndices(); }
       unsigned int getCount(unsigned int index = 0) const { return getObj(index).getCount(); }
-      unsigned int getCountAndInc(unsigned int index = 0) { return getObj(index).getCountAndInc(); }
       void incCount(unsigned int index = 0) { getObj(index).incCount(); }
       void erase(unsigned int index = 0) { data_.erase(data_.begin() + index); }
       int getPt(unsigned int index = 0) const { return getObj(index).getPt(); }
@@ -94,13 +89,6 @@ namespace l1ct {
       }
 
     private:
-
-      /// SRs share RAMs (and hardware pipes)
-      static size_t constexpr SRS_PER_RAM = 2;
-      /// Because some SRs share pipes, this determines the pipe index for a linearize SR index
-      /// (This is based on the VHDL function, get_target_pipe_index_subindex)
-      size_t getHardwarePipeIndex(size_t srIndex) const {return srIndex / SRS_PER_RAM;}
-
       unsigned int clkindex_, nphi_;
       std::vector<PipeObject<T>> data_;
     };
@@ -124,18 +112,18 @@ namespace l1ct {
       bool isInBigRegion(const PFRegionEmu& reg) const;
 
       unsigned int getSize() const { return pipes_.size(); }
-      unsigned int getPipeSize(unsigned int index) const { return getPipe(index).getPipeSize(); }
+      unsigned int getPipeSize(unsigned int linkIndex) const { return pipes_[linkIndex].getPipeSize(); }
 
       std::vector<size_t> getSmallRegions(int glbeta, int glbphi) const;
 
       void addToPipe(const T& obj, unsigned int index);
       void setPipe(const std::vector<T>& objvec, unsigned int index);
       void setPipes(const std::vector<std::vector<T>>& objvecvec);
-      const Pipe<T>& getPipe(unsigned int index) const { return pipes_[index]; }
-      Pipe<T>& getPipe(unsigned int index) { return pipes_[index]; }
 
       // linkIndex == sector
       int getPipeTime(int linkIndex, int linkTimeOfObject, int linkAlgoClockRunningTime);
+
+      /// This either removes the next object on the link or inrements the count; It returns the next time
       int popLinkObject(int linkIndex, int currentTimeOfObject);
       int timeNextFromIndex(unsigned int linkIndex, int time) { return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), time); }
 
@@ -144,9 +132,17 @@ namespace l1ct {
       int getClosedIndexForObject(unsigned int linknum, unsigned int index = 0) {
         return pipes_[linknum].getClosedIndexForObject(index);
       }
-      int getPipeIndexForObject(unsigned int linknum, unsigned int index = 0) {
+
+      /// This retruns the linearized small region associated with the given item
+      size_t getPipeIndexForObject(unsigned int linknum, unsigned int index = 0) {
         return pipes_[linknum].getPipeIndexForObject(index);
       }
+
+      /// This returns the hardware pipe number of the item. Generally two SRs share a pipe
+      size_t getHardwarePipeIndexForObject(unsigned int linknum, unsigned int index = 0) {
+        return getHardwarePipeIndex(getPipeIndexForObject(linknum, index));
+      }
+
       void addToSmallRegion(unsigned int linkNum, unsigned int index = 0);
 
       void run(bool debug = false);
@@ -158,6 +154,13 @@ namespace l1ct {
       void printDebug(int count) const;
 
     private:
+
+      /// SRs share RAMs (and hardware pipes)
+      static size_t constexpr SRS_PER_RAM = 2;
+
+      /// Because some SRs share pipes, this determines the pipe index for a linearize SR index
+      /// (This is based on the VHDL function, get_target_pipe_index_subindex)
+      size_t getHardwarePipeIndex(size_t srIndex) const {return srIndex / SRS_PER_RAM;}
 
       // this function is for sorting small regions first in phi and then in eta.
       // It takes regions_ indices
