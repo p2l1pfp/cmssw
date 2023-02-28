@@ -82,6 +82,18 @@ process.l1tLayer1Barrel9.boards=cms.VPSet(
             regions=cms.vuint32(*[6+9*ie+i for ie in range(3) for i in range(3)])),
     )
 
+process.l1tLayer1BarrelTDR = process.l1tLayer1Barrel.clone()
+process.l1tLayer1BarrelTDR.regionizerAlgo = cms.string("TDR")
+process.l1tLayer1BarrelTDR.regionizerAlgoParameters = cms.PSet(
+        nTrack = cms.uint32(22),
+        nCalo = cms.uint32(15),
+        nEmCalo = cms.uint32(12),
+        nMu = cms.uint32(2),
+        nClocks = cms.int32(162),
+        doSort = cms.bool(False),
+        bigRegionEdges = cms.vint32(-560, -80, 400, -560),
+        debug = cms.untracked.bool(True)
+    )
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import *
 if not args.patternFilesOFF:
     process.l1tLayer1Barrel.patternWriters = cms.untracked.VPSet(*barrelWriterConfigs)
@@ -95,6 +107,7 @@ process.runPF = cms.Path(
         process.l1tGTTInputProducer +
         process.l1tVertexFinderEmulator +
         process.l1tLayer1Barrel +
+        process.l1tLayer1BarrelTDR +
         process.l1tLayer1Barrel9 +
         process.l1tLayer1HGCal +
         process.l1tLayer1HGCalNoTK +
@@ -124,7 +137,7 @@ if not args.patternFilesOFF:
     process.l1tLayer2SeedConeJetWriter.maxLinesPerFile = eventsPerFile_*54
 
 if not args.dumpFilesOFF:
-  for det in "Barrel", "Barrel9", "HGCal", "HGCalNoTK", "HF":
+  for det in "Barrel", "BarrelTDR", "Barrel9", "HGCal", "HGCalNoTK", "HF":
         l1pf = getattr(process, 'l1tLayer1'+det)
         l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 
