@@ -29,7 +29,6 @@ namespace l1ct {
     void run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) override;
 
   private:
-
     // link emulation from decoded inputs (for simulation)
     void fillLinks(const RegionizerDecodedInputs& in, std::vector<std::vector<l1ct::TkObjEmu>>& links);
     void fillLinks(const RegionizerDecodedInputs& in, std::vector<std::vector<l1ct::HadCaloObjEmu>>& links);
@@ -58,7 +57,7 @@ namespace l1ct {
     uint32_t MAX_HADCALO_OBJ_;
     uint32_t MAX_MU_OBJ_;
 
-    bool init_; // has initialization happened
+    bool init_;  // has initialization happened
 
     std::vector<tdr_regionizer::Regionizer<l1ct::TkObjEmu>> tkRegionizers_;
     std::vector<tdr_regionizer::Regionizer<l1ct::HadCaloObjEmu>> hadCaloRegionizers_;

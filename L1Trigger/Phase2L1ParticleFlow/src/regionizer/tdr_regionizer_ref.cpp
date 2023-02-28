@@ -7,14 +7,13 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 l1ct::TDRRegionizerEmulator::TDRRegionizerEmulator(const edm::ParameterSet& iConfig)
-    : TDRRegionizerEmulator(
-          iConfig.getParameter<uint32_t>("nTrack"),
-          iConfig.getParameter<uint32_t>("nCalo"),
-          iConfig.getParameter<uint32_t>("nEmCalo"),
-          iConfig.getParameter<uint32_t>("nMu"),
-          iConfig.getParameter<int32_t>("nClocks"),
-          iConfig.getParameter<std::vector<int32_t> >("bigRegionEdges"),
-          iConfig.getParameter<bool>("doSort")) {
+    : TDRRegionizerEmulator(iConfig.getParameter<uint32_t>("nTrack"),
+                            iConfig.getParameter<uint32_t>("nCalo"),
+                            iConfig.getParameter<uint32_t>("nEmCalo"),
+                            iConfig.getParameter<uint32_t>("nMu"),
+                            iConfig.getParameter<int32_t>("nClocks"),
+                            iConfig.getParameter<std::vector<int32_t>>("bigRegionEdges"),
+                            iConfig.getParameter<bool>("doSort")) {
   debug_ = iConfig.getUntrackedParameter<bool>("debug", false);
 }
 #endif
@@ -36,13 +35,12 @@ l1ct::TDRRegionizerEmulator::TDRRegionizerEmulator(uint32_t ntk,
       dosort_(dosort),
       netaInBR_(6),
       nphiInBR_(3),
-      init_(false)
-{
+      init_(false) {
   nBigRegions_ = bigRegionEdges_.size() - 1;
   MAX_TK_OBJ_ = nclocks_ * 2 / 3;  // 2 objects per 3 clocks
-  MAX_EMCALO_OBJ_ = nclocks_;  // 1 object per clock
-  MAX_HADCALO_OBJ_ = nclocks_;  // 1 object per clock
-  MAX_MU_OBJ_ = nclocks_;  // 1 object per clock
+  MAX_EMCALO_OBJ_ = nclocks_;      // 1 object per clock
+  MAX_HADCALO_OBJ_ = nclocks_;     // 1 object per clock
+  MAX_MU_OBJ_ = nclocks_;          // 1 object per clock
 }
 
 l1ct::TDRRegionizerEmulator::~TDRRegionizerEmulator() {}
@@ -56,16 +54,15 @@ void l1ct::TDRRegionizerEmulator::initSectorsAndRegions(const RegionizerDecodedI
   init_ = true;
   nregions_ = out.size();
 
-
   for (unsigned int i = 0; i < nBigRegions_; i++) {
     tkRegionizers_.emplace_back(
-        netaInBR_, nphiInBR_, nregions_, ntk_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+        netaInBR_, nphiInBR_, nregions_, ntk_, bigRegionEdges_[i], bigRegionEdges_[i + 1], nclocks_);
     hadCaloRegionizers_.emplace_back(
-        netaInBR_, nphiInBR_, nregions_, ncalo_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+        netaInBR_, nphiInBR_, nregions_, ncalo_, bigRegionEdges_[i], bigRegionEdges_[i + 1], nclocks_);
     emCaloRegionizers_.emplace_back(
-        netaInBR_, nphiInBR_, nregions_, nem_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+        netaInBR_, nphiInBR_, nregions_, nem_, bigRegionEdges_[i], bigRegionEdges_[i + 1], nclocks_);
     muRegionizers_.emplace_back(
-        netaInBR_, nphiInBR_, nregions_, nmu_, bigRegionEdges_[i], bigRegionEdges_[i+1], nclocks_);
+        netaInBR_, nphiInBR_, nregions_, nmu_, bigRegionEdges_[i], bigRegionEdges_[i + 1], nclocks_);
   }
 
   dbgCout() << "in.track.size() = " << in.track.size() << std::endl;
@@ -175,7 +172,6 @@ void l1ct::TDRRegionizerEmulator::fillLinks(const l1ct::RegionizerDecodedInputs&
   }
 }
 
-
 void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out) {
   if (debug_) {
     dbgCout() << "TDRRegionizerEmulator::run called, out.size =  " << out.size() << std::endl;
@@ -208,10 +204,9 @@ void l1ct::TDRRegionizerEmulator::run(const RegionizerDecodedInputs& in, std::ve
       dbgCout() << "\tsector\titem\tpt\teta\tphi" << std::endl;
       for (unsigned int sector = 0; sector < tk_links_in.size(); sector++) {
         for (unsigned int j = 0; j < tk_links_in[sector].size(); j++) {
-          dbgCout() << "\t" << sector << "\t" << j
-                    << "\t " << tk_links_in[sector][j].hwPt.to_int()
-                    << "\t" << tk_links_in[sector][j].hwEta.to_int()
-                    << "\t" << tk_links_in[sector][j].hwPhi.to_int() << std::endl;
+          dbgCout() << "\t" << sector << "\t" << j << "\t " << tk_links_in[sector][j].hwPt.to_int() << "\t"
+                    << tk_links_in[sector][j].hwEta.to_int() << "\t" << tk_links_in[sector][j].hwPhi.to_int()
+                    << std::endl;
         }
         dbgCout() << "-------------------------------" << std::endl;
       }

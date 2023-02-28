@@ -30,16 +30,12 @@ namespace l1ct {
     class PipeObject {
     public:
       PipeObject() {}
-      PipeObject(const T& obj,
-                 std::vector<size_t> srIndices,
-                 int glbphi,
-                 int glbeta,
-                 unsigned int clk);
+      PipeObject(const T& obj, std::vector<size_t> srIndices, int glbphi, int glbeta, unsigned int clk);
 
       unsigned int getClock() const { return linkobjclk_; }
       void setClock(unsigned int clock) { linkobjclk_ = clock; }
-      const std::vector<size_t>& getSRIndices() const {return srIndices_; }
-      size_t getNextSRIndex() const {return srIndices_.at(objcount_); }
+      const std::vector<size_t>& getSRIndices() const { return srIndices_; }
+      size_t getNextSRIndex() const { return srIndices_.at(objcount_); }
       unsigned int getCount() const { return objcount_; }
       void incCount() { objcount_++; }
       int getPt() const { return obj_.hwPt.to_int(); }
@@ -97,12 +93,13 @@ namespace l1ct {
     class Regionizer {
     public:
       Regionizer() {}
-      Regionizer(
-          unsigned int neta, unsigned int nphi,  //the number of eta and phi SRs in a big region (board)
-          unsigned int nregions, // The total number of small regions in the full barrel
-          unsigned int maxobjects,
-          int bigRegionMin, int bigRegionMax,  // the phi range covered by this board
-          int nclocks);
+      Regionizer(unsigned int neta,
+                 unsigned int nphi,      //the number of eta and phi SRs in a big region (board)
+                 unsigned int nregions,  // The total number of small regions in the full barrel
+                 unsigned int maxobjects,
+                 int bigRegionMin,
+                 int bigRegionMax,  // the phi range covered by this board
+                 int nclocks);
 
       void initSectors(const std::vector<DetectorSector<T>>& sectors);
       void initSectors(const DetectorSector<T>& sector);
@@ -125,7 +122,9 @@ namespace l1ct {
 
       /// This either removes the next object on the link or inrements the count; It returns the next time
       int popLinkObject(int linkIndex, int currentTimeOfObject);
-      int timeNextFromIndex(unsigned int linkIndex, int time) { return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), time); }
+      int timeNextFromIndex(unsigned int linkIndex, int time) {
+        return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), time);
+      }
 
       void initTimes();
 
@@ -156,13 +155,12 @@ namespace l1ct {
       void printDebug(int count) const;
 
     private:
-
       /// SRs share RAMs (and hardware pipes)
       static size_t constexpr SRS_PER_RAM = 2;
 
       /// Because some SRs share pipes, this determines the pipe index for a linearize SR index
       /// (This is based on the VHDL function, get_target_pipe_index_subindex)
-      size_t getHardwarePipeIndex(size_t srIndex) const {return srIndex / SRS_PER_RAM;}
+      size_t getHardwarePipeIndex(size_t srIndex) const { return srIndex / SRS_PER_RAM; }
 
       // this function is for sorting small regions first in phi and then in eta.
       // It takes regions_ indices

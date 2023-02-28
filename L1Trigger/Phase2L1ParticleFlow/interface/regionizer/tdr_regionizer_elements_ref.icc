@@ -1,22 +1,14 @@
 
 
 template <typename T>
-l1ct::tdr_regionizer::PipeObject<T>::PipeObject(const T& obj,
-                                                std::vector<size_t> srIndices,
-                                                int glbphi,
-                                                int glbeta,
-                                                unsigned int clk)
-    : obj_(obj),
-      srIndices_(srIndices),
-      glbeta_(glbeta),
-      glbphi_(glbphi),
-      linkobjclk_(clk) {
+l1ct::tdr_regionizer::PipeObject<T>::PipeObject(
+    const T& obj, std::vector<size_t> srIndices, int glbphi, int glbeta, unsigned int clk)
+    : obj_(obj), srIndices_(srIndices), glbeta_(glbeta), glbphi_(glbphi), linkobjclk_(clk) {
   objcount_ = 0;
 }
 
 template <typename T>
-void l1ct::tdr_regionizer::Pipe<T>::addObj(
-    T obj, std::vector<size_t> srIndices, int glbeta, int glbphi) {
+void l1ct::tdr_regionizer::Pipe<T>::addObj(T obj, std::vector<size_t> srIndices, int glbeta, int glbphi) {
   data_.emplace_back(obj, srIndices, glbeta, glbphi, clkindex_++);
 }
 //explicit for tracker to handle clocking
@@ -24,8 +16,7 @@ template <>
 inline void l1ct::tdr_regionizer::Pipe<l1ct::TkObjEmu>::addObj(l1ct::TkObjEmu obj,
                                                                std::vector<size_t> srIndices,
                                                                int glbeta,
-                                                               int glbphi)
-{
+                                                               int glbphi) {
   data_.emplace_back(obj, srIndices, glbeta, glbphi, clkindex_++);
   if (clkindex_ % 3 == 2)
     clkindex_++;  //this is for tracker, could I get this generically maybe?
@@ -37,9 +28,13 @@ size_t l1ct::tdr_regionizer::Pipe<T>::getPipeIndexForObject(unsigned int index) 
 }
 
 template <typename T>
-l1ct::tdr_regionizer::Regionizer<T>::Regionizer(
-    unsigned int neta, unsigned int nphi, unsigned int nregions, unsigned int maxobjects,
-    int bigRegionMin, int bigRegionMax, int nclocks)
+l1ct::tdr_regionizer::Regionizer<T>::Regionizer(unsigned int neta,
+                                                unsigned int nphi,
+                                                unsigned int nregions,
+                                                unsigned int maxobjects,
+                                                int bigRegionMin,
+                                                int bigRegionMax,
+                                                int nclocks)
     : neta_(neta),
       nphi_(nphi),
       nregions_(nregions),
@@ -48,7 +43,7 @@ l1ct::tdr_regionizer::Regionizer<T>::Regionizer(
       bigRegionMin_(bigRegionMin),
       bigRegionMax_(bigRegionMax),
       nclocks_(nclocks) {
-  smallRegionObjects_.resize(neta_*nphi_);
+  smallRegionObjects_.resize(neta_ * nphi_);
 }
 
 template <typename T>
@@ -69,7 +64,6 @@ void l1ct::tdr_regionizer::Regionizer<T>::initSectors(const DetectorSector<T>& s
   sectors_.resize(1, sector.region);
   pipes_.resize(nsectors_);
 }
-
 
 // this function is for sorting small regions first
 // in eta first, then in phi
@@ -103,7 +97,6 @@ bool l1ct::tdr_regionizer::Regionizer<T>::sortRegionsRegular(size_t a, size_t b)
   }
 }
 
-
 template <typename T>
 void l1ct::tdr_regionizer::Regionizer<T>::initRegions(const std::vector<PFInputRegion>& regions) {
   regions_.resize(regions.size());
@@ -119,12 +112,12 @@ void l1ct::tdr_regionizer::Regionizer<T>::initRegions(const std::vector<PFInputR
     }
   }
   assert(regionmap_.size() == neta_ * nphi_);
-  std::sort(regionmap_.begin(), regionmap_.end(), [this](size_t a, size_t b){return this->sortRegionsRegular(a, b);});
+  std::sort(
+      regionmap_.begin(), regionmap_.end(), [this](size_t a, size_t b) { return this->sortRegionsRegular(a, b); });
 }
 
 template <typename T>
-bool l1ct::tdr_regionizer::Regionizer<T>::isInBigRegion(const PFRegionEmu& reg) const
-{
+bool l1ct::tdr_regionizer::Regionizer<T>::isInBigRegion(const PFRegionEmu& reg) const {
   auto phi = reg.intPhiCenter();
   if (bigRegionMax_ < bigRegionMin_) {
     // the wraparound case
@@ -136,10 +129,8 @@ bool l1ct::tdr_regionizer::Regionizer<T>::isInBigRegion(const PFRegionEmu& reg) 
 }
 
 template <typename T>
-std::vector<size_t> l1ct::tdr_regionizer::Regionizer<T>::getSmallRegions(int glbeta,
-                                                                         int glbphi) const
-{
-  std::vector<size_t> srIndices; // the signal regions this object should go into
+std::vector<size_t> l1ct::tdr_regionizer::Regionizer<T>::getSmallRegions(int glbeta, int glbphi) const {
+  std::vector<size_t> srIndices;  // the signal regions this object should go into
 
   // only iterate over regions covered by board
   for (size_t i = 0; i < regionmap_.size(); i++) {
@@ -161,7 +152,7 @@ void l1ct::tdr_regionizer::Regionizer<T>::addToPipe(const T& obj, unsigned int s
   auto glbeta = sectors_[sector].hwGlbEtaOf(obj).to_int();
   // get the SR indices that this object should go into
   std::vector<size_t> srIndices = getSmallRegions(glbeta, glbphi);
-  if (srIndices.size()) {
+  if (!srIndices.empty()) {
     pipes_[sector].addObj(obj, srIndices, glbeta, glbphi);
   }
 }
@@ -209,7 +200,7 @@ int l1ct::tdr_regionizer::Regionizer<T>::popLinkObject(int linkIndex, int curren
     //get time of next object
     if (getPipeSize(linkIndex)) {
       return getPipeTime(linkIndex, pipes_[linkIndex].getClock(), currentTimeOfObject);
-    } else { //no more objects on link
+    } else {  //no more objects on link
       return -1;
     }
   }
@@ -262,9 +253,9 @@ void l1ct::tdr_regionizer::Regionizer<T>::run(bool debug) {
         minPipeIndex = getHardwarePipeIndexForObject(sector);
         minTime = timeOfNextObject_[sector];
         minLinkIndex = sector;
-      } else if (getPipeSize(sector) && minLinkIndex >= 0
-                 && minPipeIndex == static_cast<int>(getHardwarePipeIndexForObject(sector))
-                 && timeOfNextObject_[sector] == minTime) {
+      } else if (getPipeSize(sector) && minLinkIndex >= 0 &&
+                 minPipeIndex == static_cast<int>(getHardwarePipeIndexForObject(sector)) &&
+                 timeOfNextObject_[sector] == minTime) {
         //have pipe conflict, so need to wait a clock
         ++timeOfNextObject_[sector];
       }
@@ -320,13 +311,13 @@ void l1ct::tdr_regionizer::Regionizer<T>::printDebug(int count) const {
   dbgCout() << count << "\tsector\titem\tpt\teta\tphi" << std::endl;
   for (unsigned int sector = 0; sector < getSize(); sector++) {
     for (unsigned int j = 0; j < getPipeSize(sector); j++) {
-      dbgCout() << "\t" << sector << "\t" << j << "\t" << pipes_[sector].getPt(j) << "\t" << pipes_[sector].getGlbEta(j) << "\t"
-                << pipes_[sector].getGlbPhi(j) << std::endl;
+      dbgCout() << "\t" << sector << "\t" << j << "\t" << pipes_[sector].getPt(j) << "\t" << pipes_[sector].getGlbEta(j)
+                << "\t" << pipes_[sector].getGlbPhi(j) << std::endl;
     }
     dbgCout() << "-------------------------------" << std::endl;
   }
   dbgCout() << "SMALL REGIONS" << std::endl;
-  for (unsigned int region = 0; region < neta_*nphi_; region++) {
+  for (unsigned int region = 0; region < neta_ * nphi_; region++) {
     dbgCout() << count << "\tregion\titem\tpt\tloceta\tlocphi" << std::endl;
     for (unsigned int j = 0; j < smallRegionObjects_[region].size(); j++) {
       dbgCout() << "\t" << region << " " << j << "\t" << smallRegionObjects_[region][j].hwPt.to_int() << "\t"
