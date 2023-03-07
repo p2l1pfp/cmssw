@@ -32,7 +32,7 @@ l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
       dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
       trkQualityPtMin(pset.getParameter<double>("trkQualityPtMin")),
       doCompositeTkEle(pset.getParameter<bool>("doCompositeTkEle")),
-      nCOMPCAND_PER_CLUSTER(pset.getParameter<uint32_t>("nCOMPCAND_PER_CLUSTER")),
+      nCompCandPerCluster(pset.getParameter<uint32_t>("nCompCandPerCluster")),
       writeEgSta(pset.getParameter<bool>("writeEGSta")),
       tkIsoParams_tkEle(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEle")),
       tkIsoParams_tkEm(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEm")),
@@ -199,7 +199,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     std::sort(candidates.begin(),
               candidates.end(),
               [](const CompositeCandidate &a, const CompositeCandidate &b) -> bool { return a.dpt < b.dpt; });
-    unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), cfg.nCOMPCAND_PER_CLUSTER);
+    unsigned int nCandPerCluster = std::min<unsigned int>(candidates.size(), cfg.nCompCandPerCluster);
     if (nCandPerCluster == 0)
       continue;
 

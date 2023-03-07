@@ -49,10 +49,9 @@ namespace l1ct {
 
     bool hwIsEM() const { return hwEmID != 0; }
 
-    static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width + emid_t::width +
-                                srrtot_t::width + meanz_t::width + hoe_t::width;
-
     static const int BITWIDTH_SLIM = pt_t::width + eta_t::width + phi_t::width + pt_t::width + emid_t::width;
+
+    static const int BITWIDTH = BITWIDTH_SLIM + srrtot_t::width + meanz_t::width + hoe_t::width;
 
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;
@@ -67,6 +66,7 @@ namespace l1ct {
       pack_into_bits(ret, start, hwHoe);
       return ret;
     }
+
     inline static HadCaloObj unpack(const ap_uint<BITWIDTH> &src) {
       HadCaloObj ret;
       unsigned int start = 0;
@@ -81,27 +81,7 @@ namespace l1ct {
       return ret;
     }
 
-    inline ap_uint<BITWIDTH_SLIM> pack_slim() const {
-      ap_uint<BITWIDTH_SLIM> ret;
-      unsigned int start = 0;
-      pack_into_bits(ret, start, hwPt);
-      pack_into_bits(ret, start, hwEta);
-      pack_into_bits(ret, start, hwPhi);
-      pack_into_bits(ret, start, hwEmPt);
-      pack_into_bits(ret, start, hwEmID);
-      return ret;
-    }
-    inline static HadCaloObj unpack_slim(const ap_uint<BITWIDTH_SLIM> &src) {
-      HadCaloObj ret;
-      ret.clear();
-      unsigned int start = 0;
-      unpack_from_bits(src, start, ret.hwPt);
-      unpack_from_bits(src, start, ret.hwEta);
-      unpack_from_bits(src, start, ret.hwPhi);
-      unpack_from_bits(src, start, ret.hwEmPt);
-      unpack_from_bits(src, start, ret.hwEmID);
-      return ret;
-    }
+    inline ap_uint<BITWIDTH_SLIM> pack_slim() const { return pack()(BITWIDTH_SLIM - 1, 0); }
   };
 
   inline void clear(HadCaloObj &c) { c.clear(); }
@@ -146,10 +126,9 @@ namespace l1ct {
     float floatMeanZ() const { return Scales::floatMeanZ(hwMeanZ); };
     float floatHoe() const { return Scales::floatHoe(hwHoe); };
 
-    static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width + emid_t::width +
-                                srrtot_t::width + meanz_t::width + hoe_t::width;
-
     static const int BITWIDTH_SLIM = pt_t::width + eta_t::width + phi_t::width + pt_t::width + emid_t::width;
+
+    static const int BITWIDTH = BITWIDTH_SLIM + srrtot_t::width + meanz_t::width + hoe_t::width;
 
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;
@@ -179,28 +158,7 @@ namespace l1ct {
       return ret;
     }
 
-    inline ap_uint<BITWIDTH_SLIM> pack_slim() const {
-      ap_uint<BITWIDTH_SLIM> ret;
-      unsigned int start = 0;
-      pack_into_bits(ret, start, hwPt);
-      pack_into_bits(ret, start, hwEta);
-      pack_into_bits(ret, start, hwPhi);
-      pack_into_bits(ret, start, hwPtErr);
-      pack_into_bits(ret, start, hwEmID);
-      return ret;
-    }
-    inline static EmCaloObj unpack_slim(const ap_uint<BITWIDTH_SLIM> &src) {
-      EmCaloObj ret;
-      ret.clear();
-      unsigned int start = 0;
-      unpack_from_bits(src, start, ret.hwPt);
-      unpack_from_bits(src, start, ret.hwEta);
-      unpack_from_bits(src, start, ret.hwPhi);
-      unpack_from_bits(src, start, ret.hwPtErr);
-      unpack_from_bits(src, start, ret.hwEmID);
-
-      return ret;
-    }
+    inline ap_uint<BITWIDTH_SLIM> pack_slim() const { return pack()(BITWIDTH_SLIM - 1, 0); }
   };
   inline void clear(EmCaloObj &c) { c.clear(); }
 
@@ -268,12 +226,11 @@ namespace l1ct {
     float floatZ0() const { return Scales::floatZ0(hwZ0); }
     float floatDxy() const { return Scales::floatDxy(hwDxy); }
 
-    static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 +
-                                z0_t::width + dxy_t::width + tkquality_t::width + stub_t::width + redChi2Bin_t::width +
-                                redChi2Bin_t::width + redChi2Bin_t::width;
-
     static const int BITWIDTH_SLIM = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 +
                                      z0_t::width + dxy_t::width + tkquality_t::width;
+
+    static const int BITWIDTH =
+        BITWIDTH_SLIM + stub_t::width + redChi2Bin_t::width + redChi2Bin_t::width + redChi2Bin_t::width;
 
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;
@@ -311,35 +268,7 @@ namespace l1ct {
       unpack_from_bits(src, start, ret.hwRedChi2Bend);
       return ret;
     }
-    inline ap_uint<BITWIDTH_SLIM> pack_slim() const {
-      ap_uint<BITWIDTH_SLIM> ret;
-      unsigned int start = 0;
-      pack_into_bits(ret, start, hwPt);
-      pack_into_bits(ret, start, hwEta);
-      pack_into_bits(ret, start, hwPhi);
-      pack_into_bits(ret, start, hwDEta);
-      pack_into_bits(ret, start, hwDPhi);
-      pack_bool_into_bits(ret, start, hwCharge);
-      pack_into_bits(ret, start, hwZ0);
-      pack_into_bits(ret, start, hwDxy);
-      pack_into_bits(ret, start, hwQuality);
-      return ret;
-    }
-    inline static TkObj unpack_slim(const ap_uint<BITWIDTH_SLIM> &src) {
-      TkObj ret;
-      ret.clear();
-      unsigned int start = 0;
-      unpack_from_bits(src, start, ret.hwPt);
-      unpack_from_bits(src, start, ret.hwEta);
-      unpack_from_bits(src, start, ret.hwPhi);
-      unpack_from_bits(src, start, ret.hwDEta);
-      unpack_from_bits(src, start, ret.hwDPhi);
-      unpack_bool_from_bits(src, start, ret.hwCharge);
-      unpack_from_bits(src, start, ret.hwZ0);
-      unpack_from_bits(src, start, ret.hwDxy);
-      unpack_from_bits(src, start, ret.hwQuality);
-      return ret;
-    }
+    inline ap_uint<BITWIDTH_SLIM> pack_slim() const { return pack()(BITWIDTH_SLIM - 1, 0); }
   };
   inline void clear(TkObj &c) { c.clear(); }
 

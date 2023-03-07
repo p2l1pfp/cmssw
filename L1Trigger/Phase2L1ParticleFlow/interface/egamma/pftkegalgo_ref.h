@@ -33,7 +33,7 @@ namespace l1ct {
     std::vector<double> dPhiValues;
     float trkQualityPtMin;  // GeV
     bool doCompositeTkEle;
-    unsigned int nCOMPCAND_PER_CLUSTER;
+    unsigned int nCompCandPerCluster;
     bool writeEgSta;
 
     struct IsoParameters {
@@ -123,7 +123,7 @@ namespace l1ct {
           dPhiValues(dPhiValues),
           trkQualityPtMin(trkQualityPtMin),
           doCompositeTkEle(doCompositeTkEle),
-          nCOMPCAND_PER_CLUSTER(nCompCandPerCluster),
+          nCompCandPerCluster(nCompCandPerCluster),
           writeEgSta(writeEgSta),
           tkIsoParams_tkEle(tkIsoParams_tkEle),
           tkIsoParams_tkEm(tkIsoParams_tkEm),

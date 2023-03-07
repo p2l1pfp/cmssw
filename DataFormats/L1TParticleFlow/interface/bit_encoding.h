@@ -84,7 +84,7 @@ inline void l1pf_pattern_unpack_slim(const ap_uint<NB> data[], T objs[N]) {
 #ifdef __SYNTHESIS__
 #pragma HLS unroll
 #endif
-    objs[i] = T::unpack_slim(data[i + OFFS]);
+    objs[i] = T::unpack(data[i + OFFS]);
   }
 }
 
