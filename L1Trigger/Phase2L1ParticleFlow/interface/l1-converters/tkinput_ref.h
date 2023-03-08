@@ -22,14 +22,24 @@ namespace l1ct {
     };
 
     TrackInputEmulator(const edm::ParameterSet &iConfig);
-    TrackInputEmulator(Region = Region::Endcap, Encoding encoding = Encoding::Stepping, bool bitwise = true);
+    TrackInputEmulator(Region = Region::Endcap,
+                       Encoding encoding = Encoding::Stepping,
+                       bool bitwise = true,
+                       bool slim = true);
 
     std::pair<l1ct::TkObjEmu, bool> decodeTrack(ap_uint<96> tkword, const l1ct::PFRegionEmu &sector) const {
-      return decodeTrack(tkword, sector, bitwise_);
+      return decodeTrack(tkword, sector, bitwise_, slim_);
     }
     std::pair<l1ct::TkObjEmu, bool> decodeTrack(ap_uint<96> tkword,
                                                 const l1ct::PFRegionEmu &sector,
-                                                bool bitwise) const;
+                                                bool bitwise) const {
+      return decodeTrack(tkword, sector, bitwise, slim_);
+    }
+
+    std::pair<l1ct::TkObjEmu, bool> decodeTrack(ap_uint<96> tkword,
+                                                const l1ct::PFRegionEmu &sector,
+                                                bool bitwise,
+                                                bool slim) const;
 
     //== Unpackers ==
     static bool valid(const ap_uint<96> &tkword) { return tkword[95]; }
@@ -183,6 +193,9 @@ namespace l1ct {
 
     /// Whether to run the bitwise accurate or floating point conversions
     bool bitwise_;
+
+    /// Whether to unpack and populate also nstubs and various chi2 variables (needed for CompibedID in the endcap)
+    bool slim_;
 
     /// Main constants
     float rInvToPt_, phiScale_, z0Scale_;
