@@ -1,8 +1,12 @@
 #ifndef CONIFER_CPP_H__
 #define CONIFER_CPP_H__
-//#include "FWCore/Utilities/interface/Exception.h"
 #include "nlohmann/json.hpp"
 #include <fstream>
+#ifdef CMSSW_GIT_HASH
+#include "FWCore/Utilities/interface/Exception.h"
+#else
+#include <stdexcept>
+#endif
 
 namespace conifer {
 
@@ -115,10 +119,16 @@ namespace conifer {
 
     std::vector<U> decision_function(std::vector<T> x) const {
       /* Do the prediction */
-      //if (x.size() != n_features) {
-      //  throw cms::Exception("RuntimeError")
-      //      << "Conifer : Size of feature vector mismatches expected n_features" << std::endl;
-      //}
+ #ifdef CMSSW_GIT_HASH
+      if (x.size() != n_features) {
+        throw cms::Exception("RuntimeError")
+            << "Conifer : Size of feature vector mismatches expected n_features" << std::endl;
+      }
+#else
+      if (x.size() != n_features) {
+        throw std::runtime_error("Conifer : Size of feature vector mismatches expected n_features");
+      }
+#endif
       std::vector<U> values;
       std::vector<std::vector<U>> values_trees;
       values_trees.resize(n_classes);
