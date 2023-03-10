@@ -51,10 +51,10 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
    tkTrackerJetToken = cms.InputTag("L1TrackJetsEmulation", "L1TrackJets"),  #these are emulated
    tkTrackerJetDisplacedToken = cms.InputTag("L1TrackJetsExtendedEmulation", "L1TrackJetsExtended"), #emulated
 	 
-   tkMetToken = cms.InputTag("L1TrackerEmuEtMiss","L1TrackerEmuEtMiss"), #emulated
+   tkMetToken = cms.InputTag("l1tTrackerEmuEtMiss","L1TrackerEmuEtMiss"), #emulated
 
-   tkMhtToken = cms.InputTag("L1TrackerEmuHTMiss","L1TrackerEmuHTMiss"), #emulated
-   tkMhtDisplacedToken = cms.InputTag("L1TrackerEmuHTMissExtended","L1TrackerEmuHTMissExtended"), #emulated
+   tkMhtToken = cms.InputTag("l1tTrackerEmuHTMiss","L1TrackerEmuHTMiss"), #emulated
+   tkMhtDisplacedToken = cms.InputTag("l1tTrackerEmuHTMissExtended","L1TrackerEmuHTMissExtended"), #emulated
 
    maxL1Extra = cms.uint32(50)
 )
