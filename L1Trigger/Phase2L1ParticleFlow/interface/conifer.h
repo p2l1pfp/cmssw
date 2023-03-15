@@ -119,7 +119,7 @@ namespace conifer {
 
     std::vector<U> decision_function(std::vector<T> x) const {
       /* Do the prediction */
- #ifdef CMSSW_GIT_HASH
+#ifdef CMSSW_GIT_HASH
       if (x.size() != n_features) {
         throw cms::Exception("RuntimeError")
             << "Conifer : Size of feature vector mismatches expected n_features" << std::endl;
