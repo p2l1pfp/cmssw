@@ -210,7 +210,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
       auto &cand = candidates[icand];
       const std::vector<EmCaloObjEmu> &emcalo_sel = emcalo;
       float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
-      if((score > cfg.compIDparams.bdtScore_loose_wp) && (score > maxScore)) {
+      if ((score > cfg.compIDparams.bdtScore_loose_wp) && (score > maxScore)) {
         maxScore = score;
         ibest = icand;
       }
@@ -434,7 +434,7 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
   egiso.hwPhi = calo.hwPhi;
   unsigned int egHwQual = hwQual;
   if (cfg.doEndcapHwQual) {
-    if(cfg.doCompositeTkEle) {
+    if (cfg.doCompositeTkEle) {
       // tight ele WP is set for tight BDT score
       egHwQual = (hwQual & 0x9) | ((bdtScore >= cfg.compIDparams.bdtScore_tight_wp) << 1);
     } else {

@@ -61,11 +61,9 @@ namespace l1ct {
     struct CompIDParameters {
       CompIDParameters(const edm::ParameterSet &);
       CompIDParameters(double bdtScore_loose_wp, double bdtScore_tight_wp, const std::string &model)
-          : bdtScore_loose_wp(bdtScore_loose_wp),
-            bdtScore_tight_wp(bdtScore_tight_wp),
-            conifer_model(model) {}
-      const double bdtScore_loose_wp; // XGBOOST score
-      const double bdtScore_tight_wp; // XGBOOST score
+          : bdtScore_loose_wp(bdtScore_loose_wp), bdtScore_tight_wp(bdtScore_tight_wp), conifer_model(model) {}
+      const double bdtScore_loose_wp;  // XGBOOST score
+      const double bdtScore_tight_wp;  // XGBOOST score
       const std::string conifer_model;
     };
 

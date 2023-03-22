@@ -1,7 +1,8 @@
 import FWCore.ParameterSet.Config as cms
+import math 
 
 def BDTScore_tmva2xgboost(score):
-    return 1. / (1. + sqrt((1. - score) / (1. + score)))
+    return 1. / (1. + math.sqrt((1. - score) / (1. + score)))
 
 tkEgAlgoParameters = cms.PSet(
     nTRACK=cms.uint32(50),  # very large numbers for first test
