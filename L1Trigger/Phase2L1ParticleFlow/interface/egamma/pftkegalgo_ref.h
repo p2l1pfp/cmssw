@@ -58,13 +58,15 @@ namespace l1ct {
     EGIsoEleObjEmu::IsoType hwIsoTypeTkEle;
     EGIsoObjEmu::IsoType hwIsoTypeTkEm;
 
-    //bool doCompositeTkEle;
     struct CompIDParameters {
       CompIDParameters(const edm::ParameterSet &);
-      CompIDParameters(double BDTcut_wp97p5, double BDTcut_wp95p0)
-          : BDTcut_wp97p5(BDTcut_wp97p5), BDTcut_wp95p0(BDTcut_wp95p0) {}
-      double BDTcut_wp97p5;
-      double BDTcut_wp95p0;
+      CompIDParameters(double bdtScore_loose_wp, double bdtScore_tight_wp, const std::string &model)
+          : bdtScore_loose_wp(bdtScore_loose_wp),
+            bdtScore_tight_wp(bdtScore_tight_wp),
+            conifer_model(model) {}
+      const double bdtScore_loose_wp; // XGBOOST score
+      const double bdtScore_tight_wp; // XGBOOST score
+      const std::string conifer_model;
     };
 
     CompIDParameters compIDparams;
@@ -100,7 +102,7 @@ namespace l1ct {
                         EGIsoEleObjEmu::IsoType hwIsoTypeTkEle = EGIsoEleObjEmu::IsoType::TkIso,
                         EGIsoObjEmu::IsoType hwIsoTypeTkEm = EGIsoObjEmu::IsoType::TkIsoPV,
                         // FIXME: maybe we round these?
-                        const CompIDParameters &myCompIDparams = {0.7927004, 0.9826955},
+                        const CompIDParameters &compIDparams = {0.7927004, 0.9826955, "compositeID.json"},
                         int debug = 0)
 
         : nTRACK(nTrack),
@@ -133,7 +135,7 @@ namespace l1ct {
           doPfIso(doPfIso),
           hwIsoTypeTkEle(hwIsoTypeTkEle),
           hwIsoTypeTkEm(hwIsoTypeTkEm),
-          compIDparams(myCompIDparams),
+          compIDparams(compIDparams),
           debug(debug) {}
   };
 

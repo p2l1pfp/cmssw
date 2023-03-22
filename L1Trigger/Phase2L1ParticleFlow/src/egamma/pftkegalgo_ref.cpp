@@ -52,18 +52,19 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMax")) {}
 
 l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
-    : CompIDParameters(pset.getParameter<double>("BDTcut_wp97p5"), pset.getParameter<double>("BDTcut_wp95p0")) {}
+    : CompIDParameters(pset.getParameter<double>("bdt_loose_wp"),
+                       pset.getParameter<double>("bdt_tight_wp"),
+                       pset.getParameter<std::string>("conifer_model")) {}
 
 #endif
 
 PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
     : cfg(config), composite_bdt_(nullptr), debug_(cfg.debug) {
   if (cfg.doCompositeTkEle) {
-    //FIXME: make the name of the file configurable
 #ifdef CMSSW_GIT_HASH
-    auto resolvedFileName = edm::FileInPath("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json").fullPath();
+    auto resolvedFileName = edm::FileInPath(cfg.compIDparams.conifer_model).fullPath();
 #else
-    auto resolvedFileName = "compositeID.json";
+    auto resolvedFileName = cfg.compIDparams.conifer_model;
 #endif
     composite_bdt_ = new conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(resolvedFileName);
   }
@@ -203,17 +204,13 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     if (nCandPerCluster == 0)
       continue;
 
-    float bdtWP_MVA = cfg.compIDparams.BDTcut_wp97p5;
-    float bdtWP_XGB =
-        1. / (1. + std::sqrt((1. - bdtWP_MVA) / (1. + bdtWP_MVA)));  // Convert WP value from ROOT.TMVA to XGboost
     float maxScore = -999;
     int ibest = -1;
     for (unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
       const std::vector<EmCaloObjEmu> &emcalo_sel = emcalo;
       float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
-      if (score > maxScore) {
-        // if((score > bdtWP_XGB) && (score > maxScore)) {
+      if((score > cfg.compIDparams.bdtScore_loose_wp) && (score > maxScore)) {
         maxScore = score;
         ibest = icand;
       }
@@ -255,7 +252,6 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   float bdt_score_CON = bdt_score[0];
   float bdt_score_XGB = 1 / (1 + exp(-bdt_score_CON));  // Map Conifer score to XGboost score. (same as scipy.expit)
 
-  // std::cout<<"BDT score of composite candidate = "<<bdt_score_XGB<<std::endl;
   return bdt_score_XGB;
 }
 
@@ -438,9 +434,14 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
   egiso.hwPhi = calo.hwPhi;
   unsigned int egHwQual = hwQual;
   if (cfg.doEndcapHwQual) {
-    // 1. zero-suppress the loose EG-ID (bit 1)
-    // 2. for now use the standalone tight definition (bit 0) to set the tight point for eles (bit 1)
-    egHwQual = (hwQual & 0x9) | ((hwQual & 0x1) << 1);
+    if(cfg.doCompositeTkEle) {
+      // tight ele WP is set for tight BDT score
+      egHwQual = (hwQual & 0x9) | ((bdtScore >= cfg.compIDparams.bdtScore_tight_wp) << 1);
+    } else {
+      // 1. zero-suppress the loose EG-ID (bit 1)
+      // 2. for now use the standalone tight definition (bit 0) to set the tight point for eles (bit 1)
+      egHwQual = (hwQual & 0x9) | ((hwQual & 0x1) << 1);
+    }
   }
   egiso.hwQual = egHwQual;
   egiso.hwDEta = track.hwVtxEta() - egiso.hwEta;

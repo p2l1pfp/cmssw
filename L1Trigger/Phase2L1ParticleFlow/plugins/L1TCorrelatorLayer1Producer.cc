@@ -176,9 +176,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
 #if 0  // LATER
   produces<l1t::PFCandidateCollection>("TKVtx");
 #endif
-#ifdef PUT_DECODED_TK
   produces<std::vector<l1t::PFTrack>>("DecodedTK");
-#endif
 
   for (const auto &tag : iConfig.getParameter<std::vector<edm::InputTag>>("emClusters")) {
     emCands_.push_back(consumes<l1t::PFClusterCollection>(tag));
@@ -368,10 +366,7 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
   iEvent.put(fetchEmCalo(), "EmCalo");
   iEvent.put(fetchHadCalo(), "Calo");
   iEvent.put(fetchTracks(), "TK");
-
-#ifdef PUT_DECODED_TK
   iEvent.put(fetchDecodedTracks(), "DecodedTK");
-#endif
 
   // Then do the vertexing, and save it out
   std::vector<float> z0s;
@@ -691,10 +686,6 @@ void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::H
   calo.hwSrrTot = l1ct::Scales::makeSrrTot(c.sigmaRR());
   calo.hwMeanZ = c.absZBarycenter() < 320. ? l1ct::meanz_t(0) : l1ct::Scales::makeMeanZ(c.absZBarycenter());
   calo.hwHoe = l1ct::Scales::makeHoe(c.hOverE());
-  // std::cout << "[addDecodedHadCalo] eta: " << calo.hwEta << " phi: " << calo.hwPhi << std::endl;
-  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << calo.hwHoe << std::endl;
-  // std::cout << "                    hwMeanZ IN: " << c.absZBarycenter() << " OUT: " << calo.hwMeanZ << std::endl;
-  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << calo.hwSrrTot << std::endl;
   calo.src = &c;
   sec.obj.push_back(calo);
 }
@@ -724,15 +715,9 @@ void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uin
   // hgc format is better defined. For now we use
   // hwMeanZ = word 1 bits 30-19
   // hwSrrTot = word 3 bits 21 - 9
-  // hoe = word 1 bits 63-52 (currently spare)
+  // hoe = word 1 bits 63-52 (currently spare in the interface)
   cwrd(213, 201) = w_srrtot;
   cwrd(94, 83) = w_meanz;
-
-  // std::cout << "[addRawHgcalCluster] meanz IN: " << c.absZBarycenter() << " OUT: " << w_meanz << std::endl;
-  // std::cout << "                    hoe IN: " << c.hOverE() << " OUT: " << w_hoe << std::endl;
-  // std::cout << "                    hwSrrTot IN: " << c.sigmaRR() << " OUT: " << w_srrtot << std::endl;
-  // std::cout << " .   eta: " << w_eta << " phi: " << w_phi << std::endl;
-  // FIXME: we use a spare space in the word for hoe which is not in the current interface
   cwrd(127, 116) = w_hoe.range();
 
   sec.obj.push_back(cwrd);
