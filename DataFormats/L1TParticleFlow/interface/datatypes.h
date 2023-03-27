@@ -156,8 +156,8 @@ namespace l1ct {
     constexpr float DXY_LSB = 0.05;
     constexpr float PUPPIW_LSB = 1.0 / 256;
     constexpr float MEANZ_OFFSET = 320.;
-    constexpr float SRRTOT_LSB = 0.0019531250;
-    constexpr float HOE_LSB = 0.031250000;
+    constexpr float SRRTOT_LSB = pow(2, -9);
+    constexpr float HOE_LSB = pow(2, -5);
 
     inline float floatPt(pt_t pt) { return pt.to_float(); }
     inline float floatPt(dpt_t pt) { return pt.to_float(); }
