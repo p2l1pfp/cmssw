@@ -1,8 +1,4 @@
 import FWCore.ParameterSet.Config as cms
-import math 
-
-def BDTScore_tmva2xgboost(score):
-    return 1. / (1. + math.sqrt((1. - score) / (1. + score)))
 
 tkEgAlgoParameters = cms.PSet(
     nTRACK=cms.uint32(50),  # very large numbers for first test
@@ -57,8 +53,9 @@ tkEgAlgoParameters = cms.PSet(
     doCompositeTkEle=cms.bool(False),
     nCompCandPerCluster=cms.uint32(3),
     compositeParametersTkEle=cms.PSet(
-        bdt_loose_wp=cms.double(0.),
-        bdt_tight_wp=cms.double(BDTScore_tmva2xgboost(0.9826955)),
+        # the working points are cuts on BDT output logits log(p/1-p)
+        bdt_loose_wp=cms.double(-4.),
+        bdt_tight_wp=cms.double(-1.029296875),
         conifer_model=cms.string("L1Trigger/Phase2L1ParticleFlow/data/compositeID.json")
     ),
 )

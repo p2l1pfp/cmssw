@@ -66,7 +66,7 @@ PFTkEGAlgoEmulator::PFTkEGAlgoEmulator(const PFTkEGAlgoEmuConfig &config)
 #else
     auto resolvedFileName = cfg.compIDparams.conifer_model;
 #endif
-    composite_bdt_ = new conifer::BDT<bdt_feature_t, ap_fixed<12, 3, AP_RND_CONV, AP_SAT>, false>(resolvedFileName);
+    composite_bdt_ = new conifer::BDT<bdt_feature_t, bdt_score_t, false>(resolvedFileName);
   }
 }
 
@@ -248,12 +248,9 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
 
   // Run BDT inference
   std::vector<bdt_feature_t> inputs = {tkpt, hoe, srrtot, deta, dphi, dpt, meanz, nstubs, chi2rphi, chi2rz, chi2bend};
-  std::vector<ap_fixed<12, 3, AP_RND_CONV, AP_SAT>> bdt_score = composite_bdt_->decision_function(inputs);
+  std::vector<bdt_score_t> bdt_score = composite_bdt_->decision_function(inputs);
 
-  float bdt_score_CON = bdt_score[0];
-  float bdt_score_XGB = 1 / (1 + exp(-bdt_score_CON));  // Map Conifer score to XGboost score. (same as scipy.expit)
-
-  return bdt_score_XGB;
+  return bdt_score[0];
 }
 
 void PFTkEGAlgoEmulator::sel_emCalo(unsigned int nmax_sel,
