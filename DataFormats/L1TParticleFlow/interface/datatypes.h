@@ -157,7 +157,7 @@ namespace l1ct {
     constexpr float PUPPIW_LSB = 1.0 / 256;
     constexpr float MEANZ_OFFSET = 320.;
     constexpr float SRRTOT_LSB = 0.0019531250;  // pow(2, -9)
-    constexpr float SRRTOT_SCALE = 64.;         // pow(2, 6)
+    constexpr unsigned int SRRTOT_SCALE = 64;   // pow(2, 6)
     constexpr float HOE_LSB = 0.031250000;      // pow(2, -5)
 
     inline float floatPt(pt_t pt) { return pt.to_float(); }
