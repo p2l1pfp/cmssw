@@ -38,7 +38,6 @@
 #include "DataFormats/L1Trigger/interface/EGamma.h"
 #include "DataFormats/L1TCorrelator/interface/TkEm.h"
 #include "DataFormats/L1TCorrelator/interface/TkEmFwd.h"
-#include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 
 //--------------------------------------------------------------------------------------------------
 class L1TCorrelatorLayer1Producer : public edm::stream::EDProducer<> {
