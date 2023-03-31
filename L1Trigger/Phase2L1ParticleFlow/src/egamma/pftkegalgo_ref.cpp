@@ -52,9 +52,9 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMax")) {}
 
 l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
-    : CompIDParameters(pset.getParameter<double>("bdt_loose_wp"),
-                       pset.getParameter<double>("bdt_tight_wp"),
-                       pset.getParameter<std::string>("conifer_model")) {}
+    : CompIDParameters(pset.getParameter<double>("loose_wp"),
+                       pset.getParameter<double>("tight_wp"),
+                       pset.getParameter<std::string>("model")) {}
 
 #endif
 
@@ -448,7 +448,7 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
   egiso.hwCharge = track.hwCharge;
   egiso.srcCluster = calo.src;
   egiso.srcTrack = track.src;
-  egiso.bdtScore = bdtScore;
+  egiso.idScore = bdtScore;
   egobjs.push_back(egiso);
 
   if (debug_ > 2)
