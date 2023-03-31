@@ -230,9 +230,7 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   const auto &calo = emcalo[cand.cluster_idx];
   const auto &tk = track[cand.track_idx];
 
-  // Call and normalize input feature values, then cast to ap_fixed.
-  // Note that for some features (e.g. track pT) we call the floating point representation, but that's already quantized!
-  // Several other features, such as chi2 or most cluster features, are not quantized before casting them to ap_fixed.
+  // Prepare the input features
   bdt_feature_t hoe = calo.hwHoe;
   bdt_feature_t tkpt = tk.hwPt;
   bdt_feature_t srrtot = calo.hwSrrTot;
