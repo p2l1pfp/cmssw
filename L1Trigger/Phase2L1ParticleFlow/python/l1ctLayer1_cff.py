@@ -29,6 +29,7 @@ l1tLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
         region = cms.string("barrel"),
         trackWordEncoding = cms.string("biased"),
         bitwiseAccurate = cms.bool(True),
+        slimDataFormat = cms.bool(True),
         ptLUTBits = cms.uint32(11),
         etaLUTBits = cms.uint32(10),
         etaPreOffs = cms.int32(0),
@@ -48,6 +49,7 @@ l1tLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
         ),
     muonInputConversionAlgo = cms.string("Emulator"),
     muonInputConversionParameters = muonInputConversionParameters.clone(),
+    hgcalInputConversionAlgo = cms.string("Ideal"),
     regionizerAlgo = cms.string("Ideal"),
     pfAlgo = cms.string("PFAlgo3"),
     puAlgo = cms.string("LinearizedPuppi"),
@@ -169,6 +171,7 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         region = cms.string("endcap"),
         trackWordEncoding = cms.string("biased"),
         bitwiseAccurate = cms.bool(True),
+        slimDataFormat = cms.bool(False),
         ptLUTBits = cms.uint32(11),
         etaLUTBits = cms.uint32(11),
         etaPreOffs = cms.int32(0),
@@ -193,6 +196,10 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         ),
     muonInputConversionAlgo = cms.string("Emulator"),
     muonInputConversionParameters = muonInputConversionParameters.clone(),
+    hgcalInputConversionAlgo = cms.string("Emulator"),
+    hgcalInputConversionParameters = cms.PSet(
+        slim = cms.bool(False)
+    ),
     regionizerAlgo = cms.string("Multififo"),
     regionizerAlgoParameters = cms.PSet(
         useAlsoVtxCoords = cms.bool(True),
@@ -261,7 +268,9 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         doBremRecovery=True,
         doEndcapHwQual=True,
         writeBeforeBremRecovery=False,
-        writeEGSta=True),
+        writeEGSta=True,
+        doCompositeTkEle=True,
+        trkQualityPtMin=0.), # This should be 10 GeV when doCompositeTkEle=False
     tkEgSorterParameters=tkEgSorterParameters.clone(
         nObjToSort = 5
     ),
@@ -290,6 +299,12 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
     writeRawHgcalCluster = cms.untracked.bool(True)
 )
 
+l1tLayer1HGCalElliptic = l1tLayer1HGCal.clone(
+    tkEgAlgoParameters = l1tLayer1HGCal.tkEgAlgoParameters.clone(
+        doCompositeTkEle = False,
+        trkQualityPtMin = 10.)
+)
+
 l1tLayer1HGCalExtended = l1tLayer1HGCal.clone(tracks = cms.InputTag('l1tPFTracksFromL1TracksExtended'))
 
 l1tLayer1HGCalNoTK = cms.EDProducer("L1TCorrelatorLayer1Producer",
@@ -305,6 +320,10 @@ l1tLayer1HGCalNoTK = cms.EDProducer("L1TCorrelatorLayer1Producer",
     trkPtCut    = cms.double(2.0),
     muonInputConversionAlgo = cms.string("Emulator"),
     muonInputConversionParameters = muonInputConversionParameters.clone(),
+    hgcalInputConversionAlgo = cms.string("Emulator"),
+    hgcalInputConversionParameters = cms.PSet(
+        slim = cms.bool(True)
+    ),
     regionizerAlgo = cms.string("Ideal"),
     pfAlgo = cms.string("PFAlgoDummy"),
     puAlgo = cms.string("LinearizedPuppi"),
@@ -390,6 +409,7 @@ l1tLayer1HF = cms.EDProducer("L1TCorrelatorLayer1Producer",
     trkPtCut    = cms.double(2.0),
     muonInputConversionAlgo = cms.string("Ideal"),
     muonInputConversionParameters = muonInputConversionParameters.clone(),
+    hgcalInputConversionAlgo = cms.string("Ideal"),
     regionizerAlgo = cms.string("Ideal"),
     pfAlgo = cms.string("PFAlgoDummy"),
     puAlgo = cms.string("LinearizedPuppi"),
@@ -526,6 +546,50 @@ l1tLayer1EG = cms.EDProducer(
     )
 )
 
+l1tLayer1EGElliptic = cms.EDProducer(
+    "L1TEGMultiMerger",
+    tkElectrons=cms.VPSet(
+        cms.PSet(
+            instance=cms.string("L1TkEleEE"),
+            pfProducers=cms.VInputTag(
+                cms.InputTag("l1tLayer1HGCalElliptic", 'L1TkEle')
+            )
+        ),
+        cms.PSet(
+            instance=cms.string("L1TkEleEB"),
+            pfProducers=cms.VInputTag(
+                cms.InputTag("l1tLayer1Barrel", 'L1TkEle')
+            )
+        )
+    ),
+    tkEms=cms.VPSet(
+        cms.PSet(
+            instance=cms.string("L1TkEmEE"),
+            pfProducers=cms.VInputTag(
+                cms.InputTag("l1tLayer1HGCalElliptic", 'L1TkEm'),
+                cms.InputTag("l1tLayer1HGCalNoTK", 'L1TkEm')
+            )
+        ),
+        cms.PSet(
+            instance=cms.string("L1TkEmEB"),
+            pfProducers=cms.VInputTag(
+                cms.InputTag("l1tLayer1Barrel", 'L1TkEm')
+            )
+        )
+    ),
+    tkEgs=cms.VPSet(
+        cms.PSet(
+            instance=cms.string("L1EgEE"),
+            pfProducers=cms.VInputTag(
+                cms.InputTag("l1tLayer1HGCalElliptic", 'L1Eg'),
+                cms.InputTag("l1tLayer1HGCalNoTK", 'L1Eg')
+            )
+        )    
+    )
+)
+
+
+
 L1TLayer1TaskInputsTask = cms.Task(
     l1tPFClustersFromL1EGClusters,
     l1tPFClustersFromCombinedCaloHCal,
@@ -544,5 +608,7 @@ L1TLayer1Task = cms.Task(
      l1tLayer1HF,
      l1tLayer1,
      l1tLayer1Extended,
-     l1tLayer1EG
+     l1tLayer1HGCalElliptic,
+     l1tLayer1EG,
+     l1tLayer1EGElliptic
 )
