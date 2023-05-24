@@ -119,6 +119,7 @@ process.runPF = cms.Path(
         process.l1tLayer1BarrelSerenity +
         process.l1tLayer1Barrel9 +
         process.l1tLayer1HGCal +
+        process.l1tLayer1HGCalElliptic +
         process.l1tLayer1HGCalNoTK +
         process.l1tLayer1HF +
         process.l1tLayer1 +
@@ -146,7 +147,7 @@ if not args.patternFilesOFF:
     process.l1tLayer2SeedConeJetWriter.maxLinesPerFile = eventsPerFile_*54
 
 if not args.dumpFilesOFF:
-  for det in "Barrel", "BarrelSerenity", "Barrel9", "HGCal", "HGCalNoTK", "HF":
+  for det in "Barrel", "BarrelSerenity", "Barrel9", "HGCal", "HGCalElliptic", "HGCalNoTK", "HF":
         l1pf = getattr(process, 'l1tLayer1'+det)
         l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 
