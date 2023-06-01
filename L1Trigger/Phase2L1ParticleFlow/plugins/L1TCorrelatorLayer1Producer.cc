@@ -41,6 +41,8 @@
 #include "DataFormats/L1TCorrelator/interface/TkEm.h"
 #include "DataFormats/L1TCorrelator/interface/TkEmFwd.h"
 
+#include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
+#include "DataFormats/L1THGCal/interface/HGCalCluster_HW.h"
 //--------------------------------------------------------------------------------------------------
 class L1TCorrelatorLayer1Producer : public edm::stream::EDProducer<> {
 public:
@@ -82,6 +84,9 @@ private:
   const std::vector<edm::ParameterSet> patternWriterConfigs_;
   std::vector<std::unique_ptr<L1TCorrelatorLayer1PatternFileWriter>> patternWriters_;
 
+  // hgcal unpacked debugging
+  mutable unsigned int debugHGC_;
+
   // region of interest debugging
   float debugEta_, debugPhi_, debugR_;
 
@@ -106,41 +111,99 @@ private:
   // add objects in already-decoded format
   void addDecodedTrack(l1ct::DetectorSector<l1ct::TkObjEmu> &sec, const l1t::PFTrack &t);
   void addDecodedMuon(l1ct::DetectorSector<l1ct::MuObjEmu> &sec, const l1t::SAMuon &t);
-  void addDecodedHadCalo(l1ct::DetectorSector<l1ct::HadCaloObjEmu> &sec, const l1t::PFCluster &t);
+  void addDecodedHadCalo(l1ct::DetectorSector<l1ct::HadCaloObjEmu> &sec,
+                         const l1t::PFCluster &t,
+                         const ap_uint<256> rawCaloWord = 0);
   void addDecodedEmCalo(l1ct::DetectorSector<l1ct::EmCaloObjEmu> &sec, const l1t::PFCluster &t);
 
-  void addRawHgcalCluster(l1ct::DetectorSector<ap_uint<256>> &sec, const l1t::PFCluster &c);
+  ap_uint<256> addRawHgcalCluster(l1ct::DetectorSector<ap_uint<256>> &sec, const l1t::PFCluster &c);
 
   template <class T>
   void rawHgcalClusterEncode(ap_uint<256> &cwrd, const l1ct::DetectorSector<T> &sec, const l1t::PFCluster &c) const {
+    const l1t::HGCalMulticluster *hgcCluster =
+        dynamic_cast<const l1t::HGCalMulticluster *>(c.constituentsAndFractions().front().first.get());
+    l1t::HGCalMulticluster::ClusterWords hgcsa = hgcCluster->getHwData();
+    l1thgcfirmware::HGCalCluster_HW hgcsaHLS = l1thgcfirmware::HGCalCluster_HW::unpack(hgcsa);
+
     cwrd = 0;
     ap_ufixed<14, 12, AP_RND_CONV, AP_SAT> w_pt = c.pt();
+    ap_uint<14> w_intpt = w_pt.range();
     ap_uint<14> w_empt = round(c.emEt() / 0.25);
     constexpr float ETAPHI_LSB = M_PI / 720;
-    ap_int<9> w_eta = round(sec.region.localEta(c.eta()) / ETAPHI_LSB);
+    ap_uint<10> w_abseta = round(std::abs(c.eta()) / ETAPHI_LSB);
     ap_int<9> w_phi = round(sec.region.localPhi(c.phi()) / ETAPHI_LSB);
     ap_uint<10> w_qual = c.hwQual();
+    float f_emf = c.pt() ? c.emEt() / c.pt() : 0;
+    ap_uint<8> w_emf = std::min<int>(round(256 * std::max(0.f, f_emf)), 255);
+    ap_uint<8> w_emf_raw = hgcsaHLS.fractionInCE_E;
     // NOTE: this is an arbitrary choice to keep the rounding consistent with the "addDecodedHadCalo" one
-    ap_uint<13> w_srrtot = round(c.sigmaRR() * l1ct::Scales::SRRTOT_SCALE / l1ct::Scales::SRRTOT_LSB);
-    ap_uint<12> w_meanz = round(c.absZBarycenter());
+    constexpr float HGCAL_SRRTOT_LSB = 0.024584 / (1 << 7);
+    ap_uint<7> w_srrtot = round(c.sigmaRR() / HGCAL_SRRTOT_LSB);
+    // depending on the emulator used, absZBarycenter may be defined in absolute coordinates (starts form 320 cm) or relative (starts from 0).
+    // since the two are disjoint, I can do this ugly thing and support both
+    ap_uint<12> w_meanz =
+        round((c.absZBarycenter() > 300 ? std::max(0.f, c.absZBarycenter() - 320) : c.absZBarycenter()) / 0.05);
     // NOTE: the calibration can actually make hoe become negative....we add a small protection for now
     // We use ap_ufixed to handle saturation and rounding
     ap_ufixed<10, 5, AP_RND_CONV, AP_SAT> w_hoe = c.hOverE();
+    ap_ufixed<10, 5, AP_RND_CONV, AP_SAT> w_hoe_fromRawEmf = 0;
+    w_hoe_fromRawEmf = 256.0 / (w_emf_raw.to_int() + 0.5) - 1;
 
     cwrd(13, 0) = w_pt.range();
     cwrd(27, 14) = w_empt;
-    cwrd(72, 64) = w_eta;
-    cwrd(81, 73) = w_phi;
-    cwrd(115, 106) = w_qual;
+    cwrd(73, 64) = w_abseta;
+    cwrd(82, 74) = w_phi;
+    cwrd(31, 28) = w_qual(3, 0);
+    cwrd(39, 32) = w_emf;
 
     // FIXME: we add the variables use by composite-ID. The definitin will have to be reviewd once the
     // hgc format is better defined. For now we use
     // hwMeanZ = word 1 bits 30-19
     // hwSrrTot = word 3 bits 21 - 9
     // hoe = word 1 bits 63-52 (currently spare in the interface)
-    cwrd(213, 201) = w_srrtot;
+    cwrd(191, 185) = w_srrtot;
     cwrd(94, 83) = w_meanz;
-    cwrd(127, 116) = w_hoe.range();
+    //cwrd(127, 116) = w_hoe.range();
+    if (debugHGC_ && c.pt() > 0) {
+      l1t::HGCalMulticluster::ClusterWords me;
+      for (int w = 0; w < 4; ++w)
+        me[w] = ap_uint<64>(cwrd(64 * w + 63, 64 * w)).to_uint64();
+      printf("Packing cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f.in sector at eta %+6.3f phi %+6.3f\n",
+             c.pt(),
+             c.eta(),
+             c.phi(),
+             c.emEt(),
+             sec.region.floatEtaCenter(),
+             sec.region.floatPhiCenter());
+      printf("     CTL1  %016lx.%016lx.%016lx.%016lx\n", me[0], me[1], me[2], me[3]);
+      printf("     HGCSA %016lx.%016lx.%016lx.%016lx\n", hgcsa[0], hgcsa[1], hgcsa[2], hgcsa[3]);
+      printf("     match %016lx.%016lx.%016lx.%016lx\n",
+             ~(me[0] ^ hgcsa[0]),
+             ~(me[1] ^ hgcsa[1]),
+             ~(me[2] ^ hgcsa[2]),
+             ~(me[3] ^ hgcsa[3]));
+      printf("     pt    %5llu %5d\n", w_pt.bits_to_uint64(), hgcsaHLS.e.to_int());
+      printf("     empt  %5d %5d\n", w_empt.to_int(), hgcsaHLS.e_em.to_int());
+      printf("     ieta  %5d %5d\n", w_abseta.to_int(), hgcsaHLS.w_eta.to_int());
+      printf("     iphi  %+5d %+5d\n", w_phi.to_int(), hgcsaHLS.w_phi.to_int());
+      printf("     zeta  %5d %5d (float: %.2f)\n", w_meanz.to_int(), hgcsaHLS.w_z.to_int(), c.absZBarycenter());
+      printf("     sRR   %5d %5d (float: %.6f)\n", w_srrtot.to_int(), hgcsaHLS.sigma_roz.to_int(), c.sigmaRR());
+      printf("     qual  %5s %5s \n",
+             std::bitset<5>(w_qual.to_int()).to_string().c_str(),
+             std::bitset<5>(hgcsaHLS.gctBits.to_int()).to_string().c_str());
+      printf("     EMF   %5d %5d (float: %.6f)\n", w_emf.to_int(), hgcsaHLS.fractionInCE_E.to_int(), f_emf);
+      printf("     H/E   %5llu %5llu (float: %.6f, %.6f vs %.6f, diff %.6f)\n",
+             w_hoe.bits_to_uint64(),
+             w_hoe_fromRawEmf.bits_to_uint64(),
+             c.hOverE(),
+             w_hoe.to_float(),
+             w_hoe_fromRawEmf.to_float(),
+             w_hoe.to_float() - w_hoe_fromRawEmf.to_float());
+      debugHGC_--;
+    }
+    // in the end, we write out the HGCal word since that's the nominal value
+    for (int w = 0; w < 4; ++w)
+      cwrd(64 * w + 63, 64 * w) = ap_uint<64>(hgcsa[w]);
   }
 
   // fetching outputs
@@ -197,6 +260,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
       writeRawHgcalCluster_(iConfig.getUntrackedParameter<bool>("writeRawHgcalCluster", false)),
       patternWriterConfigs_(iConfig.getUntrackedParameter<std::vector<edm::ParameterSet>>(
           "patternWriters", std::vector<edm::ParameterSet>())),
+      debugHGC_(iConfig.getUntrackedParameter<uint32_t>("debugHGC", 0)),
       debugEta_(iConfig.getUntrackedParameter<double>("debugEta", 0)),
       debugPhi_(iConfig.getUntrackedParameter<double>("debugPhi", 0)),
       debugR_(iConfig.getUntrackedParameter<double>("debugR", -1)) {
@@ -650,9 +714,10 @@ void L1TCorrelatorLayer1Producer::addHadCalo(const l1t::PFCluster &c, l1t::PFClu
   int sidx = 0;
   for (auto &sec : event_.decoded.hadcalo) {
     if (sec.region.contains(c.eta(), c.phi())) {
-      addDecodedHadCalo(sec, c);
       if (writeRawHgcalCluster_)
-        addRawHgcalCluster(event_.raw.hgcalcluster[sidx], c);
+        addDecodedHadCalo(sec, c, addRawHgcalCluster(event_.raw.hgcalcluster[sidx], c));
+      else
+        addDecodedHadCalo(sec, c);
     }
     sidx++;
   }
@@ -723,12 +788,50 @@ void L1TCorrelatorLayer1Producer::addDecodedMuon(l1ct::DetectorSector<l1ct::MuOb
 }
 
 void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::HadCaloObjEmu> &sec,
-                                                    const l1t::PFCluster &c) {
+                                                    const l1t::PFCluster &c,
+                                                    const ap_uint<256> word) {
   l1ct::HadCaloObjEmu calo;
-  ap_uint<256> word = 0;
-  rawHgcalClusterEncode(word, sec, c);
   if (hgcalInput_) {
-    calo = hgcalInput_->decode(word);
+    calo = hgcalInput_->decode(sec.region, word);
+    if (debugHGC_ && c.pt() > 0) {
+      printf("Unpacking cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f in sector at eta %+6.3f phi %+6.3f\n",
+             c.pt(),
+             c.eta(),
+             c.phi(),
+             c.emEt(),
+             sec.region.floatEtaCenter(),
+             sec.region.floatPhiCenter());
+      printf("     pt   %8.2f  %8.2f  %+8.2f\n", calo.floatPt(), c.pt(), calo.floatPt() - c.pt());
+      printf("     empt %8.2f  %8.2f  %+8.2f\n", calo.floatEmPt(), c.emEt(), calo.floatEmPt() - c.emEt());
+      printf("     eta  %+8.4f  %+8.4f  %+8.4f  [hw %+8d]\n",
+             calo.floatEta(),
+             sec.region.localEta(c.eta()),
+             calo.floatEta() - sec.region.localEta(c.eta()),
+             calo.intEta());
+      printf("     phi  %+8.4f  %+8.4f  %+8.4f  [hw %+8d]\n",
+             calo.floatPhi(),
+             sec.region.localPhi(c.phi()),
+             calo.floatPhi() - sec.region.localPhi(c.phi()),
+             calo.intPhi());
+      printf("     zeta %8.2f  %8.2f  %+8.2f  [hw %8llu]\n",
+             calo.floatMeanZ(),
+             c.absZBarycenter(),
+             calo.floatMeanZ() - c.absZBarycenter(),
+             calo.hwMeanZ.to_uint64());
+      printf("     sRR  %8.5f  %8.5f  %+8.5f  [hw %8llu] \n",
+             calo.floatSrrTot(),
+             c.sigmaRR(),
+             calo.floatSrrTot() - c.sigmaRR(),
+             calo.hwSrrTot.bits_to_uint64());
+      printf("     H/E  %8.4f  %8.4f  %+8.4f  [hw %8llu]\n",
+             calo.floatHoe(),
+             c.hOverE(),
+             calo.floatHoe() - c.hOverE(),
+             calo.hwHoe.bits_to_uint64());
+      printf("     qual %8s  %8s  \n",
+             std::bitset<6>(calo.hwEmID.to_int()).to_string().c_str(),
+             std::bitset<6>(c.hwEmID()).to_string().c_str());
+    }
   } else {
     calo.hwPt = l1ct::Scales::makePtFromFloat(c.pt());
     calo.hwEta = l1ct::Scales::makeGlbEta(c.eta()) -
@@ -744,10 +847,12 @@ void L1TCorrelatorLayer1Producer::addDecodedHadCalo(l1ct::DetectorSector<l1ct::H
   sec.obj.push_back(calo);
 }
 
-void L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uint<256>> &sec, const l1t::PFCluster &c) {
+ap_uint<256> L1TCorrelatorLayer1Producer::addRawHgcalCluster(l1ct::DetectorSector<ap_uint<256>> &sec,
+                                                             const l1t::PFCluster &c) {
   ap_uint<256> cwrd = 0;
   rawHgcalClusterEncode(cwrd, sec, c);
   sec.obj.push_back(cwrd);
+  return cwrd;
 }
 
 void L1TCorrelatorLayer1Producer::addDecodedEmCalo(l1ct::DetectorSector<l1ct::EmCaloObjEmu> &sec,
