@@ -207,11 +207,15 @@ namespace l1thgcfirmware {
     const HGCalCluster& operator+=(HGCalCluster& hc);
 
     // Format data into firmware representation
-    ClusterWords formatClusterWords( const ClusterAlgoConfig& config );
+    HGCalCluster_HW convertToL1TFormat( const ClusterAlgoConfig& config );
     void formatFirstWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatSecondWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatThirdWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+
+    // Conversion of roz to eta (and sigma roz)
+    double convertRozToEta( const ClusterAlgoConfig& config );
+    double convertSigmaRozRozToSigmaEtaEta( const ClusterAlgoConfig& config );
 
     // Format data into firmware representation
     void clearClusterSumWords();

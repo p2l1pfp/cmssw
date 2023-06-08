@@ -74,7 +74,7 @@ const HGCalCluster& HGCalCluster::operator+=(HGCalCluster& c) {
 }
 
 
-ClusterWords HGCalCluster::formatClusterWords( const ClusterAlgoConfig& config ) {
+HGCalCluster_HW HGCalCluster::convertToL1TFormat( const ClusterAlgoConfig& config ) {
 
   HGCalCluster_HW hwCluster;
 
@@ -84,38 +84,56 @@ ClusterWords HGCalCluster::formatClusterWords( const ClusterAlgoConfig& config )
   formatThirdWord( config, hwCluster );
   formatFourthWord( config, hwCluster );
 
-  return hwCluster.pack();
+  return hwCluster;
 }
 
 void HGCalCluster::formatFirstWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {
+  hwCluster.e = Scales::HGCaltoL1_et(e());
+  hwCluster.e_em = Scales::HGCaltoL1_et(e_em());
+  hwCluster.e = Scales::HGCaltoL1_et(e());
+  hwCluster.e_em = Scales::HGCaltoL1_et(e_em());
+  hwCluster.fractionInCE_E = Scales::makeL1EFraction(e_em(), e());
+  hwCluster.fractionInCoreCE_E = Scales::makeL1EFraction(e_em_core(), e_em());
+  hwCluster.fractionInEarlyCE_E = Scales::makeL1EFraction(e_h_early(), e());
+  hwCluster.setGCTBits();
+  hwCluster.firstLayer = firstLayer();
 
-  unsigned et = round(float(e())/256);
-  e_t hw_e = et;
-  unsigned et_em = round(float(e_em())/256);
-  e_t hw_e_em = et_em;
-
-  eFraction_t hw_fractionInCE_E = round( 256 * float(e_em()) / e() );
-  eFraction_t hw_fractionInCoreCE_E = round( 256 * float(e_em_core()) / e_em() );
-  eFraction_t hw_fractionInEarlyCE_H = round( 256 * float(e_h_early()) / e() );
-
-  ap_uint<1> gctBit0 = hw_fractionInCE_E > 64;
-  ap_uint<1> gctBit1 = hw_fractionInCoreCE_E > 64;
-  ap_uint<1> gctBit2 = hw_fractionInEarlyCE_H > 64;
-  ap_uint<1> gctBit3 = et_em > 64;
-  gctbits_t gctSelectBits = (gctBit3, gctBit2, gctBit1, gctBit0);
-
-  nLayer_t hw_firstLayer = firstLayer();
-  hwCluster.e = et;
-  hwCluster.e_em = et_em;
-  hwCluster.gctBits = gctSelectBits;
-  hwCluster.fractionInCE_E = hw_fractionInCE_E;
-  hwCluster.fractionInCoreCE_E = hw_fractionInCoreCE_E;
-  hwCluster.fractionInEarlyCE_E = hw_fractionInEarlyCE_H;
-  hwCluster.firstLayer = hw_firstLayer;
 }
 
 void HGCalCluster::formatSecondWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {
 
+  hwCluster.w_eta = convertRozToEta( config );
+  bool saturatedPhi = false;
+  bool nominalPhi = false;
+  hwCluster.w_phi = Scales::HGCaltoL1_phi(float(wphi())/w(), saturatedPhi, nominalPhi);
+  hwCluster.w_z = Scales::HGCaltoL1_z( float(wz()) / w() );
+  hwCluster.nTC = n_tc();
+
+  // std::cout << "Packing phi : " << this->wphi() << " " << w() << " " << hwCluster.w_phi << " " << nominalPhi << std::endl;
+
+  // Quality flags are placeholders at the moment
+  bool qualFracCE_E = e() != 0x3FFFFF && e_em() != 0x3FFFFF;
+  bool qualFracCoreCE_E = e_em_core() != 0x3FFFFF && e_em() != 0x3FFFFF;
+  bool qualFracEarlyCE_H = e_h_early() != 0x3FFFFF && e() != 0x3FFFFF;
+  hwCluster.setQualityFlags(qualFracCE_E, qualFracCoreCE_E, qualFracEarlyCE_H, sat_tc(), shapeq(), saturatedPhi, nominalPhi);
+}
+
+void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {
+  
+  hwCluster.sigma_E = sigma_e_quotient() + sigma_e_fraction();
+  hwCluster.lastLayer = lastLayer();
+  hwCluster.showerLength = showerLen();
+  hwCluster.sigma_z = sigma_z_quotient() + sigma_z_fraction();
+  hwCluster.sigma_phi = sigma_phi_quotient() + sigma_phi_fraction();
+  hwCluster.coreShowerLength = coreShowerLen();
+  hwCluster.sigma_eta = convertSigmaRozRozToSigmaEtaEta( config );
+  hwCluster.sigma_roz = sigma_roz_quotient() + sigma_roz_fraction();
+}
+
+void HGCalCluster::formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {}
+
+double HGCalCluster::convertRozToEta( const ClusterAlgoConfig& config ) {
+  // TODO : named constants for magic numbers
   double roz = wroz()/w();
   if ( roz < 1026.9376220703125 ) roz = 1026.9376220703125;
   else if ( roz > 5412.17138671875 ) roz = 5412.17138671875;
@@ -123,42 +141,11 @@ void HGCalCluster::formatSecondWord( const ClusterAlgoConfig& config, HGCalClust
   roz *= 0.233510936;
   roz = int(round(roz));
   if ( roz > 1023 ) roz = 1023;
-
-  phi_t hw_phi = 0;
-  ap_uint<1> hw_satPhi = 0;
-  const int hw_phi10b = int( round( (float(wphi()) / w()) * (5./24) ) ) - 360;
-  if( hw_phi10b > 255 ) {
-    hw_phi = 255;
-    hw_satPhi = 1;
-  }
-  else if ( hw_phi10b < -256 ) {
-    hw_phi = -256;
-    hw_satPhi = 1;
-  }
-  else {
-    hw_phi = hw_phi10b;
-    hw_satPhi = 0;
-  }
-
-  ap_uint<1> hw_nominalPhi = ( hw_phi10b < 240 ) && ( hw_phi10b > -241 );
-
-
-
-  ap_uint<1> hw_qualFracCE_E = e() != 0x3FFFFF && e_em() != 0x3FFFFF;
-  ap_uint<1> hw_qualFracCoreCE_E = e_em_core() != 0x3FFFFF && e_em() != 0x3FFFFF;
-  ap_uint<1> hw_qualFracEarlyCE_H = e_h_early() != 0x3FFFFF && e() != 0x3FFFFF;
-  qualFlags_t qualFlags = (sat_tc(), hw_qualFracCE_E, hw_qualFracCoreCE_E, hw_qualFracEarlyCE_H, shapeq(), hw_satPhi, hw_nominalPhi);
-
-  hwCluster.w_eta = config.rozToEtaLUT(roz);
-  hwCluster.w_phi = hw_phi;
-  hwCluster.w_z = round( float(wz()) / w() );// + ( 3221 * 2 );
-  hwCluster.nTC = n_tc();
-  hwCluster.qualFlags = qualFlags;
-
+  return config.rozToEtaLUT(roz);
 }
 
-void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {
-  
+double HGCalCluster::convertSigmaRozRozToSigmaEtaEta( const ClusterAlgoConfig& config ) {
+  // TODO : named constants for magic numbers
   // Sigma eta eta calculation
   bool debug = true;
   double roz = wroz()/w();
@@ -180,18 +167,9 @@ void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluste
 
   unsigned int lutAddress = roz * 64 + sigmaRoz;
   if ( lutAddress >= 4096 ) lutAddress = 4095;
-
-  hwCluster.sigma_E = sigma_e_quotient() + sigma_e_fraction();
-  hwCluster.lastLayer = lastLayer();
-  hwCluster.showerLength = showerLen();
-  hwCluster.sigma_z = sigma_z_quotient() + sigma_z_fraction();
-  hwCluster.sigma_phi = sigma_phi_quotient() + sigma_phi_fraction();
-  hwCluster.coreShowerLength = coreShowerLen();
-  hwCluster.sigma_eta = config.sigmaRozToSigmaEtaLUT(lutAddress);
-  hwCluster.sigma_roz = sigma_roz_quotient() + sigma_roz_fraction();
+  return config.sigmaRozToSigmaEtaLUT(lutAddress);
 }
 
-void HGCalCluster::formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {}
 
 void HGCalCluster::clearClusterSumWords() {
   for ( auto& clusterSumWord : packedData_clustersSums_ ) {

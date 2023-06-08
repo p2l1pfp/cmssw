@@ -71,6 +71,8 @@ private:
 
   edm::EDGetTokenT<l1t::HGCalMulticlusterBxCollection> refClustersToken_;
 
+  unsigned int nClusters_;
+
 };
 
 //
@@ -84,7 +86,8 @@ Stage2FileReader::Stage2FileReader(const edm::ParameterSet& iConfig)
                   kS2BoardTMUX,
                   kEmptyFrames,
                   kChannelSpecsOutputToL1T),
-    refClustersToken_(consumes<l1t::HGCalMulticlusterBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("refClustersTag")))
+    refClustersToken_(consumes<l1t::HGCalMulticlusterBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("refClustersTag"))),
+    nClusters_(0)
  {
   produces<l1t::HGCalMulticlusterBxCollection>();
 }
@@ -111,6 +114,7 @@ void Stage2FileReader::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
   std::vector<l1thgcfirmware::HGCalCluster_HW> refHWClusters = getRefHWClusters( refClusters, 0 );
 
   compareClustersToRef( hwClusters, refHWClusters );
+  std::cout << "N clusters so far : " << nClusters_ << std::endl;
 }
 
 std::vector<l1thgcfirmware::HGCalCluster_HW> Stage2FileReader::getRefHWClusters( const l1t::HGCalMulticlusterBxCollection& refClusters, const unsigned int iSector ) {
@@ -139,6 +143,7 @@ std::vector<l1thgcfirmware::HGCalCluster_HW> Stage2FileReader::getRefHWClusters(
 }
 
 void Stage2FileReader::compareClustersToRef( std::vector<l1thgcfirmware::HGCalCluster_HW> clusters, std::vector<l1thgcfirmware::HGCalCluster_HW> refClusters ) {
+  nClusters_ += refClusters.size();
   if ( clusters.size() != refClusters.size() ) {
     std::cout << "---> Different number of clusters : " << refClusters.size() << " " << clusters.size() << std::endl;
     // return;

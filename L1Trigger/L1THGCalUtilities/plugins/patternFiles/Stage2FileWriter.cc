@@ -30,6 +30,7 @@
 #include "FWCore/Utilities/interface/InputTag.h"
 
 #include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
+#include "DataFormats/L1THGCal/interface/HGCalCluster_HW.h"
 #include "DataFormats/Common/interface/View.h"
 
 #include "L1Trigger/DemonstratorTools/interface/BoardDataWriter.h"
@@ -199,19 +200,40 @@ std::array<std::vector<ap_uint<64>>, 4> Stage2FileWriter::encodeTowersAndCluster
 
     ++iCluster;
     if ( iCluster > 160 ) break;
-    if ( sector == 0 && zside == -1 ) {
-      std::cout << "Cluster pt, eta, phi, nTC,  : " << sector << " " << cl3d_itr->pt() << " " << cl3d_itr->eta() << " " << cl3d_itr->phi() << " " << cl3d_itr->constituents().size() << " " << cl3d_itr->hw_sigma_e_quotient() << " " << cl3d_itr->hw_sigma_e_fraction() << std::endl;
-    }
+    // if ( sector == 0 && zside == -1 ) {
+    //   std::cout << "Cluster pt, eta, phi, nTC,  : " << sector << " " << cl3d_itr->pt() << " " << cl3d_itr->eta() << " " << cl3d_itr->phi() << " " << cl3d_itr->constituents().size() << " " << cl3d_itr->hw_sigma_e_quotient() << " " << cl3d_itr->hw_sigma_e_fraction() << std::endl;
+    // }
     //  << " " << cl3d_itr->getHwData()[0].to_string() << std::endl;
     // std::cout << "Phi, eta : " << cl3d_itr->phi() << " " << cl3d_itr->eta() << " " << cl3d_itr->getHwData()[1].to_string() << std::endl;
     const auto& clusterWords = cl3d_itr->getHwData();
-    std::cout << "Cluster words : " ;
-    for (const auto& word : clusterWords ) std::cout << word << " ";
-    std::cout << std::endl;
+    // std::cout << "Cluster words : " ;
+    // for (const auto& word : clusterWords ) std::cout << word << " ";
+    // std::cout << std::endl;
     output[0].push_back( clusterWords[0] );
     output[1].push_back( clusterWords[1] );
     output[2].push_back( clusterWords[2] );
     output[3].push_back( clusterWords[3] );
+
+    // if ( sector == 0 && zside == -1 ) {
+
+    //   const auto unpacked = l1thgcfirmware::HGCalCluster_HW::unpack(cl3d_itr->getHwData());
+    //   if ( abs( cl3d_itr->pt() - unpacked.e*0.25 ) > 0.001 ||
+    //       abs( cl3d_itr->iPt(l1t::HGCalMulticluster::EnergyInterpretation::EM) - unpacked.e_em*0.25 ) > 0.001 ||
+    //       abs( abs(cl3d_itr->eta()) - unpacked.w_eta * M_PI/720 ) > 0.001 ||
+    //       abs( cl3d_itr->phi() - ( unpacked.w_phi * M_PI/720 + M_PI / 2 ) ) > 0.001 ||
+    //       abs( cl3d_itr->zBarycenter() - unpacked.w_z * 0.05 ) > 0.001 ||
+    //       abs( cl3d_itr->sigmaRRTot() - unpacked.sigma_roz * 0.0001920625 ) > 0.001
+    //   ) {
+    //     std::cout << "---> PANIC : Comparing unpacked hw data with edm object" << std::endl;
+    //     std::cout << cl3d_itr->pt() << " " << unpacked.e*0.25 << std::endl;
+    //     std::cout << cl3d_itr->iPt(l1t::HGCalMulticluster::EnergyInterpretation::EM) << " " << unpacked.e_em*0.25 << std::endl;
+    //     std::cout << abs(cl3d_itr->eta()) << " " << unpacked.w_eta * M_PI/720 << std::endl;
+    //     std::cout << cl3d_itr->phi() << " " << unpacked.w_phi * M_PI/720 + M_PI / 2 << std::endl;
+    //     std::cout << cl3d_itr->zBarycenter() << " " << unpacked.w_z * 0.05 << std::endl;
+    //     std::cout << cl3d_itr->sigmaRRTot() << " " << unpacked.sigma_roz * 0.0001920625 << std::endl;
+    //   }
+    // }
+    
   }
 
   return output;
