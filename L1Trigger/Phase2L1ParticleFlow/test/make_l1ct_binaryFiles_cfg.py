@@ -165,11 +165,9 @@ if not args.dumpFilesOFF:
         l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 
 
-process.source.fileNames  = [ '/store/cmst3/group/l1tr/gpetrucc/11_1_0/NewInputs110X/110121.done/TTbar_PU200/inputs110X_%d.root' % i for i in (1,3,7,8,9) ]
-process.l1tPFClustersFromL1EGClusters.src = cms.InputTag("L1EGammaClusterEmuProducer",)
-process.l1tPFClustersFromCombinedCaloHCal.phase2barrelCaloTowers = [cms.InputTag("L1EGammaClusterEmuProducer",)]
-process.l1tPFClustersFromHGC3DClusters.src  = cms.InputTag("hgcalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClustering")
-process.l1tPFClustersFromCombinedCaloHF.hcalCandidates = [ cms.InputTag("hgcalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClustering")]
-process.l1tPFTracksFromL1Tracks.L1TrackTag = cms.InputTag("TTTracksFromTrackletEmulation","Level1TTTracks")
-process.l1tGTTInputProducer.l1TracksInputTag = cms.InputTag("TTTracksFromTrackletEmulation","Level1TTTracks")
-
+process.source.fileNames  = [ 'file:/afs/cern.ch/work/e/ejclemen/public/ForHGCalL1T/output_withEmuHGCalClusters.root' ]
+process.l1tPFClustersFromHGC3DClusters.src  = cms.InputTag("l1tHGCalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClusteringSA")
+process.l1tPFClustersFromCombinedCaloHF.hcalCandidates = [ cms.InputTag("l1tHGCalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClusteringSA")]
+process.l1tPFClustersFromHGC3DClusters.corrector = ""
+process.l1tPFClustersFromHGC3DClusters.emVsPUID.wp = "-99"
+process.l1tPFClustersFromHGC3DClusters.useEMInterpretation = "allKeepTot"
