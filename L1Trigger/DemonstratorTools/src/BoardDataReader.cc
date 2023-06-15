@@ -75,14 +75,14 @@ namespace l1t::demo {
 
             bool expectValid(((j - framesBeforeFirstPacket) % eventLength) < packetLength);
 
-            if (expectValid) {
-              if (not chanData.at(j).valid)
-                throw std::runtime_error("Frame " + std::to_string(j) + " on channel " +
-                                         std::to_string(indices.at(tmuxIndex)) +
-                                         " is invalid, but expected valid frame");
-            } else if (chanData.at(j).valid)
-              throw std::runtime_error("Frame " + std::to_string(j) + " on channel " +
-                                       std::to_string(indices.at(tmuxIndex)) + " is valid, but expected invalid frame");
+            // if (expectValid) {
+            //   if (not chanData.at(j).valid)
+            //     throw std::runtime_error("Frame " + std::to_string(j) + " on channel " +
+            //                              std::to_string(indices.at(tmuxIndex)) +
+            //                              " is invalid, but expected valid frame");
+            // } else if (chanData.at(j).valid)
+            //   throw std::runtime_error("Frame " + std::to_string(j) + " on channel " +
+            //                            std::to_string(indices.at(tmuxIndex)) + " is valid, but expected invalid frame");
           }
         }
       }

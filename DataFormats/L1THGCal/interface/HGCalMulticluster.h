@@ -7,6 +7,7 @@
 #include "DataFormats/L1THGCal/interface/HGCalCluster.h"
 #include <boost/iterator/transform_iterator.hpp>
 #include <functional>
+#include <bitset>
 
 namespace l1t {
 
@@ -33,7 +34,7 @@ namespace l1t {
       hOverEValid_ = true;
     }
 
-    enum EnergyInterpretation { EM = 0 };
+    enum EnergyInterpretation { EM = 0, EM_CORE = 1, H_EARLY = 2 };
 
     void saveEnergyInterpretation(const HGCalMulticluster::EnergyInterpretation eInt, double energy);
 
@@ -90,6 +91,40 @@ namespace l1t {
     float hOverE_;
     bool hOverEValid_;
     std::map<EnergyInterpretation, double> energyInterpretationFractions_;
+
+  public:
+    // Types for firmware representation of cluster data sent to L1T
+    // These are duplicated with those in interface/backend_emulator/HGCalCluster_SA.h
+    // Can we define in one place?
+    static constexpr int wordLength = 64;
+    static constexpr int nWordsPerCluster = 4;
+    typedef uint64_t ClusterWord;
+    typedef std::array<ClusterWord, nWordsPerCluster> ClusterWords;
+    void setHwData( ClusterWords clusterWords ) { hwData_ = clusterWords; }
+    ClusterWords getHwData() const { return hwData_; }
+    void setHwSector( unsigned int sector ) { hwSector_ = sector; }
+    unsigned int getHwSector() const { return hwSector_; }
+    void setHwZSide( int zside ) { hwZSide_ = zside; }
+    int getHwZSide() const { return hwZSide_; }
+
+    // Types for firmware representation of cluster sum data, input to cluster properties step
+    static constexpr int clusterSumWordLength = 64;
+    static constexpr int nWordsPerClusterSum = 8;
+    typedef uint64_t ClusterSumWord;
+    typedef std::array<ClusterSumWord, nWordsPerClusterSum> ClusterSumWords;
+    void setHwClusterSumData( ClusterSumWords clusterSumWords ) { hwClusterSumData_ = clusterSumWords; }
+    ClusterSumWords getHwClusterSumData() const { return hwClusterSumData_; }
+
+  private:
+    ClusterWords hwData_;
+    ClusterSumWords hwClusterSumData_;
+    // Store sector number for pattern files
+    // TODO check if detID of emulated cluster always gives same sector
+    // Emulated cluster takes detID of first TC added to it, which is not necessarily a TC in the seed histo bin
+    unsigned int hwSector_;
+    // Safe to take zside from the detID of the emualted cluster
+    // But keep consistent with sector for now
+    int hwZSide_;
   };
 
   typedef BXVector<HGCalMulticluster> HGCalMulticlusterBxCollection;
