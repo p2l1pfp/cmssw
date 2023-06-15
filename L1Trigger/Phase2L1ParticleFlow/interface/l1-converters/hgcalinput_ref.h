@@ -3,12 +3,20 @@
 
 #include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
 
+namespace edm {
+  class ParameterSet;
+}
+
 namespace l1ct {
   class HgcalClusterDecoderEmulator {
+    bool slim_;
+
   public:
-    HgcalClusterDecoderEmulator(){};
+    HgcalClusterDecoderEmulator(bool slim = false) : slim_{slim} {};
+    HgcalClusterDecoderEmulator(const edm::ParameterSet &pset);
+
     ~HgcalClusterDecoderEmulator();
-    l1ct::HadCaloObjEmu decode(const ap_uint<256> &in) const;
+    l1ct::HadCaloObjEmu decode(const l1ct::PFRegionEmu &sector, const ap_uint<256> &in) const;
   };
 }  // namespace l1ct
 

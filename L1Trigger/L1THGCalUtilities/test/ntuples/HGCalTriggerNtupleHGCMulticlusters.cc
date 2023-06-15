@@ -18,6 +18,7 @@ private:
 
   bool fill_layer_info_;
   bool fill_interpretation_info_;
+  bool fill_hw_cluster_properties_;
 
   std::unique_ptr<HGCalTriggerClusterIdentificationBase> id_;
 
@@ -55,6 +56,32 @@ private:
   std::vector<int> cl3d_quality_;
   std::vector<std::vector<float>> cl3d_ipt_;
   std::vector<std::vector<float>> cl3d_ienergy_;
+
+  // Hardware cluster properties
+  std::vector<unsigned long int> cl3d_sigma_e_quotient_;
+  std::vector<unsigned long int> cl3d_sigma_e_fraction_;
+  std::vector<unsigned long int> cl3d_Mean_z_quotient_;
+  std::vector<unsigned long int> cl3d_Mean_z_fraction_;
+  std::vector<unsigned long int> cl3d_Mean_phi_quotient_;
+  std::vector<unsigned long int> cl3d_Mean_phi_fraction_;
+  std::vector<unsigned long int> cl3d_Mean_eta_quotient_;
+  std::vector<unsigned long int> cl3d_Mean_eta_fraction_;
+  std::vector<unsigned long int> cl3d_Mean_roz_quotient_;
+  std::vector<unsigned long int> cl3d_Mean_roz_fraction_;
+  std::vector<unsigned long int> cl3d_sigma_z_quotient_;
+  std::vector<unsigned long int> cl3d_sigma_z_fraction_;
+  std::vector<unsigned long int> cl3d_sigma_phi_quotient_;
+  std::vector<unsigned long int> cl3d_sigma_phi_fraction_;
+  std::vector<unsigned long int> cl3d_sigma_eta_quotient_;
+  std::vector<unsigned long int> cl3d_sigma_eta_fraction_;
+  std::vector<unsigned long int> cl3d_sigma_roz_quotient_;
+  std::vector<unsigned long int> cl3d_sigma_roz_fraction_;
+  std::vector<unsigned long int> cl3d_e_em_over_e_quotient_;
+  std::vector<unsigned long int> cl3d_e_em_over_e_fraction_;
+  std::vector<unsigned long int> cl3d_e_em_core_over_e_em_quotient_;
+  std::vector<unsigned long int> cl3d_e_em_core_over_e_em_fraction_;
+  std::vector<unsigned long int> cl3d_e_h_early_over_e_quotient_;
+  std::vector<unsigned long int> cl3d_e_h_early_over_e_fraction_;
 };
 
 DEFINE_EDM_PLUGIN(HGCalTriggerNtupleFactory, HGCalTriggerNtupleHGCMulticlusters, "HGCalTriggerNtupleHGCMulticlusters");
@@ -62,7 +89,8 @@ DEFINE_EDM_PLUGIN(HGCalTriggerNtupleFactory, HGCalTriggerNtupleHGCMulticlusters,
 HGCalTriggerNtupleHGCMulticlusters::HGCalTriggerNtupleHGCMulticlusters(const edm::ParameterSet& conf)
     : HGCalTriggerNtupleBase(conf),
       fill_layer_info_(conf.getParameter<bool>("FillLayerInfo")),
-      fill_interpretation_info_(conf.getParameter<bool>("FillInterpretationInfo")) {
+      fill_interpretation_info_(conf.getParameter<bool>("FillInterpretationInfo")),
+      fill_hw_cluster_properties_(conf.getParameter<bool>("FillHWClusterProperties")) {
   accessEventSetup_ = false;
 }
 
@@ -118,6 +146,32 @@ void HGCalTriggerNtupleHGCMulticlusters::initialize(TTree& tree,
   if (fill_interpretation_info_) {
     tree.Branch(withPrefix("ipt"), &cl3d_ipt_);
     tree.Branch(withPrefix("ienergy"), &cl3d_ienergy_);
+  }
+  if (fill_hw_cluster_properties_) {
+    tree.Branch(withPrefix("meanZquotient"), &cl3d_Mean_z_quotient_);
+    tree.Branch(withPrefix("meanZfraction"), &cl3d_Mean_z_fraction_);
+    tree.Branch(withPrefix("meanPhiquotient"), &cl3d_Mean_phi_quotient_);
+    tree.Branch(withPrefix("meanPhifraction"), &cl3d_Mean_phi_fraction_);
+    tree.Branch(withPrefix("meanEtaquotient"), &cl3d_Mean_eta_quotient_);
+    tree.Branch(withPrefix("meanEtafraction"), &cl3d_Mean_eta_fraction_);
+    tree.Branch(withPrefix("meanRoZquotient"), &cl3d_Mean_roz_quotient_);
+    tree.Branch(withPrefix("meanRoZfraction"), &cl3d_Mean_roz_fraction_);
+    tree.Branch(withPrefix("sigmaEquotient"), &cl3d_sigma_e_quotient_);
+    tree.Branch(withPrefix("sigmaEfraction"), &cl3d_sigma_e_fraction_);
+    tree.Branch(withPrefix("sigmaZquotient"), &cl3d_sigma_z_quotient_);
+    tree.Branch(withPrefix("sigmaZfraction"), &cl3d_sigma_z_fraction_);
+    tree.Branch(withPrefix("sigmaPhiquotient"), &cl3d_sigma_phi_quotient_);
+    tree.Branch(withPrefix("sigmaPhifraction"), &cl3d_sigma_phi_fraction_);
+    tree.Branch(withPrefix("sigmaEtaquotient"), &cl3d_sigma_eta_quotient_);
+    tree.Branch(withPrefix("sigmaEtafraction"), &cl3d_sigma_eta_fraction_);
+    tree.Branch(withPrefix("sigmaRoZquotient"), &cl3d_sigma_roz_quotient_);
+    tree.Branch(withPrefix("sigmaRoZfraction"), &cl3d_sigma_roz_fraction_);
+    tree.Branch(withPrefix("energyEMOverEnergyquotient"), &cl3d_e_em_over_e_quotient_);
+    tree.Branch(withPrefix("energyEMOverEnergyfraction"), &cl3d_e_em_over_e_fraction_);
+    tree.Branch(withPrefix("energyEMCoreOverEnergyEMquotient"), &cl3d_e_em_core_over_e_em_quotient_);
+    tree.Branch(withPrefix("energyEMCoreOverEnergyEMfraction"), &cl3d_e_em_core_over_e_em_fraction_);
+    tree.Branch(withPrefix("energyHEarlyOverEnergyquotient"), &cl3d_e_h_early_over_e_quotient_);
+    tree.Branch(withPrefix("energyHEarlyOverEnergyfraction"), &cl3d_e_h_early_over_e_fraction_);
   }
 }
 
@@ -187,6 +241,33 @@ void HGCalTriggerNtupleHGCMulticlusters::fill(const edm::Event& e, const HGCalTr
                    cl3d_itr->constituents_end(),
                    cl3d_clusters_id_.back().begin(),
                    [](const std::pair<uint32_t, edm::Ptr<l1t::HGCalCluster>>& id_cl) { return id_cl.second->detId(); });
+
+    if (fill_hw_cluster_properties_) {
+      cl3d_sigma_e_quotient_.emplace_back(cl3d_itr->hw_sigma_e_quotient());
+      cl3d_sigma_e_fraction_.emplace_back(cl3d_itr->hw_sigma_e_fraction());
+      cl3d_Mean_z_quotient_.emplace_back(cl3d_itr->hw_mean_z_quotient());
+      cl3d_Mean_z_fraction_.emplace_back(cl3d_itr->hw_mean_z_fraction());
+      cl3d_Mean_phi_quotient_.emplace_back(cl3d_itr->hw_mean_phi_quotient());
+      cl3d_Mean_phi_fraction_.emplace_back(cl3d_itr->hw_mean_phi_fraction());
+      cl3d_Mean_eta_quotient_.emplace_back(cl3d_itr->hw_mean_eta_quotient());
+      cl3d_Mean_eta_fraction_.emplace_back(cl3d_itr->hw_mean_eta_fraction());
+      cl3d_Mean_roz_quotient_.emplace_back(cl3d_itr->hw_mean_roz_quotient());
+      cl3d_Mean_roz_fraction_.emplace_back(cl3d_itr->hw_mean_roz_fraction());
+      cl3d_sigma_z_quotient_.emplace_back(cl3d_itr->hw_sigma_z_quotient());
+      cl3d_sigma_z_fraction_.emplace_back(cl3d_itr->hw_sigma_z_fraction());
+      cl3d_sigma_phi_quotient_.emplace_back(cl3d_itr->hw_sigma_phi_quotient());
+      cl3d_sigma_phi_fraction_.emplace_back(cl3d_itr->hw_sigma_phi_fraction());
+      cl3d_sigma_eta_quotient_.emplace_back(cl3d_itr->hw_sigma_eta_quotient());
+      cl3d_sigma_eta_fraction_.emplace_back(cl3d_itr->hw_sigma_eta_fraction());
+      cl3d_sigma_roz_quotient_.emplace_back(cl3d_itr->hw_sigma_roz_quotient());
+      cl3d_sigma_roz_fraction_.emplace_back(cl3d_itr->hw_sigma_roz_fraction());
+      cl3d_e_em_over_e_quotient_.emplace_back(cl3d_itr->hw_e_em_over_e_quotient());
+      cl3d_e_em_over_e_fraction_.emplace_back(cl3d_itr->hw_e_em_over_e_fraction());
+      cl3d_e_em_core_over_e_em_quotient_.emplace_back(cl3d_itr->hw_e_em_core_over_e_em_quotient());
+      cl3d_e_em_core_over_e_em_fraction_.emplace_back(cl3d_itr->hw_e_em_core_over_e_em_fraction());
+      cl3d_e_h_early_over_e_quotient_.emplace_back(cl3d_itr->hw_e_h_early_over_e_quotient());
+      cl3d_e_h_early_over_e_fraction_.emplace_back(cl3d_itr->hw_e_h_early_over_e_fraction());
+    }
   }
 }
 
@@ -224,4 +305,28 @@ void HGCalTriggerNtupleHGCMulticlusters::clear() {
   cl3d_quality_.clear();
   cl3d_ipt_.clear();
   cl3d_ienergy_.clear();
+  cl3d_sigma_e_quotient_.clear();
+  cl3d_sigma_e_fraction_.clear();
+  cl3d_Mean_z_quotient_.clear();
+  cl3d_Mean_z_fraction_.clear();
+  cl3d_Mean_phi_quotient_.clear();
+  cl3d_Mean_phi_fraction_.clear();
+  cl3d_Mean_eta_quotient_.clear();
+  cl3d_Mean_eta_fraction_.clear();
+  cl3d_Mean_roz_quotient_.clear();
+  cl3d_Mean_roz_fraction_.clear();
+  cl3d_sigma_z_quotient_.clear();
+  cl3d_sigma_z_fraction_.clear();
+  cl3d_sigma_phi_quotient_.clear();
+  cl3d_sigma_phi_fraction_.clear();
+  cl3d_sigma_eta_quotient_.clear();
+  cl3d_sigma_eta_fraction_.clear();
+  cl3d_sigma_roz_quotient_.clear();
+  cl3d_sigma_roz_fraction_.clear();
+  cl3d_e_em_over_e_quotient_.clear();
+  cl3d_e_em_over_e_fraction_.clear();
+  cl3d_e_em_core_over_e_em_quotient_.clear();
+  cl3d_e_em_core_over_e_em_fraction_.clear();
+  cl3d_e_h_early_over_e_quotient_.clear();
+  cl3d_e_h_early_over_e_fraction_.clear();
 }
