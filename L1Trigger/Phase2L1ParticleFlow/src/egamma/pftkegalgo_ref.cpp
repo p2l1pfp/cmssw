@@ -297,7 +297,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
     link_emCalo2emCalo(emcalo_sel, emCalo2emCalo);
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
-  std::vector<id_score_t> emCaloTkBdtScore(emcalo_sel.size(), -999);
+  std::vector<id_score_t> emCaloTkBdtScore(emcalo_sel.size(), -1);
 
   if (cfg.doCompositeTkEle) {
     link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, emCaloTkBdtScore);

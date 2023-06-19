@@ -27,6 +27,8 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const l1ct::PFRegi
 
   l1ct::HadCaloObjEmu out;
   out.clear();
+  if (w_pt == 0)
+    return out;
   out.hwPt = w_pt * l1ct::pt_t(l1ct::Scales::INTPT_LSB);
   out.hwEta = w_eta;
   out.hwPhi = w_phi;  // relative to the region center, at calo
