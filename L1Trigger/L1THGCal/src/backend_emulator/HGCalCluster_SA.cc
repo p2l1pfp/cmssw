@@ -127,7 +127,9 @@ void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluste
   hwCluster.sigma_phi = sigma_phi_quotient() + sigma_phi_fraction();
   hwCluster.coreShowerLength = coreShowerLen();
   hwCluster.sigma_eta = convertSigmaRozRozToSigmaEtaEta( config );
-  hwCluster.sigma_roz = sigma_roz_quotient() + sigma_roz_fraction();
+  unsigned int sigma_roz = round(sqrt( (w()*wroz2() - wroz() * wroz())  / ( w() * w() ) ) * 0.5073223114013672);
+  if ( sigma_roz > 127 ) sigma_roz = 127;
+  hwCluster.sigma_roz = sigma_roz;
 }
 
 void HGCalCluster::formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {}

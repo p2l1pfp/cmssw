@@ -160,10 +160,10 @@ namespace l1thgcfirmware {
     unsigned int w() const { return w_; }
     unsigned int n_tc_w() const { return n_tc_w_; }
     unsigned long int w2() const { return w2_; }
-    unsigned int wz() const { return wz_; }
-    unsigned int weta() const { return weta_; }
-    unsigned int wphi() const { return wphi_; }
-    unsigned int wroz() const { return wroz_; }
+    unsigned long int wz() const { return wz_; }
+    unsigned long int weta() const { return weta_; }
+    unsigned long int wphi() const { return wphi_; }
+    unsigned long int wroz() const { return wroz_; }
     unsigned long int wz2() const { return wz2_; }
     unsigned long int weta2() const { return weta2_; }
     unsigned long int wphi2() const { return wphi2_; }
