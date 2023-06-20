@@ -136,7 +136,7 @@ void HGCalCluster::formatFourthWord( const ClusterAlgoConfig& config, HGCalClust
 
 double HGCalCluster::convertRozToEta( const ClusterAlgoConfig& config ) {
   // TODO : named constants for magic numbers
-  double roz = wroz()/w();
+  double roz = double(wroz())/w();
   if ( roz < 1026.9376220703125 ) roz = 1026.9376220703125;
   else if ( roz > 5412.17138671875 ) roz = 5412.17138671875;
   roz -= 1026.9376220703125;
