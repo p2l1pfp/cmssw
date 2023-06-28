@@ -41,9 +41,9 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
 
 
    #zoPuppi = cms.InputTag(""), # does not exist anymore! 
-   #l1vertextdr = cms.InputTag("VertexProducer","l1vertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   #l1vertices = cms.InputTag("VertexProducer","l1vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   l1TkPrimaryVertex= cms.InputTag("L1VertexFinderEmulator","l1verticesEmulation"), #we need to rename this, but these are now emulated vertices!
+   #l1vertextdr = cms.InputTag("VertexProducer","ertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   #L1Vertices = cms.InputTag("l1tVertexProducer","L1Vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   l1TkPrimaryVertex= cms.InputTag("l1tVertexFinderEmulator","L1VerticesEmulation"), #we need to rename this, but these are now emulated vertices!
 
    L1NNTauToken = cms.InputTag("L1NNTauProducerPuppi","L1PFTausNN"), # default collection, emulated 
    L1NNTau2vtxToken = cms.InputTag("L1NNTauProducerPuppi2Vtx","L1PFTausNN"), # 2 vtx version 

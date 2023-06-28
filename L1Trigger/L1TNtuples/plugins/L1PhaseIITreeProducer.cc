@@ -243,7 +243,7 @@ L1PhaseIITreeProducer::L1PhaseIITreeProducer(const edm::ParameterSet& iConfig) {
 
   z0PuppiToken_ = consumes<float>(iConfig.getParameter<edm::InputTag>("zoPuppi"));
   //l1vertextdrToken_ = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertextdr"));
-  //l1verticesToken_  = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertices"));
+  //l1verticesToken_  = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("L1Vertices"));
   l1TkPrimaryVertexToken_ =
       consumes<l1t::VertexWordCollection>(iConfig.getParameter<edm::InputTag>("l1TkPrimaryVertex"));
 
