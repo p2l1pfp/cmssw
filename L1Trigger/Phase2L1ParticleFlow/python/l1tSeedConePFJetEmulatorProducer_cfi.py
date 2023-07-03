@@ -1,0 +1,2 @@
+from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetProducer_cfi import l1tSeedConePFJetProducer as _l1tSeedConePFJetProducer
+l1tSeedConePFJetEmulatorProducer = _l1tSeedConePFJetProducer.clone(HW = True)
