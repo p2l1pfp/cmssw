@@ -55,10 +55,10 @@ private:
   const std::map<l1t::demo::LinkId, std::pair<l1t::demo::ChannelSpec, std::vector<size_t>>>
       kChannelSpecsOutputToL1T = {
           /* logical channel within time slice -> {{link TMUX, inter-packet gap}, vector of channel indices} */
-          {{"towersAndClusters", 0}, {{kS2BoardTMUX, kGapLengthOutput}, {0}}},
-          {{"towersAndClusters", 1}, {{kS2BoardTMUX, kGapLengthOutput}, {1}}},
-          {{"towersAndClusters", 2}, {{kS2BoardTMUX, kGapLengthOutput}, {2}}},
-          {{"towersAndClusters", 3}, {{kS2BoardTMUX, kGapLengthOutput}, {3}}}
+          {{"towersAndClusters", 0}, {{kS2BoardTMUX, kGapLengthOutput}, {84}}},
+          {{"towersAndClusters", 1}, {{kS2BoardTMUX, kGapLengthOutput}, {85}}},
+          {{"towersAndClusters", 2}, {{kS2BoardTMUX, kGapLengthOutput}, {86}}},
+          {{"towersAndClusters", 3}, {{kS2BoardTMUX, kGapLengthOutput}, {87}}}
         };
 
   // ----------member functions ----------------------
@@ -71,6 +71,7 @@ private:
 
   edm::EDGetTokenT<l1t::HGCalMulticlusterBxCollection> refClustersToken_;
 
+  unsigned int sector_;
   unsigned int nClusters_;
 
 };
@@ -87,6 +88,7 @@ Stage2FileReader::Stage2FileReader(const edm::ParameterSet& iConfig)
                   kEmptyFrames,
                   kChannelSpecsOutputToL1T),
     refClustersToken_(consumes<l1t::HGCalMulticlusterBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("refClustersTag"))),
+    sector_(iConfig.getUntrackedParameter<unsigned int>("sector")),
     nClusters_(0)
  {
   produces<l1t::HGCalMulticlusterBxCollection>();
@@ -111,7 +113,7 @@ void Stage2FileReader::produce(edm::Event& iEvent, const edm::EventSetup& iSetup
 
   // Ref clusters
   const l1t::HGCalMulticlusterBxCollection refClusters = iEvent.get(refClustersToken_);
-  std::vector<l1thgcfirmware::HGCalCluster_HW> refHWClusters = getRefHWClusters( refClusters, 0 );
+  std::vector<l1thgcfirmware::HGCalCluster_HW> refHWClusters = getRefHWClusters( refClusters, sector_ );
 
   compareClustersToRef( hwClusters, refHWClusters );
   std::cout << "N clusters so far : " << nClusters_ << std::endl;
@@ -167,7 +169,6 @@ void Stage2FileReader::compareClustersToRef( std::vector<l1thgcfirmware::HGCalCl
       }
       if ( abs(refCluster.w_eta - cluster.w_eta) == 1 ) {
         std::cout << "Etas differ by one bit" << std::endl;
-        allGood = false;
         continue;
       }
       if ( clusters.size() > iCluster+1) {
@@ -209,6 +210,7 @@ void Stage2FileReader::fillDescriptions(edm::ConfigurationDescriptions& descript
                                      });
   desc.addUntracked<std::string>("format", "EMPv2");
   desc.addUntracked<edm::InputTag>("refClustersTag", edm::InputTag("l1tHGCalBackEndLayer2Producer", "HGCalBackendLayer2Processor3DClusteringSA"));
+  desc.addUntracked<unsigned int>("sector", 0);
   descriptions.add("Stage2FileReader", desc);
 }
 
