@@ -6,6 +6,11 @@ import FWCore.ParameterSet.VarParsing as VarParsing
 # PART 1 : PARSE ARGUMENTS
 
 options = VarParsing.VarParsing ('analysis')
+options.register('tm',
+                -1,
+                VarParsing.VarParsing.multiplicity.singleton,
+                VarParsing.VarParsing.varType.int,
+                "Time slice of pattern files")
 options.parseArguments()
 
 inputFiles = []
@@ -41,8 +46,27 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1
 process.Timing = cms.Service("Timing", summaryOnly = cms.untracked.bool(True))
 
 process.load('FWCore.Modules.preScaler_cfi')
-process.preScaler.prescaleFactor = 3
-process.preScaler.prescaleOffset = 1
-process.p = cms.Path(process.preScaler*process.Stage2FileWriter)
 
-# process.p = cms.Path(process.Stage2FileWriter)
+
+if options.tm == 0:
+    # Time slice 0
+    process.preScaler.prescaleFactor = 3
+    process.preScaler.prescaleOffset = 1
+    process.Stage2FileWriter.tmIndex = 0
+elif options.tm == 6:
+    # #Time slice 6
+    process.preScaler.prescaleFactor = 3
+    process.preScaler.prescaleOffset = 2
+    process.Stage2FileWriter.tmIndex = 6
+elif options.tm == 12:
+    # Time slice 12
+    process.preScaler.prescaleFactor = 3
+    process.preScaler.prescaleOffset = 0
+    process.Stage2FileWriter.tmIndex = 12
+else:
+    print ("Producing pattern files from all time slices...")
+    process.preScaler.prescaleFactor = 1
+    process.preScaler.prescaleOffset = 0
+    process.Stage2FileWriter.tmIndex = 99
+
+process.p = cms.Path(process.preScaler*process.Stage2FileWriter)

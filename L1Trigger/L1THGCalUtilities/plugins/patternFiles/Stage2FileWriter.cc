@@ -53,7 +53,7 @@ private:
   static constexpr size_t kFramesPerTMUXPeriod = 9;
   static constexpr size_t kGapLengthOutput = 0;
   static constexpr size_t kS2BoardTMUX = 18;
-  static constexpr size_t kMaxLinesPerFile = 1024;
+  static constexpr size_t kMaxLinesPerFile = 648;
 
   const std::map<l1t::demo::LinkId, std::pair<l1t::demo::ChannelSpec, std::vector<size_t>>>
       kChannelSpecsOutputToL1T = {
@@ -92,7 +92,7 @@ private:
 
   std::vector<l1t::demo::BoardDataWriter> fileWritersOutputToL1T_;
   std::vector<l1t::demo::BoardDataWriter> fileWritersClusterSumsInput_;
-
+  unsigned int tmIndex_;
   unsigned int eventCounter_;
 };
 
@@ -102,16 +102,17 @@ private:
 
 Stage2FileWriter::Stage2FileWriter(const edm::ParameterSet& iConfig)
     : clustersToken_(consumes<l1t::HGCalMulticlusterBxCollection>(iConfig.getUntrackedParameter<edm::InputTag>("clusters"))),
+      tmIndex_(iConfig.getUntrackedParameter<unsigned int>("tmIndex")),
       eventCounter_(0) {
       for ( unsigned int iFileWriter=0; iFileWriter < 6; ++iFileWriter ) {
         fileWritersOutputToL1T_.emplace_back(l1t::demo::parseFileFormat(iConfig.getUntrackedParameter<std::string>("format")),
-                                    iConfig.getUntrackedParameter<std::string>("outputFilename_clustersToL1T")+"_Sector"+std::to_string(iFileWriter),
+                                    std::string("hgc_sec")+std::to_string(iFileWriter)+"_tm"+std::to_string(tmIndex_)+std::string("-output-ref"),
                                     kFramesPerTMUXPeriod,
                                     kS2BoardTMUX,
                                     kMaxLinesPerFile,
                                     kChannelSpecsOutputToL1T);
         fileWritersClusterSumsInput_.emplace_back(l1t::demo::parseFileFormat(iConfig.getUntrackedParameter<std::string>("format")),
-                                            iConfig.getUntrackedParameter<std::string>("outputFilename_clusterSums")+"_Sector"+std::to_string(iFileWriter),
+                                            std::string("hgc_sec")+std::to_string(iFileWriter)+"_tm"+std::to_string(tmIndex_)+std::string("-input"),
                                             kFramesPerTMUXPeriod,
                                             kS2BoardTMUX,
                                             kMaxLinesPerFile,
@@ -159,8 +160,7 @@ void Stage2FileWriter::fillDescriptions(edm::ConfigurationDescriptions& descript
   // Stage2FileWriter
   edm::ParameterSetDescription desc;
   desc.addUntracked<edm::InputTag>("clusters", edm::InputTag("hgcalBackEndLayer2Producer", "HGCalBackendLayer2Processor3DClusteringSA"));
-  desc.addUntracked<std::string>("outputFilename_clustersToL1T", "HGCS2OutputToL1TFile");
-  desc.addUntracked<std::string>("outputFilename_clusterSums", "HGCS2ClusterSumsInput");
+  desc.addUntracked<unsigned int>("tmIndex", 0);
   desc.addUntracked<std::string>("format", "EMP");
   descriptions.add("Stage2FileWriter", desc);
 }
@@ -175,7 +175,7 @@ std::array<std::vector<ap_uint<64>>, 4> Stage2FileWriter::encodeTowersAndCluster
     if ( sector == 1 ) sector = 2;
     else if ( sector == 2 ) sector = 1;
   }
-  std::cout << "Sectors : " << iSector << " " << zside << " " << sector << std::endl;
+  // std::cout << "Sectors : " << iSector << " " << zside << " " << sector << std::endl;
 
   // First frame empty for alignment
   ap_uint<64> packetHeader = 0;
@@ -269,7 +269,7 @@ std::array<std::vector<ap_uint<64>>, 8> Stage2FileWriter::encodeClusterSumRecord
 
     // ++iCluster;
     // if ( iCluster > 160 ) break;
-    std::cout << "Adding cluster, sector : " << iSector << " " << zside << " " << sector << " " << cl3d_itr->pt() << " " << cl3d_itr->eta() << " " << cl3d_itr->phi() << " " << cl3d_itr->size() << std::endl;
+    // std::cout << "Adding cluster, sector : " << iSector << " " << zside << " " << sector << " " << cl3d_itr->pt() << " " << cl3d_itr->eta() << " " << cl3d_itr->phi() << " " << cl3d_itr->size() << std::endl;
     //  << " " << cl3d_itr->getHwData()[0].to_string() << std::endl;
     // std::cout << "Phi, eta : " << cl3d_itr->phi() << " " << cl3d_itr->eta() << " " << cl3d_itr->getHwData()[1].to_string() << std::endl;
     const auto& clusterSumWords = cl3d_itr->getHwClusterSumData();
