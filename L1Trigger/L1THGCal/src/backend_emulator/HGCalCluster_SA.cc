@@ -215,7 +215,7 @@ HGCalCluster::ClusterSumWords HGCalCluster::formatClusterSumWords( const Cluster
   ap_uint<nb_w2> hw_w2 = w2();
   ap_uint<nb_wz> hw_wz = wz();
   // ap_uint<nb_weta> hw_weta = 0;
-  ap_uint<nb_wphi> hw_wphi = wphi();
+  ap_uint<nb_wphi> hw_wphi = wphi() * 3456. / 1944; // Temp hack (another one...)
   ap_uint<nb_wroz> hw_wroz = wroz();
 
   ap_uint<nb_wz2> hw_wz2 = wz2();

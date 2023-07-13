@@ -44,6 +44,7 @@ layer2ClusteringFw_Params = cms.PSet(
         rOverZNValues = cms.double(8192), # 13 bits
         phiRange = cms.double(pi),
         phiNValues = cms.double(1944), # 12 bits, but range over 2pi is 3888
+        # phiNValues = cms.double(3456),
         ptDigiFactor = cms.double(1024),
         # ptDigiFactor = cms.double(10000),
     ),

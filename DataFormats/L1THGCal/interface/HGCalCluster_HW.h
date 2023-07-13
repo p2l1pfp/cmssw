@@ -58,8 +58,13 @@ namespace l1thgcfirmware {
 
     inline phi_t HGCaltoL1_phi(float phi, bool& saturatedPhi, bool& nominalPhi) {
       phi_t hw_phi = 0;
+
+      // Temporary fix.  First line is what we should use, assuming phi LSB of pi/3456
+      // But steps before CP block don't like this, and put TCs in the wrong bins - to be debugged
+      // So for now, where earlier steps are used to produce input for testing CP block in hardware,
+      // use original LSB (pi/1944) for earlier steps, and convert to CP-block LSB here
       // const int hw_phi10b = int( round( phi * (5./24) ) ) - 360;
-      const int hw_phi10b = int( round( phi * (10./27) ) ) - 360; // Temporarily fix phi conversion.  Won't match firmware, but will produce physically correct phi values.
+      const int hw_phi10b = int( round( phi * (3456./1944) * (5./24) ) ) - 360;
       nominalPhi = ( hw_phi10b < 240 ) && ( hw_phi10b > -241 );
       if( hw_phi10b > 255 ) {
         hw_phi = 255;
