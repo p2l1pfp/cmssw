@@ -69,6 +69,7 @@ void HGCalHistoClusteringWrapper::convertCMSSWInputs(
   for (const auto& sector60 : clustersPtrs) {
     unsigned iCluster = 0;
     for (const auto& cluster : sector60) {
+
       const GlobalPoint& position = cluster->position();
       double x = position.x();
       double y = position.y();
@@ -98,7 +99,7 @@ void HGCalHistoClusteringWrapper::convertCMSSWInputs(
       // But some of the TCs in the S1 emulation fall outside of the 60 degree region
       // For now, assign these TCs to the 60 degree sector that the S2 emulation is expecting them to be in.
       unsigned tcSector60 = iSector60;
-      const unsigned sectorPhiWidth = 648;
+      const unsigned sectorPhiWidth = theConfiguration_.phiNValues()/3;
       unsigned int minSectorPhi = iSector60 * sectorPhiWidth;
       unsigned int maxSectorPhi = (iSector60 + 1) * sectorPhiWidth;
       if (digi_phi < minSectorPhi) {
