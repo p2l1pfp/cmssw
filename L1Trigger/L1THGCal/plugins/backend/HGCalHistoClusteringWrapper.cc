@@ -69,6 +69,7 @@ void HGCalHistoClusteringWrapper::convertCMSSWInputs(
   for (const auto& sector60 : clustersPtrs) {
     unsigned iCluster = 0;
     for (const auto& cluster : sector60) {
+
       const GlobalPoint& position = cluster->position();
       double x = position.x();
       double y = position.y();
@@ -98,7 +99,7 @@ void HGCalHistoClusteringWrapper::convertCMSSWInputs(
       // But some of the TCs in the S1 emulation fall outside of the 60 degree region
       // For now, assign these TCs to the 60 degree sector that the S2 emulation is expecting them to be in.
       unsigned tcSector60 = iSector60;
-      const unsigned sectorPhiWidth = 648;
+      const unsigned sectorPhiWidth = theConfiguration_.phiNValues()/3;
       unsigned int minSectorPhi = iSector60 * sectorPhiWidth;
       unsigned int maxSectorPhi = (iSector60 + 1) * sectorPhiWidth;
       if (digi_phi < minSectorPhi) {
@@ -160,30 +161,29 @@ void HGCalHistoClusteringWrapper::convertAlgorithmOutputs(
     const std::vector<std::vector<edm::Ptr<l1t::HGCalCluster>>>& inputClustersPtrs) const {
   for (const auto& cluster : clusterSums) {
 
-    // Convert from digitised quantities
     if (cluster->w() == 0 || cluster->e() == 0)
       continue;
-    double phi = (cluster->wphi() / cluster->w()) * theConfiguration_.phiRange() / theConfiguration_.phiNValues();
-    double pt = cluster->e() / theConfiguration_.ptDigiFactor();
 
-    if (pt < theConfiguration_.minClusterPtOut())
+    // Convert to format expected by L1T
+    const auto hwData = cluster->convertToL1TFormat( theConfiguration_ );
+
+    // Remove if below pt threshold
+    double pt = l1thgcfirmware::Scales::floatEt(hwData.e);
+    if ( pt <= theConfiguration_.minClusterPtOut())
       continue;
 
-    double rOverZ =
-        (cluster->wroz() / cluster->w()) * theConfiguration_.rOverZRange() / theConfiguration_.rOverZNValues();
-    double eta = -1.0 * std::log(tan(atan(rOverZ) / 2));
+    double eta = l1thgcfirmware::Scales::floatEta(hwData.w_eta);
     eta *= theConfiguration_.zSide();
 
     auto sector = theConfiguration_.sector();
-    phi = rotatePhiFromSectorZero(phi, sector);
 
+    double phi = l1thgcfirmware::Scales::floatPhi(hwData.w_phi);
+    phi = rotatePhiFromSectorZero(phi, sector);
     if (theConfiguration_.zSide() == 1) {
       phi = M_PI - phi;
     }
     phi -= (phi > M_PI) ? 2 * M_PI : 0;
-
     math::PtEtaPhiMLorentzVector clusterP4(pt, eta, phi, 0.);
-
     l1t::HGCalMulticluster multicluster;
     multicluster.setP4(clusterP4);
 
@@ -193,17 +193,21 @@ void HGCalHistoClusteringWrapper::convertAlgorithmOutputs(
       multicluster.addConstituent(tc_cmssw, false, 0.);
     }
 
-    double emIntfraction = float(cluster->e_em()) / cluster->e();
+    double emIntfraction = float(hwData.e_em) / hwData.e * multicluster.energy(); // Hack to get multicluster.iPt to return hwData.e_em
     multicluster.saveEnergyInterpretation(l1t::HGCalMulticluster::EnergyInterpretation::EM,
-                                          emIntfraction * multicluster.energy());
+                                          emIntfraction);
 
-    double emCoreIntfraction = float(cluster->e_em_core()) / cluster->e();
-    multicluster.saveEnergyInterpretation(l1t::HGCalMulticluster::EnergyInterpretation::EM_CORE,
-                                          emCoreIntfraction * multicluster.energy());
+    // double emCoreIntfraction = float(cluster->e_em_core()) / cluster->e();
+    // multicluster.saveEnergyInterpretation(l1t::HGCalMulticluster::EnergyInterpretation::EM_CORE,
+    //                                       emCoreIntfraction * multicluster.energy());
 
-    double emHEarlyIntfraction = float(cluster->e_h_early()) / cluster->e();
-    multicluster.saveEnergyInterpretation(l1t::HGCalMulticluster::EnergyInterpretation::H_EARLY,
-                                          emHEarlyIntfraction * multicluster.energy());
+    // double emHEarlyIntfraction = float(cluster->e_h_early()) / cluster->e();
+    // multicluster.saveEnergyInterpretation(l1t::HGCalMulticluster::EnergyInterpretation::H_EARLY,
+    //                                       emHEarlyIntfraction * multicluster.energy());
+
+    multicluster.zBarycenter(l1thgcfirmware::Scales::floatZ(hwData.w_z));
+
+    multicluster.sigmaRRTot( l1thgcfirmware::Scales::floatSigmaRozRoz(hwData.sigma_roz) );
 
     // Set cluster shower shape properties
     multicluster.showerLength(cluster->showerLen());
@@ -234,20 +238,15 @@ void HGCalHistoClusteringWrapper::convertAlgorithmOutputs(
     multicluster.hw_e_h_early_over_e_quotient(cluster->e_h_early_over_e_quotient());
     multicluster.hw_e_h_early_over_e_fraction(cluster->e_h_early_over_e_fraction());
 
-    const auto hwData = cluster->formatClusterWords( theConfiguration_ );
-    // std::cout << "Packed words" << std::endl;
-    // std::cout << hwData[0] << std::endl;
-    // std::cout << hwData[1] << std::endl;
-    // std::cout << hwData[2] << std::endl;
-    // std::cout << hwData[3] << std::endl;
-    multicluster.setHwData( hwData );
-    // std::cout << multicluster.getHwData()[0] << std::endl;
-    // std::cout << multicluster.getHwData()[1] << std::endl;
-    // std::cout << multicluster.getHwData()[2] << std::endl;
-    // std::cout << multicluster.getHwData()[3] << std::endl;
 
+    multicluster.setHwData( hwData.pack() );
     multicluster.setHwSector( sector );
     multicluster.setHwZSide( theConfiguration_.zSide() );
+
+    const auto unpacked = l1thgcfirmware::HGCalCluster_HW::unpack(multicluster.getHwData());
+    if ( hwData != unpacked ) {
+      std::cout << "Problem in unpacking words!" << std::endl;
+    }
 
     const auto hwClusterSumData = cluster->formatClusterSumWords( theConfiguration_ );
     multicluster.setHwClusterSumData( hwClusterSumData );

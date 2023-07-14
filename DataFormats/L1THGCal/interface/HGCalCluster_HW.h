@@ -31,9 +31,61 @@ namespace l1thgcfirmware {
   static constexpr int nWordsPerCluster = 4;
   typedef uint64_t ClusterWord;
   typedef std::array<ClusterWord, nWordsPerCluster> ClusterWords;
-//   namespace Scales {
-    
-//   }
+  
+  namespace Scales {
+    constexpr float ET_LSB = 1./1024;
+    constexpr float ET_HGCALtoL1_SCALE = 1. / 256;
+    constexpr float ET_L1_LSB = 0.25;
+
+    constexpr int INTPHI_PI = 720;
+    constexpr float ETAPHI_LSB = M_PI / INTPHI_PI;
+    constexpr float Z_LSB = 0.05;
+    constexpr float SIGMA_ROZ_ROZ_LSB = 0.0001920625; // 0.024584/2^(7), max r/z / nBits
+
+    inline float floatEt(e_t et) { return et.to_float() * ET_L1_LSB; }
+    inline float floatEta(eta_t eta) { return eta.to_float() * ETAPHI_LSB; }
+    inline float floatPhi(phi_t phi) { return phi.to_float() * ETAPHI_LSB + M_PI/2; }
+    inline float floatZ(z_t z) { return z.to_float() * Z_LSB; }
+    inline float floatSigmaRozRoz(sigma_roz_t sigmaRozRoz) { return sigmaRozRoz.to_float() * SIGMA_ROZ_ROZ_LSB; }
+
+    inline e_t HGCaltoL1_et(double et) {
+      return round(et * Scales::ET_HGCALtoL1_SCALE);
+    }
+
+    inline z_t HGCaltoL1_z(double z) {
+      return round(z); // Same scale on both sides of interface
+    }
+
+    inline phi_t HGCaltoL1_phi(float phi, bool& saturatedPhi, bool& nominalPhi) {
+      phi_t hw_phi = 0;
+
+      // Temporary fix.  First line is what we should use, assuming phi LSB of pi/3456
+      // But steps before CP block don't like this, and put TCs in the wrong bins - to be debugged
+      // So for now, where earlier steps are used to produce input for testing CP block in hardware,
+      // use original LSB (pi/1944) for earlier steps, and convert to CP-block LSB here
+      // const int hw_phi10b = int( round( phi * (5./24) ) ) - 360;
+      const int hw_phi10b = int( round( phi * (3456./1944) * (5./24) ) ) - 360;
+      nominalPhi = ( hw_phi10b < 240 ) && ( hw_phi10b > -241 );
+      if( hw_phi10b > 255 ) {
+        hw_phi = 255;
+        saturatedPhi = true;
+      }
+      else if ( hw_phi10b < -256 ) {
+        hw_phi = -256;
+        saturatedPhi = true;
+      }
+      else {
+        hw_phi = hw_phi10b;
+        saturatedPhi = false;
+      }
+      return hw_phi;
+    }
+
+    inline eFraction_t makeL1EFraction(float num, float denom) { return round(256 * num / denom); };
+
+
+  }
+
 
   struct HGCalCluster_HW {
 
@@ -216,6 +268,18 @@ namespace l1thgcfirmware {
         ap_uint<BITWIDTH_THIRDWORD> thirdWord = src[2];
         unpack_thirdWord( thirdWord, cluster );
         return cluster;
+    }
+
+    inline void setGCTBits() {
+      ap_uint<1> gctBit0 = fractionInCE_E > 64;
+      ap_uint<1> gctBit1 = fractionInCoreCE_E > 64;
+      ap_uint<1> gctBit2 = fractionInEarlyCE_E > 64;
+      ap_uint<1> gctBit3 = e_em > 64;
+      gctBits = (gctBit3, gctBit2, gctBit1, gctBit0);
+    }
+
+    inline void setQualityFlags( bool qualFracCE_E, bool qualFracCoreCE_E, bool qualFracEarlyCE_H, bool saturatedTC, unsigned int shapeQuality, bool saturatedPhi, bool nominalPhi ) {
+      qualFlags = (ap_uint<1>(saturatedTC), ap_uint<1>(qualFracCE_E), ap_uint<1>(qualFracCoreCE_E), ap_uint<1>(qualFracEarlyCE_H), ap_uint<1>(shapeQuality), ap_uint<1>(saturatedPhi), ap_uint<1>(nominalPhi));
     }
   };
 

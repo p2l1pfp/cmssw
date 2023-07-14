@@ -160,10 +160,10 @@ namespace l1thgcfirmware {
     unsigned int w() const { return w_; }
     unsigned int n_tc_w() const { return n_tc_w_; }
     unsigned long int w2() const { return w2_; }
-    unsigned int wz() const { return wz_; }
-    unsigned int weta() const { return weta_; }
-    unsigned int wphi() const { return wphi_; }
-    unsigned int wroz() const { return wroz_; }
+    unsigned long int wz() const { return wz_; }
+    unsigned long int weta() const { return weta_; }
+    unsigned long int wphi() const { return wphi_; }
+    unsigned long int wroz() const { return wroz_; }
     unsigned long int wz2() const { return wz2_; }
     unsigned long int weta2() const { return weta2_; }
     unsigned long int wphi2() const { return wphi2_; }
@@ -207,11 +207,15 @@ namespace l1thgcfirmware {
     const HGCalCluster& operator+=(HGCalCluster& hc);
 
     // Format data into firmware representation
-    ClusterWords formatClusterWords( const ClusterAlgoConfig& config );
+    HGCalCluster_HW convertToL1TFormat( const ClusterAlgoConfig& config );
     void formatFirstWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatSecondWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatThirdWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
     void formatFourthWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster );
+
+    // Conversion of roz to eta (and sigma roz)
+    double convertRozToEta( const ClusterAlgoConfig& config );
+    double convertSigmaRozRozToSigmaEtaEta( const ClusterAlgoConfig& config );
 
     // Format data into firmware representation
     void clearClusterSumWords();
