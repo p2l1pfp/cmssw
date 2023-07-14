@@ -1,13 +1,14 @@
 import argparse
 import sys
 
-# example: cmsRun L1Trigger/Phase2L1ParticleFlow/test/make_l1ct_patternFiles_cfg.py -- --dumpFilesOFF
-# example: cmsRun L1Trigger/Phase2L1ParticleFlow/test/make_l1ct_patternFiles_cfg.py -- --dumpFilesOFF
+# example: cmsRun L1Trigger/Phase2L1ParticleFlow/test/make_l1ct_patternFiles_cfg.py -- --patternFilesOFF
+# example: cmsRun L1Trigger/Phase2L1ParticleFlow/test/make_l1ct_patternFiles_cfg.py -- --dumpFilesOFF --serenity
 
 parser = argparse.ArgumentParser(prog=sys.argv[0], description='Optional parameters')
 
 parser.add_argument("--dumpFilesOFF", help="switch on dump file production", action="store_true", default=False)
 parser.add_argument("--patternFilesOFF", help="switch on Layer-1 pattern file production", action="store_true", default=False)
+parser.add_argument("--serenity", help="use Serenity settigns as default everwhere, i.e. also for barrel", action="store_true", default=False)
 
 argv = sys.argv[:]
 if '--' in argv:
@@ -23,7 +24,7 @@ if args.patternFilesOFF:
 import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 
-process = cms.Process("RESP", eras.Phase2C9)
+process = cms.Process("RESP", eras.Phase2C17I13M9)
 
 process.load('Configuration.StandardSequences.Services_cff')
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
@@ -41,14 +42,14 @@ process.source = cms.Source("PoolSource",
             "drop l1tTkPrimaryVertexs_*_*_*")
 )
 
-process.load('Configuration.Geometry.GeometryExtended2026D49Reco_cff')
-process.load('Configuration.Geometry.GeometryExtended2026D49_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D88Reco_cff')
+process.load('Configuration.Geometry.GeometryExtended2026D88_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('SimCalorimetry.HcalTrigPrimProducers.hcaltpdigi_cff') # needed to read HCal TPs
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, '123X_mcRun4_realistic_v3', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, '125X_mcRun4_realistic_v2', '')
 
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer2EG_cff')
@@ -60,27 +61,15 @@ process.l1tVertexFinderEmulator.l1TracksInputTag = cms.InputTag("l1tGTTInputProd
 from L1Trigger.Phase2L1GMT.gmt_cfi import l1tStandaloneMuons
 process.l1tSAMuonsGmt = l1tStandaloneMuons.clone()
 
-from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetProducer_cfi import l1tSeedConePFJetEmulatorProducer
+from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetEmulatorProducer_cfi import l1tSeedConePFJetEmulatorProducer
 from L1Trigger.Phase2L1ParticleFlow.l1tDeregionizerProducer_cfi import l1tDeregionizerProducer
 from L1Trigger.Phase2L1ParticleFlow.l1tJetFileWriter_cfi import l1tSeededConeJetFileWriter
 process.l1tLayer2Deregionizer = l1tDeregionizerProducer.clone()
-process.l1tLayer2SeedConeJetsCorrected = l1tSeedConePFJetEmulatorProducer.clone(L1PFObject = cms.InputTag('l1tLayer2Deregionizer', 'Puppi'),
+process.l1tLayer2SeedConeJetsCorrected = l1tSeedConePFJetEmulatorProducer.clone(L1PFObjects = cms.InputTag('l1tLayer2Deregionizer', 'Puppi'),
                                                                                 doCorrections = cms.bool(True),
                                                                                 correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root"),
                                                                                 correctorDir = cms.string('L1PuppiSC4EmuJets'))
 process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(jets = "l1tLayer2SeedConeJetsCorrected")
-
-process.l1tLayer1Barrel9 = process.l1tLayer1Barrel.clone()
-process.l1tLayer1Barrel9.puAlgo.nFinalSort = 32
-process.l1tLayer1Barrel9.regions[0].etaBoundaries = [ -1.5, -0.5, 0.5, 1.5 ] 
-process.l1tLayer1Barrel9.boards=cms.VPSet(
-        cms.PSet(
-            regions=cms.vuint32(*[0+9*ie+i for ie in range(3) for i in range(3)])),
-        cms.PSet(
-            regions=cms.vuint32(*[3+9*ie+i for ie in range(3) for i in range(3)])),
-        cms.PSet(
-            regions=cms.vuint32(*[6+9*ie+i for ie in range(3) for i in range(3)])),
-    )
 
 process.l1tLayer1BarrelTDR = process.l1tLayer1Barrel.clone()
 process.l1tLayer1BarrelTDR.regionizerAlgo = cms.string("TDR")
@@ -115,10 +104,16 @@ process.l1tLayer1BarrelSerenity.puAlgoParameters.nIn = 27
 process.l1tLayer1BarrelSerenity.puAlgoParameters.nOut = 27
 process.l1tLayer1BarrelSerenity.puAlgoParameters.finalSortAlgo = "FoldedHybrid"
 
+if args.serenity:
+    process.l1tLayer1.pfProducers[0] = "l1tLayer1BarrelSerenity"
+    process.l1tLayer2EG.tkElectrons[1].pfProducer = "l1tLayer1BarrelSerenity:L1TkElePerBoard"
+    process.l1tLayer2EG.tkEms[2].pfProducer = "l1tLayer1BarrelSerenity:L1TkEmPerBoard"
+
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import *
+from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import _eventsPerFile
 if not args.patternFilesOFF:
     process.l1tLayer1Barrel.patternWriters = cms.untracked.VPSet(*barrelWriterConfigs)
-    # process.l1tLayer1Barrel9.patternWriters = cms.untracked.VPSet(*barrel9WriterConfigs) # not enabled for now
+    process.l1tLayer1BarrelSerenity.patternWriters = cms.untracked.VPSet(barrelSerenityVU9PPhi1Config,barrelSerenityVU13PPhi1Config)
     process.l1tLayer1HGCal.patternWriters = cms.untracked.VPSet(*hgcalWriterConfigs)
     process.l1tLayer1HGCalNoTK.patternWriters = cms.untracked.VPSet(*hgcalNoTKWriterConfigs)
     process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
@@ -130,7 +125,6 @@ process.runPF = cms.Path(
         process.l1tLayer1Barrel +
         process.l1tLayer1BarrelTDR +
         process.l1tLayer1BarrelSerenity +
-        process.l1tLayer1Barrel9 +
         process.l1tLayer1HGCal +
         process.l1tLayer1HGCalElliptic +
         process.l1tLayer1HGCalNoTK +
@@ -150,17 +144,17 @@ process.runPF.associate(process.L1TLayer1TaskInputsTask)
 if not args.patternFilesOFF:
     process.l1tLayer2EG.writeInPattern = True
     process.l1tLayer2EG.writeOutPattern = True
-    process.l1tLayer2EG.inPatternFile.maxLinesPerFile = eventsPerFile_*54
-    process.l1tLayer2EG.outPatternFile.maxLinesPerFile = eventsPerFile_*54
+    process.l1tLayer2EG.inPatternFile.maxLinesPerFile = _eventsPerFile*54
+    process.l1tLayer2EG.outPatternFile.maxLinesPerFile = _eventsPerFile*54
 
 #####################################################################################################################
 ## Layer 2 seeded-cone jets 
 if not args.patternFilesOFF:
     process.runPF.insert(process.runPF.index(process.l1tLayer2SeedConeJetsCorrected)+1, process.l1tLayer2SeedConeJetWriter)
-    process.l1tLayer2SeedConeJetWriter.maxLinesPerFile = eventsPerFile_*54
+    process.l1tLayer2SeedConeJetWriter.maxLinesPerFile = _eventsPerFile*54
 
 if not args.dumpFilesOFF:
-  for det in "Barrel", "BarrelTDR", "BarrelSerenity", "Barrel9", "HGCal", "HGCalElliptic", "HGCalNoTK", "HF":
+  for det in "Barrel", "BarrelTDR", "BarrelSerenity", "HGCal", "HGCalElliptic", "HGCalNoTK", "HF":
         l1pf = getattr(process, 'l1tLayer1'+det)
         l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 

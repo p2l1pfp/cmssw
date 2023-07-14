@@ -8,6 +8,8 @@
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "DataFormats/L1TParticleFlow/interface/PFJet.h"
@@ -22,6 +24,8 @@ class L1SeedConePFJetProducer : public edm::global::EDProducer<> {
 public:
   explicit L1SeedConePFJetProducer(const edm::ParameterSet&);
   ~L1SeedConePFJetProducer() override;
+
+  static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
   /// ///////////////// ///
@@ -211,6 +215,19 @@ std::vector<l1t::PFJet> L1SeedConePFJetProducer::convertHWToEDM(
     edmJets.push_back(edmJet);
   });
   return edmJets;
+}
+
+void L1SeedConePFJetProducer::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+  edm::ParameterSetDescription desc;
+  desc.add<edm::InputTag>("L1PFObjects", edm::InputTag("l1tLayer1", "Puppi"));
+  desc.add<unsigned int>("nJets", 16);
+  desc.add<double>("coneSize", 0.4);
+  desc.add<bool>("HW", false);
+  desc.add<bool>("debug", false);
+  desc.add<bool>("doCorrections", false);
+  desc.add<std::string>("correctorFile", "");
+  desc.add<std::string>("correctorDir", "");
+  descriptions.add("l1tSeedConePFJetProducer", desc);
 }
 
 #include "FWCore/Framework/interface/MakerMacros.h"

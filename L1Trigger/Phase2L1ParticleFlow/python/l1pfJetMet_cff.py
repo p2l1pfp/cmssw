@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
-from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetProducer_cfi import l1tSeedConePFJetProducer, l1tSeedConePFJetEmulatorProducer
+from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetProducer_cfi import l1tSeedConePFJetProducer
+from L1Trigger.Phase2L1ParticleFlow.l1tSeedConePFJetEmulatorProducer_cfi import l1tSeedConePFJetEmulatorProducer
 from L1Trigger.Phase2L1ParticleFlow.l1tDeregionizerProducer_cfi import l1tDeregionizerProducer as l1tLayer2Deregionizer, l1tDeregionizerProducerExtended as l1tLayer2DeregionizerExtended
 l1tSCPFL1PF            = l1tSeedConePFJetProducer.clone(L1PFObjects = 'l1tLayer1:PF')
 l1tSCPFL1Puppi         = l1tSeedConePFJetProducer.clone()
