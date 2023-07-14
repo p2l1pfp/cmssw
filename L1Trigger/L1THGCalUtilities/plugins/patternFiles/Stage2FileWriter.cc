@@ -107,12 +107,14 @@ Stage2FileWriter::Stage2FileWriter(const edm::ParameterSet& iConfig)
       for ( unsigned int iFileWriter=0; iFileWriter < 6; ++iFileWriter ) {
         fileWritersOutputToL1T_.emplace_back(l1t::demo::parseFileFormat(iConfig.getUntrackedParameter<std::string>("format")),
                                     std::string("hgc_sec")+std::to_string(iFileWriter)+"_tm"+std::to_string(tmIndex_)+std::string("-output-ref"),
+                                    iConfig.getUntrackedParameter<std::string>("fileExtension","txt"),
                                     kFramesPerTMUXPeriod,
                                     kS2BoardTMUX,
                                     kMaxLinesPerFile,
                                     kChannelSpecsOutputToL1T);
         fileWritersClusterSumsInput_.emplace_back(l1t::demo::parseFileFormat(iConfig.getUntrackedParameter<std::string>("format")),
                                             std::string("hgc_sec")+std::to_string(iFileWriter)+"_tm"+std::to_string(tmIndex_)+std::string("-input"),
+                                            iConfig.getUntrackedParameter<std::string>("fileExtension"),
                                             kFramesPerTMUXPeriod,
                                             kS2BoardTMUX,
                                             kMaxLinesPerFile,
@@ -162,6 +164,7 @@ void Stage2FileWriter::fillDescriptions(edm::ConfigurationDescriptions& descript
   desc.addUntracked<edm::InputTag>("clusters", edm::InputTag("hgcalBackEndLayer2Producer", "HGCalBackendLayer2Processor3DClusteringSA"));
   desc.addUntracked<unsigned int>("tmIndex", 0);
   desc.addUntracked<std::string>("format", "EMP");
+  desc.addUntracked<std::string>("fileExtension", "txt");
   descriptions.add("Stage2FileWriter", desc);
 }
 
