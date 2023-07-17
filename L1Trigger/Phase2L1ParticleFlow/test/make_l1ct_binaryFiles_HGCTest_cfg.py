@@ -30,7 +30,7 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True), allowUnscheduled = cms.untracked.bool(False) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(120))
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
@@ -88,7 +88,7 @@ process.runPF = cms.Path(
 process.runPF.associate(process.L1TLayer1TaskInputsTask)
 
 #####################################################################################################################
-##  HGCalp
+##  HGCal TPs
 process.load('L1Trigger.L1THGCalUtilities.stage2FileWriter_cff')
 process.Stage2FileWriter.fileExtension = "txt.gz"
 from FWCore.Modules.preScaler_cfi import preScaler
@@ -97,14 +97,22 @@ for tmSlice, psOffset in (0,1), (6,2), (12,0):
     setattr(process, f"writerTM{tmSlice}", process.Stage2FileWriter.clone(tmIndex = tmSlice))
     setattr(process, f"Write_TM{tmSlice}", cms.Path(getattr(process, f"preTM{tmSlice}")+getattr(process, f"writerTM{tmSlice}")))
 
+# make also TM18 version.
+process.Stage2FileWriter.tmIndex = 18 # a bit of a hack
+process.Write_TM18 = cms.Path(process.Stage2FileWriter)
+
 #####################################################################################################################
-## Layer 1 e/gamma 
+## Layer 1 
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import *
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import _eventsPerFile
 process.l1tLayer1Barrel.patternWriters = cms.untracked.VPSet(*barrelWriterConfigs)
 process.l1tLayer1HGCal.patternWriters = cms.untracked.VPSet(*hgcalWriterConfigs)
 process.l1tLayer1HGCalNoTK.patternWriters = cms.untracked.VPSet(*hgcalNoTKWriterConfigs)
 process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
+
+for det in "HGCal", "HGCalNoTK":
+    l1pf = getattr(process, 'l1tLayer1'+det)
+    l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 
 #####################################################################################################################
 ## Layer 2 e/gamma 
@@ -125,3 +133,4 @@ process.l1tPFClustersFromCombinedCaloHF.hcalCandidates = [ cms.InputTag("l1tHGCa
 process.l1tPFClustersFromHGC3DClusters.corrector = ""
 process.l1tPFClustersFromHGC3DClusters.emVsPUID.wp = "-99"
 process.l1tPFClustersFromHGC3DClusters.useEMInterpretation = "allKeepTot"
+#process.l1tLayer1HGCalNoTK.debugHGC = cms.untracked.uint32(999999)

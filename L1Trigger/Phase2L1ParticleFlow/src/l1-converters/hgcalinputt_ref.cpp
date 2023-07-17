@@ -16,6 +16,7 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const l1ct::PFRegi
   ap_uint<10> w_abseta = in(73, 64);
   ap_int<9> w_eta = l1ct::glbeta_t(w_abseta.to_int() * (sector.floatEtaCenter() > 0 ? +1 : -1)) - sector.hwEtaCenter;
   ap_int<9> w_phi = in(82, 74);
+  if (sector.floatEtaCenter() > 0) w_phi = -w_phi;
   ap_uint<4> w_gctqual = in(31, 28);  // GCT quality
   ap_uint<7> w_srrtot = in(191, 185);
   ap_uint<12> w_meanz = in(94, 83);
