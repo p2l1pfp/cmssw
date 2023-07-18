@@ -54,8 +54,8 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeProducer",
    l1PFMet = cms.InputTag("l1PFMetPuppi"),
 
    zoPuppi = cms.InputTag("l1pfProducerBarrel","z0"),
-   l1vertextdr = cms.InputTag("VertexProducer","l1vertextdr"),
-   l1vertices = cms.InputTag("VertexProducer","l1vertices"),
+   l1vertextdr = cms.InputTag("l1tVertexProducer","l1vertextdr"),
+   L1Vertices = cms.InputTag("l1tVertexProducer","L1Vertices"),
    l1TkPrimaryVertex= cms.InputTag("L1TkPrimaryVertex",""),
 
  #  L1PFTauToken = cms.InputTag("l1pfTauProducer","L1PFTaus"),   

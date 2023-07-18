@@ -41,9 +41,9 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
 
 
    #zoPuppi = cms.InputTag(""), # does not exist anymore! 
-   #l1vertextdr = cms.InputTag("VertexProducer","l1vertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   #l1vertices = cms.InputTag("VertexProducer","l1vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
-   l1TkPrimaryVertex= cms.InputTag("L1VertexFinderEmulator","l1verticesEmulation"), #we need to rename this, but these are now emulated vertices!
+   #l1vertextdr = cms.InputTag("VertexProducer","ertextdr"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   #L1Vertices = cms.InputTag("l1tVertexProducer","L1Vertices"), #not used anymore - but kept in the loop just to be sure, not filled to ntuples
+   l1TkPrimaryVertex= cms.InputTag("l1tVertexFinderEmulator","L1VerticesEmulation"), #we need to rename this, but these are now emulated vertices!
 
    L1NNTauToken = cms.InputTag("L1NNTauProducerPuppi","L1PFTausNN"), # default collection, emulated 
    L1NNTau2vtxToken = cms.InputTag("L1NNTauProducerPuppi2Vtx","L1PFTausNN"), # 2 vtx version 
@@ -51,10 +51,10 @@ l1PhaseIITree = cms.EDAnalyzer("L1PhaseIITreeStep1Producer",
    tkTrackerJetToken = cms.InputTag("L1TrackJetsEmulation", "L1TrackJets"),  #these are emulated
    tkTrackerJetDisplacedToken = cms.InputTag("L1TrackJetsExtendedEmulation", "L1TrackJetsExtended"), #emulated
 	 
-   tkMetToken = cms.InputTag("L1TrackerEmuEtMiss","L1TrackerEmuEtMiss"), #emulated
+   tkMetToken = cms.InputTag("l1tTrackerEmuEtMiss","L1TrackerEmuEtMiss"), #emulated
 
-   tkMhtToken = cms.InputTag("L1TrackerEmuHTMiss","L1TrackerEmuHTMiss"), #emulated
-   tkMhtDisplacedToken = cms.InputTag("L1TrackerEmuHTMissExtended","L1TrackerEmuHTMissExtended"), #emulated
+   tkMhtToken = cms.InputTag("l1tTrackerEmuHTMiss","L1TrackerEmuHTMiss"), #emulated
+   tkMhtDisplacedToken = cms.InputTag("l1tTrackerEmuHTMissExtended","L1TrackerEmuHTMissExtended"), #emulated
 
    maxL1Extra = cms.uint32(50)
 )
