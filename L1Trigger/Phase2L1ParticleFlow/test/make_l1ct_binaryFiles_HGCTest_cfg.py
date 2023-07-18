@@ -30,7 +30,7 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True), allowUnscheduled = cms.untracked.bool(False) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(120))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(480))
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
@@ -133,4 +133,6 @@ process.l1tPFClustersFromCombinedCaloHF.hcalCandidates = [ cms.InputTag("l1tHGCa
 process.l1tPFClustersFromHGC3DClusters.corrector = ""
 process.l1tPFClustersFromHGC3DClusters.emVsPUID.wp = "-99"
 process.l1tPFClustersFromHGC3DClusters.useEMInterpretation = "allKeepTot"
-#process.l1tLayer1HGCalNoTK.debugHGC = cms.untracked.uint32(999999)
+#process.l1tLayer1HGCal.debugHGC = cms.untracked.uint32(999999)
+#process.l1tLayer1HGCal.pfAlgoParameters.debug  = True
+#process.l1tLayer1HGCal.puAlgoParameters.debug  = True

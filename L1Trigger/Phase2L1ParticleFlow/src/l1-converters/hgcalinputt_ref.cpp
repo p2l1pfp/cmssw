@@ -16,7 +16,8 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const l1ct::PFRegi
   ap_uint<10> w_abseta = in(73, 64);
   ap_int<9> w_eta = l1ct::glbeta_t(w_abseta.to_int() * (sector.floatEtaCenter() > 0 ? +1 : -1)) - sector.hwEtaCenter;
   ap_int<9> w_phi = in(82, 74);
-  if (sector.floatEtaCenter() > 0) w_phi = -w_phi;
+  if (sector.floatEtaCenter() > 0)
+    w_phi = -w_phi;
   ap_uint<4> w_gctqual = in(31, 28);  // GCT quality
   ap_uint<7> w_srrtot = in(191, 185);
   ap_uint<12> w_meanz = in(94, 83);
@@ -28,7 +29,7 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const l1ct::PFRegi
 
   l1ct::HadCaloObjEmu out;
   out.clear();
-  if (w_pt == 0)
+  if (w_pt == 0 || w_phi > sector.hwPhiHalfWidth || w_phi <= -sector.hwPhiHalfWidth)
     return out;
   out.hwPt = w_pt * l1ct::pt_t(l1ct::Scales::INTPT_LSB);
   out.hwEta = w_eta;
@@ -36,9 +37,9 @@ l1ct::HadCaloObjEmu l1ct::HgcalClusterDecoderEmulator::decode(const l1ct::PFRegi
   out.hwEmPt = w_empt * l1ct::pt_t(l1ct::Scales::INTPT_LSB);
 
   out.hwEmID = 0;
-  out.hwEmID[0] = w_gctqual[0] && (out.floatEmPt() > 1.0) && w_emf > int(0.5 * 256);  // PF ID
-  out.hwEmID[2] = w_gctqual[0] && (out.floatEmPt() > 3.0) && w_emf > int(0.7 * 256);  // LOOSE ID
-  out.hwEmID[1] = w_gctqual[1] && (out.floatEmPt() > 5.0) && w_emf > int(0.8 * 256);  // TIGHT ID
+  out.hwEmID[0] = (out.floatEmPt() > 1.0) && w_emf > int(0.5 * 256);  // PF ID
+  out.hwEmID[2] = (out.floatEmPt() > 3.0) && w_emf > int(0.7 * 256);  // LOOSE ID
+  out.hwEmID[1] = (out.floatEmPt() > 5.0) && w_emf > int(0.8 * 256);  // TIGHT ID
   if (!slim_) {
     constexpr float HGCAL_SRRTOT_LSB = 0.024584 / (1 << 7);
     // -- integer version ---

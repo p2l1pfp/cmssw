@@ -132,7 +132,8 @@ private:
     constexpr float ETAPHI_LSB = M_PI / 720;
     ap_uint<10> w_abseta = round(std::abs(c.eta()) / ETAPHI_LSB);
     ap_int<9> w_phi = round(sec.region.localPhi(c.phi()) / ETAPHI_LSB);
-    if (c.eta() > 0) w_phi = -w_phi;
+    if (c.eta() > 0)
+      w_phi = -w_phi;
     ap_uint<10> w_qual = c.hwQual();
     float f_emf = c.pt() ? c.emEt() / c.pt() : 0;
     ap_uint<8> w_emf = std::min<int>(round(256 * std::max(0.f, f_emf)), 255);
@@ -169,15 +170,17 @@ private:
       l1t::HGCalMulticluster::ClusterWords me;
       for (int w = 0; w < 4; ++w)
         me[w] = ap_uint<64>(cwrd(64 * w + 63, 64 * w)).to_uint64();
-      printf("Packing cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f.in sector at eta %+6.3f phi %+6.3f (hwSector %u, hwZSide %d)\n",
-             c.pt(),
-             c.eta(),
-             c.phi(),
-             c.emEt(),
-             sec.region.floatEtaCenter(),
-             sec.region.floatPhiCenter(),
-             hgcCluster->getHwSector(),
-             hgcCluster->getHwZSide());
+      printf(
+          "Packing cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f.in sector at eta %+6.3f phi %+6.3f (hwSector "
+          "%u, hwZSide %d)\n",
+          c.pt(),
+          c.eta(),
+          c.phi(),
+          c.emEt(),
+          sec.region.floatEtaCenter(),
+          sec.region.floatPhiCenter(),
+          hgcCluster->getHwSector(),
+          hgcCluster->getHwZSide());
       printf("     CTL1  %016lx.%016lx.%016lx.%016lx\n", me[0], me[1], me[2], me[3]);
       printf("     HGCSA %016lx.%016lx.%016lx.%016lx\n", hgcsa[0], hgcsa[1], hgcsa[2], hgcsa[3]);
       printf("     match %016lx.%016lx.%016lx.%016lx\n",
@@ -188,12 +191,12 @@ private:
       printf("     pt    %5llu %5d\n", w_pt.bits_to_uint64(), hgcsaHLS.e.to_int());
       printf("     empt  %5d %5d\n", w_empt.to_int(), hgcsaHLS.e_em.to_int());
       printf("     ieta  %5d %5d\n", w_abseta.to_int(), hgcsaHLS.w_eta.to_int());
-      printf("     iphi  %+5d %+5d (fid: b42 %d, b48 %d, byhand %d)\n", 
-          w_phi.to_int(), 
-          hgcsaHLS.w_phi.to_int(),
-          int(hgcsaHLS.qualFlags[0]),
-          int(hgcsaHLS.qualFlags[6]),
-          int(std::abs(hgcsaHLS.w_phi.to_int())<sec.region.hwPhiHalfWidth.to_int()));
+      printf("     iphi  %+5d %+5d (fid: b42 %d, b48 %d, byhand %d)\n",
+             w_phi.to_int(),
+             hgcsaHLS.w_phi.to_int(),
+             int(hgcsaHLS.qualFlags[0]),
+             int(hgcsaHLS.qualFlags[6]),
+             int(std::abs(hgcsaHLS.w_phi.to_int()) < sec.region.hwPhiHalfWidth.to_int()));
       printf("     zeta  %5d %5d (float: %.2f)\n", w_meanz.to_int(), hgcsaHLS.w_z.to_int(), c.absZBarycenter());
       printf("     sRR   %5d %5d (float: %.6f)\n", w_srrtot.to_int(), hgcsaHLS.sigma_roz.to_int(), c.sigmaRR());
       printf("     qual  %5s %5s \n",
@@ -725,20 +728,24 @@ void L1TCorrelatorLayer1Producer::addHadCalo(const l1t::PFCluster &c, l1t::PFClu
     unsigned int hw_sidx = hgcCluster->getHwSector();
     int hw_ieta = hgcCluster->getHwZSide();
     // convert to CMSSW sector numbering (increasing in phi for both endcaps)
-    unsigned int sidx_cmssw = hw_ieta > 0 ? (3+(hw_sidx > 0 ? 3-hw_sidx: hw_sidx)) : hw_sidx;
+    unsigned int sidx_cmssw = hw_ieta > 0 ? (3 + (hw_sidx > 0 ? 3 - hw_sidx : hw_sidx)) : hw_sidx;
     auto &sec = event_.decoded.hadcalo[sidx_cmssw];
     addDecodedHadCalo(sec, c, addRawHgcalCluster(event_.raw.hgcalcluster[sidx_cmssw], c));
-    printf("Cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f.in sector %u at eta %+6.3f phi %+6.3f (hwSector %u, hwZSide %d) %s\n",
-            c.pt(),
-            c.eta(),
-            c.phi(),
-            c.emEt(),
-            sidx_cmssw,
-            sec.region.floatEtaCenter(),
-            sec.region.floatPhiCenter(),
-            hw_sidx,
-            hw_ieta,
-            sec.region.contains(c.eta(), c.phi()) ? "ok" : " OUTSIDE FIDUCIAL");
+    if (debugHGC_ || !sec.region.contains(c.eta(), c.phi())) {
+      printf(
+          "Cluster of pt %8.2f eta %+6.3f phi %+6.3f, emet %8.2f.in sector %u at eta %+6.3f phi %+6.3f (hwSector %u, "
+          "hwZSide %d) %s\n",
+          c.pt(),
+          c.eta(),
+          c.phi(),
+          c.emEt(),
+          sidx_cmssw,
+          sec.region.floatEtaCenter(),
+          sec.region.floatPhiCenter(),
+          hw_sidx,
+          hw_ieta,
+          sec.region.contains(c.eta(), c.phi()) ? "ok" : " OUTSIDE FIDUCIAL");
+    }
   } else {
     for (auto &sec : event_.decoded.hadcalo) {
       if (sec.region.contains(c.eta(), c.phi())) {
