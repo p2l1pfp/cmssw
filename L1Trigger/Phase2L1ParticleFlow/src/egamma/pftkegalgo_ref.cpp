@@ -109,22 +109,19 @@ float PFTkEGAlgoEmulator::deltaPhi(float phi1, float phi2) const {
 }
 
 void PFTkEGAlgoEmulator::link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo,
-                                            std::vector<int> &emCalo2emCalo) const {
+                                            std::vector<std::vector<bool>> &emCalo2emCalo) const {
   // NOTE: we assume the input to be sorted!!!
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
-    if (emCalo2emCalo[ic] != -1)
-      continue;
 
     for (int jc = ic + 1; jc < nc; ++jc) {
-      if (emCalo2emCalo[jc] != -1)
-        continue;
 
       auto &otherCalo = emcalo[jc];
 
       if (fabs(otherCalo.floatEta() - calo.floatEta()) < cfg.dEtaMaxBrem &&
           fabs(deltaPhi(otherCalo.floatPhi(), calo.floatPhi())) < cfg.dPhiMaxBrem) {
-        emCalo2emCalo[jc] = ic;
+        emCalo2emCalo[ic][jc] = 1;
+        emCalo2emCalo[jc][jc] = 1;  // use diagonal bit to mark the cluster as already used
       }
     }
   }
@@ -292,7 +289,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
   std::vector<EmCaloObjEmu> emcalo_sel;
   sel_emCalo(cfg.nEMCALO_EGIN, in.emcalo, emcalo_sel);
 
-  std::vector<int> emCalo2emCalo(emcalo_sel.size(), -1);
+  std::vector<std::vector<bool>> emCalo2emCalo(emcalo_sel.size(), std::vector<bool>(emcalo_sel.size(), false));
   if (cfg.doBremRecovery)
     link_emCalo2emCalo(emcalo_sel, emCalo2emCalo);
 
@@ -323,7 +320,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
 void PFTkEGAlgoEmulator::eg_algo(const PFRegionEmu &region,
                                  const std::vector<EmCaloObjEmu> &emcalo,
                                  const std::vector<TkObjEmu> &track,
-                                 const std::vector<int> &emCalo2emCalo,
+                                 const std::vector<std::vector<bool>> &emCalo2emCalo,
                                  const std::vector<int> &emCalo2tk,
                                  const std::vector<id_score_t> &emCaloTkBdtScore,
                                  std::vector<EGObjEmu> &egstas,
@@ -361,14 +358,14 @@ void PFTkEGAlgoEmulator::eg_algo(const PFRegionEmu &region,
       continue;
 
     // check if the cluster has already been used in a brem reclustering
-    if (emCalo2emCalo[ic] != -1)
+    if (emCalo2emCalo[ic][ic])
       continue;
 
     pt_t ptBremReco = calo.hwPt;
     std::vector<unsigned int> components;
 
     for (int jc = ic; jc < nc; ++jc) {
-      if (emCalo2emCalo[jc] == ic) {
+      if (emCalo2emCalo[ic][jc]) {
         auto &otherCalo = emcalo[jc];
         ptBremReco += otherCalo.hwPt;
         components.push_back(jc);

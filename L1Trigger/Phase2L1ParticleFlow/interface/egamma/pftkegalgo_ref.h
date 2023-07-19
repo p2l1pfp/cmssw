@@ -158,7 +158,8 @@ namespace l1ct {
     typedef ap_fixed<12, 3, AP_RND_CONV, AP_SAT> bdt_score_t;
 
   private:
-    void link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo, std::vector<int> &emCalo2emCalo) const;
+    void link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emcalo,
+                            std::vector<std::vector<bool>> &emCalo2emCalo) const;
 
     void link_emCalo2tk_elliptic(const PFRegionEmu &r,
                                  const std::vector<EmCaloObjEmu> &emcalo,
@@ -192,7 +193,7 @@ namespace l1ct {
     void eg_algo(const PFRegionEmu &region,
                  const std::vector<EmCaloObjEmu> &emcalo,
                  const std::vector<TkObjEmu> &track,
-                 const std::vector<int> &emCalo2emCalo,
+                 const std::vector<std::vector<bool>> &emCalo2emCalo,
                  const std::vector<int> &emCalo2tk,
                  const std::vector<id_score_t> &emCaloTkBdtScore,
                  std::vector<EGObjEmu> &egstas,
