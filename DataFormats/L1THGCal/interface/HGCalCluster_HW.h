@@ -81,7 +81,11 @@ namespace l1thgcfirmware {
       return hw_phi;
     }
 
-    inline eFraction_t makeL1EFraction(float num, float denom) { return round(256 * num / denom); };
+    inline eFraction_t makeL1EFraction(float num, float denom) {
+      float frac = round(256 * num / denom);
+      if ( frac >= 256. ) frac = 255.; 
+      return frac;
+      };
 
 
   }
@@ -118,7 +122,7 @@ namespace l1thgcfirmware {
     sigma_roz_t sigma_roz;
 
     inline bool operator==(const HGCalCluster_HW &other) const {
-      return e == other.e && e_em == other.e_em && w_eta == other.w_eta && w_phi == other.w_phi && w_z == other.w_z  && sigma_roz == other.sigma_roz;
+      return e == other.e && e_em == other.e_em && w_eta == other.w_eta && w_phi == other.w_phi && w_z == other.w_z  && sigma_roz == other.sigma_roz && fractionInCE_E == other.fractionInCE_E;
     }
 
     inline bool operator!=(const HGCalCluster_HW &other) const {
