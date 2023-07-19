@@ -33,7 +33,7 @@ const HGCalCluster& HGCalCluster::operator+=(HGCalCluster& c) {
   this->set_sat_tc(this->sat_tc() | c.sat_tc());
   this->set_shapeq(this->shapeq() | c.shapeq());
 
-  const unsigned clusterWeightSat80 = 52438000; // ((1 << 16) - 1) * 0.8;  // 52428
+  const unsigned clusterWeightSat80 = 52428; // 52438000; // ((1 << 16) - 1) * 0.8;  // 52428
   if (w_ <= clusterWeightSat80 && original.shapeq() == 1 && c.shapeq() == 1) {
     this->set_shapeq(1);
   } else {
@@ -90,8 +90,6 @@ HGCalCluster_HW HGCalCluster::convertToL1TFormat( const ClusterAlgoConfig& confi
 void HGCalCluster::formatFirstWord( const ClusterAlgoConfig& config, HGCalCluster_HW& hwCluster ) {
   hwCluster.e = Scales::HGCaltoL1_et(e());
   hwCluster.e_em = Scales::HGCaltoL1_et(e_em());
-  hwCluster.e = Scales::HGCaltoL1_et(e());
-  hwCluster.e_em = Scales::HGCaltoL1_et(e_em());
   hwCluster.fractionInCE_E = Scales::makeL1EFraction(e_em(), e());
   hwCluster.fractionInCoreCE_E = Scales::makeL1EFraction(e_em_core(), e_em());
   hwCluster.fractionInEarlyCE_E = Scales::makeL1EFraction(e_h_early(), e());
@@ -129,7 +127,10 @@ void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluste
   hwCluster.sigma_eta = convertSigmaRozRozToSigmaEtaEta( config );
 
   unsigned int sigma_roz = round(sqrt( (float(w())*float(wroz2()) - float(wroz()) * float(wroz()))  / ( float(w()) * float(w()) ) ) * 0.5073223114013672);
-  
+
+  // Emulation of a bug in firmware
+  // if ( sigma_roz >=256 ) sigma_roz -= 256;
+  while (sigma_roz >= 256) sigma_roz -= 256;
   if ( sigma_roz > 127 ) sigma_roz = 127;
   hwCluster.sigma_roz = sigma_roz;
 }
