@@ -132,7 +132,6 @@ void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluste
   // if ( sigma_roz >=256 ) sigma_roz -= 256;
   while (sigma_roz >= 256) sigma_roz -= 256;
   if ( sigma_roz > 127 ) sigma_roz = 127;
-  std::cout << sigma_roz << std::endl;
   hwCluster.sigma_roz = sigma_roz;
 }
 
