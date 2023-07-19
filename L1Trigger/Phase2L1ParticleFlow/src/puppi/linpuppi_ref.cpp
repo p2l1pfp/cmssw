@@ -638,5 +638,14 @@ void l1ct::LinPuppiEmulator::run(const PFInputRegion &in,
   } else {  // forward
     std::vector<PuppiObjEmu> outallne_nocut, outallne;
     fwdlinpuppi_ref(in.region, in.hadcalo, outallne_nocut, outallne, out.puppi);
+    unsigned int nne = outallne.size();
+    outallne.resize(nOut_);
+    for (unsigned int j = nne+1; j < nOut_; ++j)
+      outallne[j].clear();
+    puppisort_and_crop_ref(nFinalSort_, outallne, out.puppi, finalSortAlgo_);
+    // trim if needed
+    while (!out.puppi.empty() && out.puppi.back().hwPt == 0)
+      out.puppi.pop_back();
+    out.puppi.shrink_to_fit();
   }
 }
