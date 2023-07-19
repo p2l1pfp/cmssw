@@ -127,10 +127,12 @@ void HGCalCluster::formatThirdWord( const ClusterAlgoConfig& config, HGCalCluste
   hwCluster.sigma_eta = convertSigmaRozRozToSigmaEtaEta( config );
 
   unsigned int sigma_roz = round(sqrt( (float(w())*float(wroz2()) - float(wroz()) * float(wroz()))  / ( float(w()) * float(w()) ) ) * 0.5073223114013672);
-  
 
-  if ( sigma_roz >=256 ) sigma_roz -= 256;
+  // Emulation of a bug in firmware
+  // if ( sigma_roz >=256 ) sigma_roz -= 256;
+  while (sigma_roz >= 256) sigma_roz -= 256;
   if ( sigma_roz > 127 ) sigma_roz = 127;
+  std::cout << sigma_roz << std::endl;
   hwCluster.sigma_roz = sigma_roz;
 }
 
