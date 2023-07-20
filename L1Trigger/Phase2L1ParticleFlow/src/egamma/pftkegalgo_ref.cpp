@@ -115,13 +115,12 @@ void PFTkEGAlgoEmulator::link_emCalo2emCalo(const std::vector<EmCaloObjEmu> &emc
     auto &calo = emcalo[ic];
 
     for (int jc = ic + 1; jc < nc; ++jc) {
-
       auto &otherCalo = emcalo[jc];
 
       if (fabs(otherCalo.floatEta() - calo.floatEta()) < cfg.dEtaMaxBrem &&
           fabs(deltaPhi(otherCalo.floatPhi(), calo.floatPhi())) < cfg.dPhiMaxBrem) {
-        emCalo2emCalo[ic][jc] = 1;
-        emCalo2emCalo[jc][jc] = 1;  // use diagonal bit to mark the cluster as already used
+        emCalo2emCalo[ic][jc] = true;
+        emCalo2emCalo[jc][jc] = true;  // use diagonal bit to mark the cluster as already used
       }
     }
   }
