@@ -640,7 +640,7 @@ void l1ct::LinPuppiEmulator::run(const PFInputRegion &in,
     fwdlinpuppi_ref(in.region, in.hadcalo, outallne_nocut, outallne, out.puppi);
     unsigned int nne = outallne.size();
     outallne.resize(nOut_);
-    for (unsigned int j = nne+1; j < nOut_; ++j)
+    for (unsigned int j = nne + 1; j < nOut_; ++j)
       outallne[j].clear();
     puppisort_and_crop_ref(nFinalSort_, outallne, out.puppi, finalSortAlgo_);
     // trim if needed
