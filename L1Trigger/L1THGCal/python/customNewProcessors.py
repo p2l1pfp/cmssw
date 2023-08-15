@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 from L1Trigger.L1THGCal.l1tHGCalBackEndLayer1Producer_cfi import layer1truncation_proc
 from L1Trigger.L1THGCal.l1tHGCalBackEndLayer1Producer_cfi import stage1truncation_proc
 from L1Trigger.L1THGCal.l1tHGCalBackEndLayer1Producer_cfi import truncation_params
+from L1Trigger.L1THGCal.hgcalBackendLayer2_fwClustering_cfi import layer2ClusteringFw_Params
 
 def custom_layer1_truncation(process):
     parameters = layer1truncation_proc.clone()
@@ -20,6 +21,7 @@ def custom_stage1_truncation(process):
 def custom_clustering_standalone(process):
     process.l1tHGCalBackEndLayer2Producer.ProcessorParameters.ProcessorName = cms.string('HGCalBackendLayer2Processor3DClusteringSA')
     process.l1tHGCalBackEndLayer2Producer.ProcessorParameters.DistributionParameters = truncation_params
+    process.l1tHGCalBackEndLayer2Producer.ProcessorParameters.C3d_parameters.histoMax_C3d_clustering_parameters.layer2FwClusteringParameters = layer2ClusteringFw_Params
     return process
 
 def custom_tower_standalone(process):

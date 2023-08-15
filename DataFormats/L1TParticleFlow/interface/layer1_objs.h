@@ -43,9 +43,15 @@ namespace l1ct {
     float floatEmPt() const { return Scales::floatPt(hwEmPt); }
     float floatEta() const { return Scales::floatEta(hwEta); }
     float floatPhi() const { return Scales::floatPhi(hwPhi); }
-    float floatSrrTot() const { return Scales::floatSrrTot(hwSrrTot); };
-    float floatMeanZ() const { return Scales::floatMeanZ(hwMeanZ); };
-    float floatHoe() const { return Scales::floatHoe(hwHoe); };
+    float floatSrrTot() const { return Scales::floatSrrTot(hwSrrTot); }
+    float floatMeanZ() const { return Scales::floatMeanZ(hwMeanZ); }
+    float floatHoe() const { return Scales::floatHoe(hwHoe); }
+    int intSrrTot() const {
+      // bits_to_unt64() is not defined under __SYNTHESIS__
+      return ap_uint<srrtot_t::width>(hwSrrTot.range()).to_int();
+    }
+    int intMeanZ() const { return hwMeanZ.to_int(); }
+    int intHoe() const { return ap_uint<hoe_t::width>(hwHoe.range()).to_int(); }
 
     bool hwIsEM() const { return hwEmID != 0; }
 
@@ -125,6 +131,12 @@ namespace l1ct {
     float floatSrrTot() const { return Scales::floatSrrTot(hwSrrTot); };
     float floatMeanZ() const { return Scales::floatMeanZ(hwMeanZ); };
     float floatHoe() const { return Scales::floatHoe(hwHoe); };
+    int intSrrTot() const {
+      // bits_to_unt64() is not defined under __SYNTHESIS__
+      return ap_uint<srrtot_t::width>(hwSrrTot.range()).to_int();
+    }
+    int intMeanZ() const { return hwMeanZ.to_int(); }
+    int intHoe() const { return ap_uint<hoe_t::width>(hwHoe.range()).to_int(); }
 
     static const int BITWIDTH_SLIM = pt_t::width + eta_t::width + phi_t::width + pt_t::width + emid_t::width;
 
