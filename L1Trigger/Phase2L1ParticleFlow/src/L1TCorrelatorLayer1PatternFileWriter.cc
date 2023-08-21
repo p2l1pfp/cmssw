@@ -5,10 +5,16 @@
 L1TCorrelatorLayer1PatternFileWriter::L1TCorrelatorLayer1PatternFileWriter(const edm::ParameterSet& iConfig,
                                                                            const l1ct::Event& eventTemplate)
     : partition_(parsePartition(iConfig.getParameter<std::string>("partition"))),
+      tmuxFactor_(iConfig.getParameter<uint32_t>("tmuxFactor")),
       writeInputs_(iConfig.existsAs<std::string>("inputFileName") &&
                    !iConfig.getParameter<std::string>("inputFileName").empty()),
       writeOutputs_(iConfig.existsAs<std::string>("outputFileName") &&
                     !iConfig.getParameter<std::string>("outputFileName").empty()),
+      tfTimeslices_(std::max(1u, tfTmuxFactor_ / tmuxFactor_)),
+      hgcTimeslices_(std::max(1u, hgcTmuxFactor_ / tmuxFactor_)),
+      gctTimeslices_(std::max(1u, gctTmuxFactor_ / tmuxFactor_)),
+      gmtTimeslices_(std::max(1u, gmtTmuxFactor_ / tmuxFactor_)),
+      gttTimeslices_(std::max(1u, gttTmuxFactor_ / tmuxFactor_)),
       outputBoard_(-1),
       outputLinkEgamma_(-1),
       fileFormat_(iConfig.getParameter<std::string>("fileFormat")),
@@ -19,7 +25,7 @@ L1TCorrelatorLayer1PatternFileWriter::L1TCorrelatorLayer1PatternFileWriter(const
 
     if (partition_ == Partition::Barrel || partition_ == Partition::HGCal) {
       configTimeSlices(iConfig, "tf", eventTemplate.raw.track.size(), tfTimeslices_, tfLinksFactor_);
-      channelSpecsInput_["tf"] = {tmuxFactor_ * tfTimeslices_, tfTimeslices_};
+      channelSpecsInput_["tf"] = {tfTmuxFactor_, tfTimeslices_};
     }
     if (partition_ == Partition::Barrel) {
       auto sectorConfig = iConfig.getParameter<std::vector<edm::ParameterSet>>("gctSectors");
@@ -56,7 +62,7 @@ L1TCorrelatorLayer1PatternFileWriter::L1TCorrelatorLayer1PatternFileWriter(const
       configTimeSlices(iConfig, "gtt", 1, gttTimeslices_, gttLinksFactor_);
       gttLatency_ = iConfig.getParameter<uint32_t>("gttLatency");
       gttNumberOfPVs_ = iConfig.getParameter<uint32_t>("gttNumberOfPVs");
-      channelSpecsInput_["gtt"] = l1t::demo::ChannelSpec{tmuxFactor_, gttTimeslices_, gttLatency_};
+      channelSpecsInput_["gtt"] = l1t::demo::ChannelSpec{tmuxFactor_ * gttTimeslices_, 1, gttLatency_};
     }
     inputFileWriter_ =
         std::make_unique<l1t::demo::BoardDataWriter>(l1t::demo::parseFileFormat(fileFormat_),
@@ -247,12 +253,12 @@ void L1TCorrelatorLayer1PatternFileWriter::writeHGC(const l1ct::Event& event, l1
       // put header word and (dummy) towers
       ret[il].resize(31);
       ap_uint<64>& head64 = ret[il][0];
-      head64(63, 48) = 0xABC0;                 // Magic
-      head64(47, 38) = 0;                      // Opaque
-      head64(39, 32) = (eventIndex_ % 3) * 6;  // TM slice
-      head64(31, 24) = iS;                     // Sector
-      head64(23, 16) = il;                     // link
-      head64(15, 0) = eventIndex_ % 3564;      // BX
+      head64(63, 48) = 0xABC0;                                        // Magic
+      head64(47, 38) = 0;                                             // Opaque
+      head64(39, 32) = (eventIndex_ % hgcTimeslices_) * tmuxFactor_;  // TM slice
+      head64(31, 24) = iS;                                            // Sector
+      head64(23, 16) = il;                                            // link
+      head64(15, 0) = eventIndex_ % 3564;                             // BX
       for (unsigned int j = 0; j < 30; ++j) {
         ret[il][j + 1] = 4 * j + il;
       }
