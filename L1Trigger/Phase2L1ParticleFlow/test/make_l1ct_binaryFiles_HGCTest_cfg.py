@@ -70,6 +70,16 @@ process.l1tLayer2SeedConeJetsCorrected = l1tSeedConePFJetEmulatorProducer.clone(
                                                                                 correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root"),
                                                                                 correctorDir = cms.string('L1PuppiSC4EmuJets'))
 
+process.l1tLayer1HGCalTM18 = process.l1tLayer1HGCal.clone()
+process.l1tLayer1HGCalTM18.regionizerAlgo = "BufferedFoldedMultififo"
+process.l1tLayer1HGCalTM18.regionizerAlgoParameters.nClocks = 162
+process.l1tLayer1HGCalTM18.regionizerAlgoParameters.nTkLinks = 1
+process.l1tLayer1HGCalTM18.regionizerAlgoParameters.nCaloLinks = 1
+process.l1tLayer1HGCalNoTKTM18 = process.l1tLayer1HGCalNoTK.clone()
+process.l1tLayer1HGCalNoTKTM18.regionizerAlgo = "BufferedFoldedMultififo"
+process.l1tLayer1HGCalNoTKTM18.regionizerAlgoParameters.nClocks = 162
+process.l1tLayer1HGCalNoTKTM18.regionizerAlgoParameters.nCaloLinks = 1
+
 process.runPF = cms.Path( 
         process.l1tSAMuonsGmt +
         process.l1tGTTInputProducer +
@@ -77,7 +87,9 @@ process.runPF = cms.Path(
         process.l1tLayer1Barrel +
         process.l1tLayer1HGCal +
         process.l1tLayer1HGCalElliptic +
+        process.l1tLayer1HGCalTM18 +
         process.l1tLayer1HGCalNoTK +
+        process.l1tLayer1HGCalNoTKTM18 +
         process.l1tLayer1HF +
         process.l1tLayer1 +
         process.l1tLayer2Deregionizer +
@@ -107,10 +119,12 @@ from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import *
 from L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_patternWriters_cff import _eventsPerFile
 process.l1tLayer1Barrel.patternWriters = cms.untracked.VPSet(*barrelWriterConfigs)
 process.l1tLayer1HGCal.patternWriters = cms.untracked.VPSet(*hgcalWriterConfigs)
+process.l1tLayer1HGCalTM18.patternWriters = cms.untracked.VPSet(*hgcalTM18WriterConfigs)
 process.l1tLayer1HGCalNoTK.patternWriters = cms.untracked.VPSet(*hgcalNoTKWriterConfigs)
+process.l1tLayer1HGCalNoTKTM18.patternWriters = cms.untracked.VPSet(hgcalNoTKOutputTM18WriterConfig)
 process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
 
-for det in "HGCal", "HGCalNoTK":
+for det in "HGCal", "HGCalTM18", "HGCalNoTK", "HGCalNoTKTM18":
     l1pf = getattr(process, 'l1tLayer1'+det)
     l1pf.dumpFileName = cms.untracked.string("TTbar_PU200_"+det+".dump")
 
