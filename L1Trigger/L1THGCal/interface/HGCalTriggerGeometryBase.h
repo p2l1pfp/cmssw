@@ -82,6 +82,7 @@ public:
   virtual bool disconnectedModule(const unsigned module_id) const = 0;
   virtual unsigned lastTriggerLayer() const = 0;
   virtual unsigned triggerLayer(const unsigned id) const = 0;
+  virtual const std::vector<unsigned>& triggerLayers() const = 0;
 
 protected:
   void setEEGeometry(const HGCalGeometry* geom) { hgc_ee_geometry_ = geom; }

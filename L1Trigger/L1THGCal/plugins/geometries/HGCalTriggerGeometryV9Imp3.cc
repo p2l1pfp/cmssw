@@ -62,6 +62,7 @@ public:
   bool disconnectedModule(const unsigned) const final;
   unsigned lastTriggerLayer() const final { return last_trigger_layer_; }
   unsigned triggerLayer(const unsigned) const final;
+  const std::vector<unsigned>& triggerLayers() const final { return trigger_layers_; }
 
 private:
   // HSc trigger cell grouping

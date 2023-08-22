@@ -16,7 +16,7 @@ namespace l1ct {
     HgcalClusterDecoderEmulator(const edm::ParameterSet &pset);
 
     ~HgcalClusterDecoderEmulator();
-    l1ct::HadCaloObjEmu decode(const ap_uint<256> &in) const;
+    l1ct::HadCaloObjEmu decode(const l1ct::PFRegionEmu &sector, const ap_uint<256> &in) const;
   };
 }  // namespace l1ct
 

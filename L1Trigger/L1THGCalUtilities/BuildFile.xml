@@ -4,6 +4,7 @@
 <use name="FWCore/ParameterSet"/>
 <use name="FWCore/PluginManager"/>
 <use name="SimDataFormats/CaloAnalysis"/>
+<use name="hls"/>
 <export>
   <lib name="1"/>
 </export>
