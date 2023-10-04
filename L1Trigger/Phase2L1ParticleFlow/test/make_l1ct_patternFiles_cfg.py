@@ -7,7 +7,7 @@ process.load('Configuration.StandardSequences.Services_cff')
 process.load("SimGeneral.HepPDTESSource.pythiapdt_cfi")
 process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.options   = cms.untracked.PSet( wantSummary = cms.untracked.bool(True), allowUnscheduled = cms.untracked.bool(False) )
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000))
 process.MessageLogger.cerr.FwkReport.reportEvery = 1
 
 process.source = cms.Source("PoolSource",
@@ -31,20 +31,23 @@ process.GlobalTag = GlobalTag(process.GlobalTag, '123X_mcRun4_realistic_v3', '')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer2EG_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1pfJetMet_cff')
-process.load('L1Trigger.L1TTrackMatch.L1GTTInputProducer_cfi')
-process.load('L1Trigger.VertexFinder.VertexProducer_cff')
-process.L1VertexFinderEmulator = process.VertexProducer.clone()
-process.L1VertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
-process.L1VertexFinderEmulator.l1TracksInputTag = cms.InputTag("L1GTTInputProducer", "Level1TTTracksConverted")
-from L1Trigger.Phase2L1GMT.gmt_cfi import standaloneMuons
-process.L1SAMuonsGmt = standaloneMuons.clone()
+process.load('L1Trigger.L1TTrackMatch.l1tGTTInputProducer_cfi')
+process.load('L1Trigger.VertexFinder.l1tVertexProducer_cfi')
+process.l1tVertexFinderEmulator = process.l1tVertexProducer.clone()
+process.l1tVertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
+process.l1tVertexFinderEmulator.l1TracksInputTag = cms.InputTag("l1tGTTInputProducer", "Level1TTTracksConverted")
+from L1Trigger.Phase2L1GMT.gmt_cfi import l1tStandaloneMuons
+process.l1tSAMuonsGmt = l1tStandaloneMuons.clone()
 
-from L1Trigger.Phase2L1ParticleFlow.l1ctJetFileWriter_cfi import l1ctSeededConeJetFileWriter
-l1ctLayer2SCJetsProducts = cms.untracked.VPSet([cms.PSet(jets = cms.InputTag("sc4PFL1PuppiCorrectedEmulator"),
-                                                         mht  = cms.InputTag("sc4PFL1PuppiCorrectedEmulatorMHT")),
-                                                cms.PSet(jets = cms.InputTag("sc8PFL1PuppiCorrectedEmulator"),
-                                                         mht  = cms.InputTag("sc8PFL1PuppiCorrectedEmulatorMHT"))])
-process.l1ctLayer2SeedConeJetWriter = l1ctSeededConeJetFileWriter.clone(collections = l1ctLayer2SCJetsProducts)
+from L1Trigger.Phase2L1ParticleFlow.l1tJetFileWriter_cfi import l1tSeededConeJetFileWriter
+l1ctLayer2SCJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4PFL1PuppiCorrectedEmulator"),
+                                               nJets = cms.uint32(12),
+                                               mht  = cms.InputTag("l1tSC4PFL1PuppiCorrectedEmulatorMHT"),
+                                               nSums = cms.uint32(2)),
+                                      cms.PSet(jets = cms.InputTag("l1tSC8PFL1PuppiCorrectedEmulator"),
+                                               nJets = cms.uint32(12))
+                                      ])
+process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(collections = l1ctLayer2SCJetsProducts)
 
 process.l1tLayer1Barrel9 = process.l1tLayer1Barrel.clone()
 process.l1tLayer1Barrel9.puAlgo.nFinalSort = 32
@@ -66,22 +69,21 @@ process.l1tLayer1HGCalNoTK.patternWriters = cms.untracked.VPSet(*hgcalNoTKWriter
 process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
 
 process.runPF = cms.Path( 
-        process.L1SAMuonsGmt +
-        process.L1GTTInputProducer +
-        process.L1VertexFinderEmulator +
-        process.l1ctLayer1Barrel +
-        #process.l1ctLayer1Barrel9 +
-        process.l1ctLayer1HGCal +
-        process.l1ctLayer1HGCalNoTK +
-        process.l1ctLayer1HF +
-        process.l1ctLayer1 +
-        process.l1ctLayer2Deregionizer +
-        process.sc4PFL1PuppiCorrectedEmulator +
-        process.sc4PFL1PuppiCorrectedEmulatorMHT +
-        process.sc8PFL1PuppiCorrectedEmulator +
-        process.sc8PFL1PuppiCorrectedEmulatorMHT +
-        process.l1ctLayer2SeedConeJetWriter +
-        process.l1ctLayer2EG
+        process.l1tSAMuonsGmt +
+        process.l1tGTTInputProducer +
+        process.l1tVertexFinderEmulator +
+        process.l1tLayer1Barrel +
+        #process.l1tLayer1Barrel9 +
+        process.l1tLayer1HGCal +
+        process.l1tLayer1HGCalNoTK +
+        process.l1tLayer1HF +
+        process.l1tLayer1 +
+        process.l1tLayer2Deregionizer +
+        process.l1tSC4PFL1PuppiCorrectedEmulator +
+        process.l1tSC4PFL1PuppiCorrectedEmulatorMHT +
+        process.l1tSC8PFL1PuppiCorrectedEmulator +
+        process.l1tLayer2SeedConeJetWriter +
+        process.l1tLayer2EG
     )
 process.runPF.associate(process.L1TLayer1TaskInputsTask)
 
@@ -105,4 +107,3 @@ process.l1tPFClustersFromHGC3DClusters.src  = cms.InputTag("hgcalBackEndLayer2Pr
 process.l1tPFClustersFromCombinedCaloHF.hcalCandidates = [ cms.InputTag("hgcalBackEndLayer2Producer","HGCalBackendLayer2Processor3DClustering")]
 process.l1tPFTracksFromL1Tracks.L1TrackTag = cms.InputTag("TTTracksFromTrackletEmulation","Level1TTTracks")
 process.l1tGTTInputProducer.l1TracksInputTag = cms.InputTag("TTTracksFromTrackletEmulation","Level1TTTracks")
-
