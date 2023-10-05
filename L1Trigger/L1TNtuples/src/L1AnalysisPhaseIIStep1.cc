@@ -170,21 +170,20 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkEG(const edm::Handle<l1t::TkElectr
       l1extra_.tkElectronEt.push_back(it->et());
       l1extra_.tkElectronEta.push_back(it->eta());
       l1extra_.tkElectronPhi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronChg.push_back(chargeFromCurvature);
+      l1extra_.tkElectronChg.push_back(it->charge());
       l1extra_.tkElectronzVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronTrkIso.push_back(it->trkIsol());
       l1extra_.tkElectronPfIso.push_back(it->pfIsol());
       l1extra_.tkElectronPuppiIso.push_back(it->puppiIsol());
-      l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());  //Rename  this?
-      l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
+      l1extra_.tkElectronHwQual.push_back(it->egCaloPtr()->hwQual());
+      l1extra_.tkElectronEGRefPt.push_back(it->egCaloPtr()->et());  //Rename  this?
+      l1extra_.tkElectronEGRefEta.push_back(it->egCaloPtr()->eta());
+      l1extra_.tkElectronEGRefPhi.push_back(it->egCaloPtr()->phi());
       l1extra_.tkElectronBx.push_back(0);  //it->bx());
       l1extra_.tkElectronHGC.push_back(0);
-      bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;  // LooseTrackID should be the second bit
+      bool quality = ((it->egCaloPtr()->hwQual() >> 1) & 1) > 0;  // LooseTrackID should be the second bit
       l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
-      quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // LooseTrackID should be the second bit
+      quality = ((it->egCaloPtr()->hwQual() >> 2) & 1) > 0;  // LooseTrackID should be the second bit
       l1extra_.tkElectronPassesPhotonID.push_back(quality);
       l1extra_.nTkElectrons++;
     }
@@ -198,19 +197,18 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkEG(const edm::Handle<l1t::TkElectr
       l1extra_.tkElectronEt.push_back(it->et());
       l1extra_.tkElectronEta.push_back(it->eta());
       l1extra_.tkElectronPhi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronChg.push_back(chargeFromCurvature);
+      l1extra_.tkElectronChg.push_back(it->charge());
       l1extra_.tkElectronzVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronTrkIso.push_back(it->trkIsol());
       l1extra_.tkElectronPfIso.push_back(it->pfIsol());
       l1extra_.tkElectronPuppiIso.push_back(it->puppiIsol());
-      l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());  //Rename this?
-      l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
+      l1extra_.tkElectronHwQual.push_back(it->egCaloPtr()->hwQual());
+      l1extra_.tkElectronEGRefPt.push_back(it->egCaloPtr()->et());  //Rename this?
+      l1extra_.tkElectronEGRefEta.push_back(it->egCaloPtr()->eta());
+      l1extra_.tkElectronEGRefPhi.push_back(it->egCaloPtr()->phi());
       l1extra_.tkElectronBx.push_back(0);  //it->bx());
       l1extra_.tkElectronHGC.push_back(1);
-      bool quality = (it->EGRef()->hwQual() == 3);
+      bool quality = (it->egCaloPtr()->hwQual() == 3);
       l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
       l1extra_.tkElectronPassesPhotonID.push_back(quality);
       l1extra_.nTkElectrons++;
@@ -236,14 +234,14 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkEM(const edm::Handle<l1t::TkEmColl
       l1extra_.tkPhotonPuppiIso.push_back(it->puppiIsol());
       l1extra_.tkPhotonPuppiIsoPV.push_back(it->puppiIsolPV());
       l1extra_.tkPhotonBx.push_back(0);  //it->bx());
-      l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());  //REname this?
-      l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
+      l1extra_.tkPhotonHwQual.push_back(it->egCaloPtr()->hwQual());
+      l1extra_.tkPhotonEGRefPt.push_back(it->egCaloPtr()->et());  //REname this?
+      l1extra_.tkPhotonEGRefEta.push_back(it->egCaloPtr()->eta());
+      l1extra_.tkPhotonEGRefPhi.push_back(it->egCaloPtr()->phi());
       l1extra_.tkPhotonHGC.push_back(0);
-      bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;
+      bool quality = ((it->egCaloPtr()->hwQual() >> 1) & 1) > 0;
       l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
-      quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // Photon Id should be the third bit
+      quality = ((it->egCaloPtr()->hwQual() >> 2) & 1) > 0;  // Photon Id should be the third bit
       l1extra_.tkPhotonPassesPhotonID.push_back(quality);
       l1extra_.nTkPhotons++;
     }
@@ -263,12 +261,12 @@ void L1Analysis::L1AnalysisPhaseIIStep1::SetTkEM(const edm::Handle<l1t::TkEmColl
       l1extra_.tkPhotonPuppiIso.push_back(it->puppiIsol());
       l1extra_.tkPhotonPuppiIsoPV.push_back(it->puppiIsolPV());
       l1extra_.tkPhotonBx.push_back(0);  //it->bx());
-      l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());  //rename this?
-      l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
+      l1extra_.tkPhotonHwQual.push_back(it->egCaloPtr()->hwQual());
+      l1extra_.tkPhotonEGRefPt.push_back(it->egCaloPtr()->et());  //rename this?
+      l1extra_.tkPhotonEGRefEta.push_back(it->egCaloPtr()->eta());
+      l1extra_.tkPhotonEGRefPhi.push_back(it->egCaloPtr()->phi());
       l1extra_.tkPhotonHGC.push_back(1);
-      bool quality = (it->EGRef()->hwQual() == 3);
+      bool quality = (it->egCaloPtr()->hwQual() == 3);
       l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
       l1extra_.tkPhotonPassesPhotonID.push_back(quality);
       l1extra_.nTkPhotons++;
