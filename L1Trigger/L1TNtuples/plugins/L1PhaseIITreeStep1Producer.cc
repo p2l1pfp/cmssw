@@ -221,7 +221,7 @@ L1PhaseIITreeStep1Producer::L1PhaseIITreeStep1Producer(const edm::ParameterSet& 
   // -> Gone after cleaning the simulated info
 
   //l1vertextdrToken_ = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertextdr"));
-  //l1verticesToken_  = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("l1vertices"));
+  //l1verticesToken_  = consumes< l1t::VertexCollection> (iConfig.getParameter<edm::InputTag>("L1Vertices"));
   l1TkPrimaryVertexToken_ =
       consumes<l1t::VertexWordCollection>(iConfig.getParameter<edm::InputTag>("l1TkPrimaryVertex"));
 

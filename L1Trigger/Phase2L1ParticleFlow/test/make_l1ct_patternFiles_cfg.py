@@ -32,10 +32,8 @@ process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer1_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1ctLayer2EG_cff')
 process.load('L1Trigger.Phase2L1ParticleFlow.l1pfJetMet_cff')
 process.load('L1Trigger.L1TTrackMatch.l1tGTTInputProducer_cfi')
+process.load('L1Trigger.L1TTrackMatch.l1tTrackSelectionProducer_cfi')
 process.load('L1Trigger.VertexFinder.l1tVertexProducer_cfi')
-process.l1tVertexFinderEmulator = process.l1tVertexProducer.clone()
-process.l1tVertexFinderEmulator.VertexReconstruction.Algorithm = "fastHistoEmulation"
-process.l1tVertexFinderEmulator.l1TracksInputTag = cms.InputTag("l1tGTTInputProducer", "Level1TTTracksConverted")
 from L1Trigger.Phase2L1GMT.gmt_cfi import l1tStandaloneMuons
 process.l1tSAMuonsGmt = l1tStandaloneMuons.clone()
 
@@ -71,6 +69,7 @@ process.l1tLayer1HF.patternWriters = cms.untracked.VPSet(*hfWriterConfigs)
 process.runPF = cms.Path( 
         process.l1tSAMuonsGmt +
         process.l1tGTTInputProducer +
+        process.l1tTrackSelectionProducer +
         process.l1tVertexFinderEmulator +
         process.l1tLayer1Barrel +
         #process.l1tLayer1Barrel9 +
