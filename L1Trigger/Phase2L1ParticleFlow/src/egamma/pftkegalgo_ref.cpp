@@ -51,6 +51,7 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMin"),
                     pset.getParameter<double>("dRMax")) {}
 
+
 l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
     : CompIDParameters(pset.getParameter<double>("loose_wp"),
                        pset.getParameter<double>("tight_wp"),
