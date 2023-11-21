@@ -8,7 +8,8 @@
 
 namespace edm {
   class ParameterSet;
-}
+  class ParameterSetDescription;
+}  // namespace edm
 
 namespace l1ct {
   class EGInputSelectorEmulator;
@@ -33,6 +34,7 @@ namespace l1ct {
 
     enum class BarrelSetup { Full54, Full27, Central18, Central9, Phi18, Phi9 };
     MultififoRegionizerEmulator(BarrelSetup barrelSetup,
+                                unsigned int ntklinks,
                                 unsigned int nHCalLinks,
                                 unsigned int nECalLinks,
                                 unsigned int nclocks,
@@ -49,6 +51,9 @@ namespace l1ct {
     MultififoRegionizerEmulator(const std::string& barrelSetup, const edm::ParameterSet& iConfig);
 
     ~MultififoRegionizerEmulator() override;
+
+    static edm::ParameterSetDescription getParameterSetDescription();
+    static edm::ParameterSetDescription getParameterSetDescriptionBarrel();
 
     static BarrelSetup parseBarrelSetup(const std::string& setup);
 
