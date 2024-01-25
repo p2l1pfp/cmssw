@@ -202,20 +202,20 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEG(const edm::Handle<l1t::TkElectronCol
       l1extra_.tkElectronEt.push_back(it->et());
       l1extra_.tkElectronEta.push_back(it->eta());
       l1extra_.tkElectronPhi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronChg.push_back(chargeFromCurvature);
+      // int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
+      // l1extra_.tkElectronChg.push_back(chargeFromCurvature);
       l1extra_.tkElectronzVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronTrkIso.push_back(it->trkIsol());
-      l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkElectronBx.push_back(0);  //it->bx());
       l1extra_.tkElectronHGC.push_back(0);
-      bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;  // LooseTrackID should be the second bit
-      l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
-      quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // LooseTrackID should be the second bit
-      l1extra_.tkElectronPassesPhotonID.push_back(quality);
+      // bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;  // LooseTrackID should be the second bit
+      // l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
+      // quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // LooseTrackID should be the second bit
+      // l1extra_.tkElectronPassesPhotonID.push_back(quality);
       l1extra_.nTkElectrons++;
     }
   }
@@ -227,19 +227,19 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEG(const edm::Handle<l1t::TkElectronCol
       l1extra_.tkElectronEt.push_back(it->et());
       l1extra_.tkElectronEta.push_back(it->eta());
       l1extra_.tkElectronPhi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronChg.push_back(chargeFromCurvature);
+      // int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
+      // l1extra_.tkElectronChg.push_back(chargeFromCurvature);
       l1extra_.tkElectronzVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronTrkIso.push_back(it->trkIsol());
-      l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkElectronHwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkElectronEGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkElectronEGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkElectronEGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkElectronBx.push_back(0);  //it->bx());
       l1extra_.tkElectronHGC.push_back(1);
-      bool quality = (it->EGRef()->hwQual() == 5);
-      l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
-      l1extra_.tkElectronPassesPhotonID.push_back(quality);
+      // bool quality = (it->EGRef()->hwQual() == 5);
+      // l1extra_.tkElectronPassesLooseTrackID.push_back(quality);
+      // l1extra_.tkElectronPassesPhotonID.push_back(quality);
       l1extra_.nTkElectrons++;
     }
   }
@@ -255,20 +255,20 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEGV2(const edm::Handle<l1t::TkElectronC
       l1extra_.tkElectronV2Et.push_back(it->et());
       l1extra_.tkElectronV2Eta.push_back(it->eta());
       l1extra_.tkElectronV2Phi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronV2Chg.push_back(chargeFromCurvature);
+      // int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
+      // l1extra_.tkElectronV2Chg.push_back(chargeFromCurvature);
       l1extra_.tkElectronV2zVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronV2TrkIso.push_back(it->trkIsol());
-      l1extra_.tkElectronV2HwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronV2EGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkElectronV2EGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronV2EGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkElectronV2HwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkElectronV2EGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkElectronV2EGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkElectronV2EGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkElectronV2Bx.push_back(0);  //it->bx());
       l1extra_.tkElectronV2HGC.push_back(0);
-      bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;
-      l1extra_.tkElectronV2PassesLooseTrackID.push_back(quality);
-      quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;
-      l1extra_.tkElectronV2PassesPhotonID.push_back(quality);
+      // bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;
+      // l1extra_.tkElectronV2PassesLooseTrackID.push_back(quality);
+      // quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;
+      // l1extra_.tkElectronV2PassesPhotonID.push_back(quality);
       l1extra_.nTkElectronsV2++;
     }
   }
@@ -280,19 +280,19 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEGV2(const edm::Handle<l1t::TkElectronC
       l1extra_.tkElectronV2Et.push_back(it->et());
       l1extra_.tkElectronV2Eta.push_back(it->eta());
       l1extra_.tkElectronV2Phi.push_back(it->phi());
-      int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-      l1extra_.tkElectronV2Chg.push_back(chargeFromCurvature);
+      // int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
+      // l1extra_.tkElectronV2Chg.push_back(chargeFromCurvature);
       l1extra_.tkElectronV2zVtx.push_back(it->trkzVtx());
       l1extra_.tkElectronV2TrkIso.push_back(it->trkIsol());
-      l1extra_.tkElectronV2HwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkElectronV2EGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkElectronV2EGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkElectronV2EGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkElectronV2HwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkElectronV2EGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkElectronV2EGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkElectronV2EGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkElectronV2Bx.push_back(0);  //it->bx());
       l1extra_.tkElectronV2HGC.push_back(1);
-      bool quality = (it->EGRef()->hwQual() == 5);
-      l1extra_.tkElectronV2PassesLooseTrackID.push_back(quality);
-      l1extra_.tkElectronV2PassesPhotonID.push_back(quality);
+      // bool quality = (it->EGRef()->hwQual() == 5);
+      // l1extra_.tkElectronV2PassesLooseTrackID.push_back(quality);
+      // l1extra_.tkElectronV2PassesPhotonID.push_back(quality);
       l1extra_.nTkElectronsV2++;
     }
   }
@@ -311,15 +311,15 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEM(const edm::Handle<l1t::TkEmCollectio
       l1extra_.tkPhotonTrkIso.push_back(it->trkIsol());
       l1extra_.tkPhotonTrkIsoPV.push_back(it->trkIsolPV());
       l1extra_.tkPhotonBx.push_back(0);  //it->bx());
-      l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkPhotonHGC.push_back(0);
-      bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;
-      l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
-      quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // Photon Id should be the third bit
-      l1extra_.tkPhotonPassesPhotonID.push_back(quality);
+      // bool quality = ((it->EGRef()->hwQual() >> 1) & 1) > 0;
+      // l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
+      // quality = ((it->EGRef()->hwQual() >> 2) & 1) > 0;  // Photon Id should be the third bit
+      // l1extra_.tkPhotonPassesPhotonID.push_back(quality);
       l1extra_.nTkPhotons++;
     }
   }
@@ -333,14 +333,14 @@ void L1Analysis::L1AnalysisPhaseII::SetTkEM(const edm::Handle<l1t::TkEmCollectio
       l1extra_.tkPhotonTrkIso.push_back(it->trkIsol());
       l1extra_.tkPhotonTrkIsoPV.push_back(it->trkIsolPV());
       l1extra_.tkPhotonBx.push_back(0);  //it->bx());
-      l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
-      l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());
-      l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
-      l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
+      // l1extra_.tkPhotonHwQual.push_back(it->EGRef()->hwQual());
+      // l1extra_.tkPhotonEGRefPt.push_back(it->EGRef()->et());
+      // l1extra_.tkPhotonEGRefEta.push_back(it->EGRef()->eta());
+      // l1extra_.tkPhotonEGRefPhi.push_back(it->EGRef()->phi());
       l1extra_.tkPhotonHGC.push_back(1);
-      bool quality = (it->EGRef()->hwQual() == 5);
-      l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
-      l1extra_.tkPhotonPassesPhotonID.push_back(quality);
+      // bool quality = (it->EGRef()->hwQual() == 5);
+      // l1extra_.tkPhotonPassesLooseTrackID.push_back(quality);
+      // l1extra_.tkPhotonPassesPhotonID.push_back(quality);
       l1extra_.nTkPhotons++;
     }
   }
@@ -423,8 +423,8 @@ void L1Analysis::L1AnalysisPhaseII::SetTkMuon(const edm::Handle<l1t::TkMuonColle
     l1extra_.tkMuonPt.push_back(it->pt());
     l1extra_.tkMuonEta.push_back(it->eta());
     l1extra_.tkMuonPhi.push_back(it->phi());
-    int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
-    l1extra_.tkMuonChg.push_back(chargeFromCurvature);
+    // int chargeFromCurvature = (it->trackCurvature() > 0) ? 1 : -1;  // ThisIsACheck
+    // l1extra_.tkMuonChg.push_back(chargeFromCurvature);
     l1extra_.tkMuonTrkIso.push_back(it->trkIsol());
     if (it->muonDetector() != 3) {
       l1extra_.tkMuonMuRefPt.push_back(it->muRef()->hwPt() * 0.5);

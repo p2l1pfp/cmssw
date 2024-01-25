@@ -62,8 +62,8 @@ namespace l1ct {
       CompIDParameters(const edm::ParameterSet &);
       CompIDParameters(double bdtScore_loose_wp, double bdtScore_tight_wp, const std::string &model)
           : bdtScore_loose_wp(bdtScore_loose_wp), bdtScore_tight_wp(bdtScore_tight_wp), conifer_model(model) {}
-      const double bdtScore_loose_wp;  // XGBOOST score
-      const double bdtScore_tight_wp;  // XGBOOST score
+      const id_score_t bdtScore_loose_wp;  // Conifer score/4
+      const id_score_t bdtScore_tight_wp;  // Conifer score/4
       const std::string conifer_model;
     };
 
@@ -169,7 +169,7 @@ namespace l1ct {
                                   const std::vector<EmCaloObjEmu> &emcalo,
                                   const std::vector<TkObjEmu> &track,
                                   std::vector<int> &emCalo2tk,
-                                  std::vector<float> &emCaloTkBdtScore) const;
+                                  std::vector<id_score_t> &emCaloTkBdtScore) const;
 
     struct CompositeCandidate {
       unsigned int cluster_idx;
@@ -177,10 +177,10 @@ namespace l1ct {
       double dpt;  // For sorting
     };
 
-    float compute_composite_score(CompositeCandidate &cand,
-                                  const std::vector<EmCaloObjEmu> &emcalo,
-                                  const std::vector<TkObjEmu> &track,
-                                  const PFTkEGAlgoEmuConfig::CompIDParameters &params) const;
+    id_score_t compute_composite_score(CompositeCandidate &cand,
+                                       const std::vector<EmCaloObjEmu> &emcalo,
+                                       const std::vector<TkObjEmu> &track,
+                                       const PFTkEGAlgoEmuConfig::CompIDParameters &params) const;
 
     //FIXME: still needed
     float deltaPhi(float phi1, float phi2) const;
@@ -194,7 +194,7 @@ namespace l1ct {
                  const std::vector<TkObjEmu> &track,
                  const std::vector<int> &emCalo2emCalo,
                  const std::vector<int> &emCalo2tk,
-                 const std::vector<float> &emCaloTkBdtScore,
+                 const std::vector<id_score_t> &emCaloTkBdtScore,
                  std::vector<EGObjEmu> &egstas,
                  std::vector<EGIsoObjEmu> &egobjs,
                  std::vector<EGIsoEleObjEmu> &egeleobjs) const;
@@ -208,7 +208,7 @@ namespace l1ct {
                        const unsigned int hwQual,
                        const pt_t ptCorr,
                        const int tk_idx,
-                       const float bdtScore,
+                       const id_score_t bdtScore,
                        const std::vector<unsigned int> &components = {}) const;
 
     EGObjEmu &addEGStaToPF(std::vector<EGObjEmu> &egobjs,
@@ -227,7 +227,7 @@ namespace l1ct {
                                     const TkObjEmu &track,
                                     const unsigned int hwQual,
                                     const pt_t ptCorr,
-                                    const float bdtScore) const;
+                                    const id_score_t bdtScore) const;
 
     // FIXME: reimplemented from PFAlgoEmulatorBase
     template <typename T>

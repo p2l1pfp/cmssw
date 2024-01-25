@@ -51,6 +51,7 @@ l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet 
                     pset.getParameter<double>("dRMin"),
                     pset.getParameter<double>("dRMax")) {}
 
+
 l1ct::PFTkEGAlgoEmuConfig::CompIDParameters::CompIDParameters(const edm::ParameterSet &pset)
     : CompIDParameters(pset.getParameter<double>("loose_wp"),
                        pset.getParameter<double>("tight_wp"),
@@ -181,7 +182,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
                                                   const std::vector<EmCaloObjEmu> &emcalo,
                                                   const std::vector<TkObjEmu> &track,
                                                   std::vector<int> &emCalo2tk,
-                                                  std::vector<float> &emCaloTkBdtScore) const {
+                                                  std::vector<id_score_t> &emCaloTkBdtScore) const {
   unsigned int nTrackMax = std::min<unsigned>(track.size(), cfg.nTRACK_EGIN);
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
     auto &calo = emcalo[ic];
@@ -214,12 +215,12 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
     if (nCandPerCluster == 0)
       continue;
 
-    float maxScore = -999;
+    id_score_t maxScore = -pow(2, l1ct::id_score_t::iwidth - 1);
     int ibest = -1;
     for (unsigned int icand = 0; icand < nCandPerCluster; icand++) {
       auto &cand = candidates[icand];
       const std::vector<EmCaloObjEmu> &emcalo_sel = emcalo;
-      float score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
+      id_score_t score = compute_composite_score(cand, emcalo_sel, track, cfg.compIDparams);
       if ((score > cfg.compIDparams.bdtScore_loose_wp) && (score > maxScore)) {
         maxScore = score;
         ibest = icand;
@@ -232,10 +233,10 @@ void PFTkEGAlgoEmulator::link_emCalo2tk_composite(const PFRegionEmu &r,
   }
 }
 
-float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
-                                                  const std::vector<EmCaloObjEmu> &emcalo,
-                                                  const std::vector<TkObjEmu> &track,
-                                                  const PFTkEGAlgoEmuConfig::CompIDParameters &params) const {
+id_score_t PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
+                                                       const std::vector<EmCaloObjEmu> &emcalo,
+                                                       const std::vector<TkObjEmu> &track,
+                                                       const PFTkEGAlgoEmuConfig::CompIDParameters &params) const {
   // Get the cluster/track objects that form the composite candidate
   const auto &calo = emcalo[cand.cluster_idx];
   const auto &tk = track[cand.track_idx];
@@ -258,7 +259,7 @@ float PFTkEGAlgoEmulator::compute_composite_score(CompositeCandidate &cand,
   std::vector<bdt_feature_t> inputs = {tkpt, hoe, srrtot, deta, dphi, dpt, meanz, nstubs, chi2rphi, chi2rz, chi2bend};
   std::vector<bdt_score_t> bdt_score = composite_bdt_->decision_function(inputs);
 
-  return bdt_score[0];
+  return bdt_score[0] / 4;
 }
 
 void PFTkEGAlgoEmulator::sel_emCalo(unsigned int nmax_sel,
@@ -297,7 +298,7 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
     link_emCalo2emCalo(emcalo_sel, emCalo2emCalo);
 
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
-  std::vector<float> emCaloTkBdtScore(emcalo_sel.size(), -999);
+  std::vector<id_score_t> emCaloTkBdtScore(emcalo_sel.size(), 0);
 
   if (cfg.doCompositeTkEle) {
     link_emCalo2tk_composite(in.region, emcalo_sel, in.track, emCalo2tk, emCaloTkBdtScore);
@@ -325,7 +326,7 @@ void PFTkEGAlgoEmulator::eg_algo(const PFRegionEmu &region,
                                  const std::vector<TkObjEmu> &track,
                                  const std::vector<int> &emCalo2emCalo,
                                  const std::vector<int> &emCalo2tk,
-                                 const std::vector<float> &emCaloTkBdtScore,
+                                 const std::vector<id_score_t> &emCaloTkBdtScore,
                                  std::vector<EGObjEmu> &egstas,
                                  std::vector<EGIsoObjEmu> &egobjs,
                                  std::vector<EGIsoEleObjEmu> &egeleobjs) const {
@@ -341,7 +342,7 @@ void PFTkEGAlgoEmulator::eg_algo(const PFRegionEmu &region,
                 << " phi " << calo.hwPhi << std::endl;
 
     int itk = emCalo2tk[ic];
-    float bdt = emCaloTkBdtScore[ic];
+    const id_score_t &bdt = emCaloTkBdtScore[ic];
 
     // check if brem recovery is on
     if (!cfg.doBremRecovery || cfg.writeBeforeBremRecovery) {
@@ -376,7 +377,6 @@ void PFTkEGAlgoEmulator::eg_algo(const PFRegionEmu &region,
     }
 
     // 2. create EG objects with brem recovery
-    // NOTE: duplicating the object is suboptimal but this is done for keeping things as in TDR code...
     addEgObjsToPF(egstas, egobjs, egeleobjs, emcalo, track, ic, calo.hwEmID, ptBremReco, itk, bdt, components);
   }
 }
@@ -432,7 +432,7 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
                                                     const TkObjEmu &track,
                                                     const unsigned int hwQual,
                                                     const pt_t ptCorr,
-                                                    const float bdtScore) const {
+                                                    const id_score_t bdtScore) const {
   EGIsoEleObjEmu egiso;
   egiso.clear();
   egiso.hwPt = ptCorr;
@@ -456,7 +456,7 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
   egiso.hwCharge = track.hwCharge;
   egiso.srcCluster = calo.src;
   egiso.srcTrack = track.src;
-  egiso.idScore = bdtScore;
+  egiso.hwIDScore = bdtScore;
   egobjs.push_back(egiso);
 
   if (debug_ > 2)
@@ -475,18 +475,18 @@ void PFTkEGAlgoEmulator::addEgObjsToPF(std::vector<EGObjEmu> &egstas,
                                        const unsigned int hwQual,
                                        const pt_t ptCorr,
                                        const int tk_idx,
-                                       const float bdtScore,
+                                       const id_score_t bdtScore,
                                        const std::vector<unsigned int> &components) const {
-  int sta_idx = -1;
+  int src_idx = -1;
   if (writeEgSta()) {
     addEGStaToPF(egstas, emcalo[calo_idx], hwQual, ptCorr, components);
-    sta_idx = egstas.size() - 1;
+    src_idx = egstas.size() - 1;
   }
   EGIsoObjEmu &egobj = addEGIsoToPF(egobjs, emcalo[calo_idx], hwQual, ptCorr);
-  egobj.sta_idx = sta_idx;
+  egobj.src_idx = src_idx;
   if (tk_idx != -1) {
     EGIsoEleObjEmu &eleobj = addEGIsoEleToPF(egeleobjs, emcalo[calo_idx], track[tk_idx], hwQual, ptCorr, bdtScore);
-    eleobj.sta_idx = sta_idx;
+    eleobj.src_idx = src_idx;
   }
 }
 
