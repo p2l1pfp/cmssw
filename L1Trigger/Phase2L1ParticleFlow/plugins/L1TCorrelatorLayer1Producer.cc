@@ -541,6 +541,7 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
   }
   l1ct::PVObjEmu hwpv;
   hwpv.hwZ0 = l1ct::Scales::makeZ0(pvwd.z0());
+  hwpv.Z0 = pvwd.z0();
   event_.pvs.push_back(hwpv);
   event_.pvs_emu.push_back(pvwd.vertexWord());
   //get additional vertices if requested
@@ -789,6 +790,10 @@ void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkO
   tkAndSel.first.simZ0 = t.vertex().Z();
   tkAndSel.first.simD0 = t.vertex().Rho();
   tkAndSel.first.src = &t;
+  tkAndSel.first.MVAQualityBits = t.MVA();
+  tkAndSel.first.ptEmulationBits = t.ptEmulationBits();
+  tkAndSel.first.etaEmulationBits = t.etaEmulationBits();
+  tkAndSel.first.Z0 = t.Z0();
 
   // If the track fails, we set its pT to zero, so that the decoded tracks are still aligned with the raw tracks
   // Downstream, the regionizer will just ignore zero-momentum tracks

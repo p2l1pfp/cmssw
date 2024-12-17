@@ -68,7 +68,11 @@ void l1tpf::PFTrackProducerFromL1Tracks::produce(edm::Event &iEvent, const edm::
     float phi = tk.momentum().phi();
     float z0 = tk.POCA().z();  //cm
     int charge = tk.rInv() > 0 ? +1 : -1;
-
+    ap_ufixed<22, 9> MVA = tk.getMVAQualityBits();
+    ap_uint<14> ptEmulationBits = tk.getTrackWord()(TTTrack_TrackWord::TrackBitLocations::kRinvMSB - 1,
+                                                     TTTrack_TrackWord::TrackBitLocations::kRinvLSB);
+    TTTrack_TrackWord::tanl_t etaEmulationBits = tk.getTanlWord();
+    double Z0 = tk.getZ0();
     reco::Candidate::PolarLorentzVector p4p(pt, eta, phi, 0.137);  // pion mass
     reco::Particle::LorentzVector p4(p4p.X(), p4p.Y(), p4p.Z(), p4p.E());
     reco::Particle::Point vtx(tk.POCA().x(), tk.POCA().y(), z0);
@@ -89,6 +93,10 @@ void l1tpf::PFTrackProducerFromL1Tracks::produce(edm::Event &iEvent, const edm::
                       nParam_,
                       caloetaphi.first,
                       caloetaphi.second,
+                      MVA,
+                      ptEmulationBits,
+                      etaEmulationBits,
+                      Z0,
                       trkErr,
                       caloErr,
                       quality);

@@ -10,7 +10,8 @@
   <class name="edm::RefVector<l1t::PFClusterCollection>" /> 
 
   <class name="l1t::PFTrack::TrackRef" />
-  <class name="l1t::PFTrack"  ClassVersion="4">
+  <class name="l1t::PFTrack"  ClassVersion="5">
+        <version ClassVersion="5" checksum="599093011"/>
         <version ClassVersion="4" checksum="1055891431"/>
         <version ClassVersion="3" checksum="2332162612"/>
   </class>

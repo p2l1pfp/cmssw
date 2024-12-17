@@ -8,6 +8,7 @@
 #include "DataFormats/L1TParticleFlow/interface/puppi.h"
 #include "DataFormats/L1TParticleFlow/interface/egamma.h"
 #include "DataFormats/L1TParticleFlow/interface/emulator_io.h"
+#include "DataFormats/L1TrackTrigger/interface/TTTrack.h"
 
 namespace l1t {
   class PFTrack;
@@ -41,6 +42,10 @@ namespace l1ct {
   struct TkObjEmu : public TkObj {
     uint16_t hwChi2;
     float simPt, simCaloEta, simCaloPhi, simVtxEta, simVtxPhi, simZ0, simD0;
+    ap_ufixed<22, 9> MVAQualityBits;
+    ap_uint<14> ptEmulationBits;
+    TTTrack_TrackWord::tanl_t etaEmulationBits;
+    double Z0;
     const l1t::PFTrack *src = nullptr;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
@@ -55,6 +60,10 @@ namespace l1ct {
       simVtxPhi = 0;
       simZ0 = 0;
       simD0 = 0;
+      MVAQualityBits = 0;
+      ptEmulationBits = 0;
+      etaEmulationBits = 0;
+      Z0 = 0;
     }
   };
 
@@ -73,6 +82,10 @@ namespace l1ct {
     const l1t::PFTrack *srcTrack = nullptr;
     const l1t::SAMuon *srcMu = nullptr;
     const l1t::PFCandidate *srcCand = nullptr;
+    ap_ufixed<22, 9> MVAQualityBits;
+    ap_uint<14> ptEmulationBits;
+    TTTrack_TrackWord::tanl_t etaEmulationBits;
+    double Z0;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
     void clear() {
@@ -81,6 +94,10 @@ namespace l1ct {
       srcTrack = nullptr;
       srcMu = nullptr;
       srcCand = nullptr;
+      MVAQualityBits = 0;
+      ptEmulationBits = 0;
+      etaEmulationBits = 0;
+      Z0 = 0;
     }
   };
 
@@ -228,8 +245,12 @@ namespace l1ct {
   };
 
   struct PVObjEmu : public PVObj {
+    double Z0;
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
+    void clear() {
+      Z0 = 0;
+    }
   };
 
   template <typename T>

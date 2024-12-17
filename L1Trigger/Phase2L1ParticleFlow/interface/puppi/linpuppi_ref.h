@@ -5,6 +5,7 @@
 #include "linpuppi_bits.h"
 
 #include <vector>
+#include "FWCore/ParameterSet/interface/FileInPath.h"
 
 namespace edm {
   class ParameterSet;
@@ -35,6 +36,12 @@ namespace l1ct {
                      double priorNe,
                      double priorPh,
                      pt_t ptCut,
+                     edm::FileInPath associationGraphPath,
+                     const double associationThreshold,
+                     bool  useAssociationNetwork,
+                     std::vector<double> associationNetworkZ0binning,
+                     std::vector<double> associationNetworkEtaBounds,
+                     std::vector<double> associationNetworkZ0ResBins,
                      unsigned int nFinalSort = 0,
                      SortAlgo finalSortAlgo = SortAlgo::Insertion)
         : nTrack_(nTrack),
@@ -56,6 +63,12 @@ namespace l1ct {
           priorNe_(1, priorNe),
           priorPh_(1, priorPh),
           ptCut_(1, ptCut),
+          associationGraphPath_(associationGraphPath),
+          associationThreshold_(associationThreshold),
+          useAssociationNetwork_(useAssociationNetwork),
+          associationNetworkZ0binning_(associationNetworkZ0binning),
+          associationNetworkEtaBounds_(associationNetworkEtaBounds),
+          associationNetworkZ0ResBins_(associationNetworkZ0ResBins),
           nFinalSort_(nFinalSort ? nFinalSort : nOut),
           finalSortAlgo_(finalSortAlgo),
           debug_(false),
@@ -90,6 +103,12 @@ namespace l1ct {
                      double priorPh_1,
                      pt_t ptCut_0,
                      pt_t ptCut_1,
+                     edm::FileInPath associationGraphPath,
+                     const double associationThreshold,
+                     bool  useAssociationNetwork,
+                     std::vector<double> associationNetworkZ0binning,
+                     std::vector<double> associationNetworkEtaBounds,
+                     std::vector<double> associationNetworkZ0ResBins,
                      unsigned int nFinalSort = 0,
                      SortAlgo finalSortAlgo = SortAlgo::Insertion);
 
@@ -112,6 +131,12 @@ namespace l1ct {
                      const std::vector<double> &priorNe,
                      const std::vector<double> &priorPh,
                      const std::vector<pt_t> &ptCut,
+                     edm::FileInPath associationGraphPath,
+                     const double associationThreshold,
+                     bool  useAssociationNetwork,
+                     std::vector<double> associationNetworkZ0binning,
+                     std::vector<double> associationNetworkEtaBounds,
+                     std::vector<double> associationNetworkZ0ResBins,
                      unsigned int nFinalSort,
                      SortAlgo finalSortAlgo)
         : nTrack_(nTrack),
@@ -133,6 +158,12 @@ namespace l1ct {
           priorNe_(priorNe),
           priorPh_(priorPh),
           ptCut_(ptCut),
+          associationGraphPath_(associationGraphPath),
+          associationThreshold_(associationThreshold),
+          useAssociationNetwork_(useAssociationNetwork),
+          associationNetworkZ0binning_(associationNetworkZ0binning),
+          associationNetworkEtaBounds_(associationNetworkEtaBounds),
+          associationNetworkZ0ResBins_(associationNetworkZ0ResBins),
           nFinalSort_(nFinalSort),
           finalSortAlgo_(finalSortAlgo),
           debug_(false),
@@ -211,6 +242,10 @@ namespace l1ct {
     std::vector<double> alphaSlope_, alphaZero_, alphaCrop_;
     std::vector<double> priorNe_, priorPh_;
     std::vector<pt_t> ptCut_;
+    edm::FileInPath associationGraphPath_;
+    const double associationThreshold_;
+    bool  useAssociationNetwork_;
+    std::vector<double> associationNetworkZ0binning_, associationNetworkEtaBounds_, associationNetworkZ0ResBins_;
     unsigned int nFinalSort_;  // output after a full sort of charged + neutral
     SortAlgo finalSortAlgo_;
 
