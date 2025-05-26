@@ -21,6 +21,8 @@ NNVtxAssoc::NNVtxAssoc(std::string AssociationGraphPath,
       res_bins_(AssociationNetworkZ0ResBins) {
   tensorflow::GraphDef* associationGraph_ = tensorflow::loadGraphDef(AssociationGraphPath);
   associationSesh_ = tensorflow::createSession(associationGraph_);
+  log_.setf(std::ios::fixed, std::ios::floatfield);
+  log_.precision(3);
 }
 
 template <typename T>
@@ -58,9 +60,9 @@ bool NNVtxAssoc::TTTrackNetworkSelector(const PFRegionEmu& region, T& t, const l
 
   // Run Association Network:
   tensorflow::run(associationSesh_,
-                  {{"assoc:0", inputAssoc}},
+                  {{"NNvtx_track_association:0", inputAssoc}},
                   {"Identity:0"},
-                  &outputAssoc);  //BRS: Need to update with new training
+                  &outputAssoc);
 
   double NNOutput = (double)outputAssoc[0].tensor<float, 2>()(0, 0);
   double NNOutput_exp = 1.0 / (1.0 + exp(-1.0 * (NNOutput)));
@@ -84,22 +86,21 @@ edm::ParameterSetDescription NNVtxAssoc::getParameterSetDescription() {
 #endif
 
 void NNVtxAssoc::NNVtxAssocDebug() {
-  // ToDo: Can switch this to use logs
-  std::cout << std::setprecision(3) << std::fixed;
-  std::cout << "-- NNVtxAssocDebug --\n";
-  std::cout << "AssociationThreshold: " << this->associationThreshold_ << "\n";
-  std::cout << "z0_binning: ";
+  log_ << "-- NNVtxAssocDebug --\n";
+  log_ << "AssociationThreshold: " << this->associationThreshold_ << "\n";
+  log_ << "z0_binning: ";
   for (auto i : this->z0_binning_)
-    std::cout << i << " ";
-  std::cout << "\n";
-  std::cout << "eta_bins: ";
+    log_ << i << " ";
+  log_ << "\n";
+  log_ << "eta_bins: ";
   for (auto i : this->eta_bins_)
-    std::cout << i << " ";
-  std::cout << "\n";
-  std::cout << "res_bins: ";
+    log_ << i << " ";
+  log_ << "\n";
+  log_ << "res_bins: ";
   for (auto i : this->res_bins_)
-    std::cout << i << " ";
-  std::cout << "\n";
+    log_ << i << " ";
+  log_ << "\n";
+  edm::LogPrint(moduleDescription().moduleName()) << log_.str();
 }
 
 template bool NNVtxAssoc::TTTrackNetworkSelector<const l1ct::TkObjEmu>(const PFRegionEmu&,

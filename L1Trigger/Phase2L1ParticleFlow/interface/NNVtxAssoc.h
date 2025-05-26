@@ -40,5 +40,6 @@ private:
   std::vector<double> z0_binning_;
   std::vector<double> eta_bins_;
   std::vector<double> res_bins_;
+  std::stringstream log_;
 };
 #endif

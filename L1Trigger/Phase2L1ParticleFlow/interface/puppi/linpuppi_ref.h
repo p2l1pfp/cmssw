@@ -14,6 +14,11 @@ namespace edm {
 }  // namespace edm
 
 namespace l1ct {
+  #ifdef CMSSW_GIT_HASH
+    const bool withinCMSSW_ = true;
+  #else
+    const bool withinCMSSW_ = false;
+  #endif
 
   class LinPuppiEmulator {
   public:
@@ -69,7 +74,7 @@ namespace l1ct {
           finalSortAlgo_(finalSortAlgo),
           debug_(false),
           fakePuppi_(false) {
-      if (useMLAssociation_) {
+      if (useMLAssociation_ and withinCMSSW_) {
         nnVtxAssoc_ = std::make_unique<NNVtxAssoc>(NNVtxAssoc(associationGraphPath,
                                                               associationThreshold,
                                                               associationNetworkZ0binning,
