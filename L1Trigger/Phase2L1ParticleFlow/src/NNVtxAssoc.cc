@@ -59,10 +59,7 @@ bool NNVtxAssoc::TTTrackNetworkSelector(const PFRegionEmu& region, T& t, const l
   inputAssoc.tensor<float, 2>()(0, 3) = dZEmulation_rescale.to_double();
 
   // Run Association Network:
-  tensorflow::run(associationSesh_,
-                  {{"NNvtx_track_association:0", inputAssoc}},
-                  {"Identity:0"},
-                  &outputAssoc);
+  tensorflow::run(associationSesh_, {{"NNvtx_track_association:0", inputAssoc}}, {"Identity:0"}, &outputAssoc);
 
   double NNOutput = (double)outputAssoc[0].tensor<float, 2>()(0, 0);
   double NNOutput_exp = 1.0 / (1.0 + exp(-1.0 * (NNOutput)));

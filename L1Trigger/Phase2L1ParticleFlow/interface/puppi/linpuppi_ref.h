@@ -14,11 +14,11 @@ namespace edm {
 }  // namespace edm
 
 namespace l1ct {
-  #ifdef CMSSW_GIT_HASH
-    const bool withinCMSSW_ = true;
-  #else
-    const bool withinCMSSW_ = false;
-  #endif
+#ifdef CMSSW_GIT_HASH
+  const bool withinCMSSW_ = true;
+#else
+  const bool withinCMSSW_ = false;
+#endif
 
   class LinPuppiEmulator {
   public:
