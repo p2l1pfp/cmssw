@@ -100,7 +100,7 @@ void NNVtxAssoc::NNVtxAssocDebug() {
   for (auto i : this->res_bins_)
     log_ << i << " ";
   log_ << "\n";
-  edm::LogPrint(moduleDescription().moduleName()) << log_.str();
+  edm::LogPrint("NNVtxAssoc") << log_.str();
 }
 
 template bool NNVtxAssoc::TTTrackNetworkSelector<const l1ct::TkObjEmu>(const PFRegionEmu&,
