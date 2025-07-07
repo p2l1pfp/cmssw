@@ -1042,7 +1042,7 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchPF
       // encode the PF candidate with the 64b encoding used for PUPPI
       l1ct::PuppiObj encodedPF;
       encodedPF.fill(reg, p);
-      ret->back().setEncodedPuppi64(encodedPF.pack().to_uint64())
+      ret->back().setEncodedPuppi64(encodedPF.pack().to_uint64());
       
       setRefs_(ret->back(), p);
     }
@@ -1060,7 +1060,7 @@ std::unique_ptr<l1t::PFCandidateCollection> L1TCorrelatorLayer1Producer::fetchPF
       // encode the PF candidate using the 64b encoding used for PUPPI
       l1ct::PuppiObj encodedPF;
       encodedPF.fill(reg, p, p.intPt(), 1);
-      ret->back().setEncodedPuppi64(encodedPF.pack().to_uint64())
+      ret->back().setEncodedPuppi64(encodedPF.pack().to_uint64());
       
       setRefs_(ret->back(), p);
     }
