@@ -41,13 +41,15 @@ namespace l1ct {
     typedef LinkPlacementInfo LPI;
     typedef std::pair<l1ct::PuppiObjEmu, LPI> PlacedPuppi;
 
+    unsigned int tmuxFactor_;
     std::vector<BoardInfo> boardInfos_;
 
     // note: this one for use in standalone testbench
-    DeregionizerInput(std::vector<BoardInfo> boardInfos) : boardInfos_(boardInfos) {}
+    DeregionizerInput(const unsigned int tmuxFactor, std::vector<BoardInfo> boardInfos)
+     : tmuxFactor_(tmuxFactor), boardInfos_(boardInfos) {}
 
     // note: this one will work only in CMSSW
-    DeregionizerInput(const std::vector<edm::ParameterSet> linkConfigs);
+    DeregionizerInput(const unsigned int tmuxFactor, const std::vector<edm::ParameterSet> linkConfigs);
 
     ~DeregionizerInput() {}
 
@@ -62,7 +64,6 @@ namespace l1ct {
     bool debug_ = false;
     // these are not configurable in current design
     static constexpr uint nInputFramesPerBX_ = 9;
-    static constexpr uint tmuxFactor_ = 6;
   };
 
 }  // namespace l1ct
