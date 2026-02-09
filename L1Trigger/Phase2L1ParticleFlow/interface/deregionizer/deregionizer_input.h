@@ -46,7 +46,7 @@ namespace l1ct {
 
     // note: this one for use in standalone testbench
     DeregionizerInput(const unsigned int tmuxFactor, std::vector<BoardInfo> boardInfos)
-     : tmuxFactor_(tmuxFactor), boardInfos_(boardInfos) {}
+        : tmuxFactor_(tmuxFactor), boardInfos_(boardInfos) {}
 
     // note: this one will work only in CMSSW
     DeregionizerInput(const unsigned int tmuxFactor, const std::vector<edm::ParameterSet> linkConfigs);
