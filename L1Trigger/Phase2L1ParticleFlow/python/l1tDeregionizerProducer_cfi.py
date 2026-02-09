@@ -70,3 +70,39 @@ l1tDeregionizerProducer = cms.EDProducer("DeregionizerProducer",
                          )
 
 l1tDeregionizerProducerExtended = l1tDeregionizerProducer.clone(RegionalPuppiCands  = cms.InputTag("l1tLayer1Extended","PuppiRegional"))
+
+################################################
+# The following is an alternative configuration for the TM18 firmware, which has a different mapping of regions to output links.
+################################################
+
+barrelConfigTM18 = cms.PSet(
+    partition = cms.string("Barrel"),
+    nLinksPuppi = cms.uint32(6),
+    nPuppiPerRegion = cms.uint32(18),
+    nOutputFramesPerBX = cms.uint32(9),
+    outputBoard = cms.int32(0),
+    outputRegions = cms.vuint32(*range(54)),
+)
+
+hgcalConfigTM18 = cms.PSet(
+    partition = cms.string("HGCal"),
+    nLinksPuppi = cms.uint32(2),
+    nPuppiPerRegion = cms.uint32(18),
+    nOutputFramesPerBX = cms.uint32(9),
+    outputRegions = cms.vuint32(*range(54,72)),
+    outputBoard = cms.int32(1),
+)
+
+hgcalNoTKConfigTM18 = cms.PSet(
+    partition = cms.string("HGCalNoTk"),
+    nLinksPuppi = cms.uint32(2),
+    nPuppiPerRegion = cms.uint32(12),
+    nOutputFramesPerBX = cms.uint32(9),
+    outputRegions = cms.vuint32(*range(72,72+18)),
+    outputBoard = cms.int32(2),
+)
+
+# hfConfigTM18 = ... no HF TM18 config for now
+
+linkConfigsTM18 = cms.VPSet(barrelConfigTM18, hgcalConfigTM18, hgcalNoTKConfigTM18)
+l1tDeregionizerProducerTM18 = l1tDeregionizerProducer.clone(linkConfigs = linkConfigsTM18, tMuxFactor = cms.uint32(18))

@@ -4,7 +4,8 @@
 
 #ifdef CMSSW_GIT_HASH
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
-l1ct::DeregionizerInput::DeregionizerInput(const std::vector<edm::ParameterSet> linkConfigs) {
+l1ct::DeregionizerInput::DeregionizerInput(const unsigned int tmuxFactor, const std::vector<edm::ParameterSet> linkConfigs) {
+  tmuxFactor_ = tmuxFactor;
   for (const auto &pset : linkConfigs) {
     DeregionizerInput::BoardInfo boardInfo;
     boardInfo.nOutputFramesPerBX_ = pset.getParameter<uint32_t>("nOutputFramesPerBX");
