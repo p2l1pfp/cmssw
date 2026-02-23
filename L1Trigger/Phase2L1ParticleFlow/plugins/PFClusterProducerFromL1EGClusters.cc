@@ -88,7 +88,7 @@ void l1tpf::PFClusterProducerFromL1EGClusters::produce(edm::Event &iEvent, const
     // bit 0: standaloneWP: is_iso && is_ss
     // bit 1: looseL1TkMatchWP: is_looseTkiso && is_looseTkss
     // bit 2: photonWP:
-    unsigned int qual = (digiCryCl.wp() & 0x1) | (digiCryCl.wp() & 0x2) | (false << 2);
+    unsigned int qual = digiCryCl.wp();
     cluster.setHwQual(qual);
     // cluster.setDigiWord(digiCryCl.data());
     out->push_back(cluster);
@@ -108,7 +108,7 @@ void l1tpf::PFClusterProducerFromL1EGClusters::produce(edm::Event &iEvent, const
     if (corrector_.valid())
       corrector_.correctPt(cluster);
     cluster.setPtError(resol_(cluster.pt(), std::abs(cluster.eta())));
-    unsigned int qual = (digiCryCl.wp() & 0x1) | (digiCryCl.wp() & 0x2) | (false << 2);
+    unsigned int qual = digiCryCl.wp();
     cluster.setHwQual(qual);
 
     // cluster.setDigiWord(digiCryCl.data());

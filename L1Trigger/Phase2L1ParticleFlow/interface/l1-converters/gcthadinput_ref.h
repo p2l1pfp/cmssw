@@ -34,7 +34,6 @@ namespace l1ct {
 
     // ECAL value
     ap_uint<12> ecal(const ap_uint<64> &in) const { return (ap_uint<12>)in.range(37, 26); }
-
   };
 }  // namespace l1ct
 
