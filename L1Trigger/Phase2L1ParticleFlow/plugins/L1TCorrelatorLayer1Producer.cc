@@ -54,10 +54,10 @@
 #include "DataFormats/L1TCalorimeterPhase2/interface/DigitizedClusterCorrelator.h"
 #include "DataFormats/L1THGCal/interface/HGCalMulticluster.h"
 
-constexpr unsigned int calomapping[] = {3, 0, 9, 6, 4, 1, 10, 7, 5, 2, 11, 8};
-// regions order:  GCT1 SLR1, GCT1 SLR3, GCT2 SLR1, GCT2 SLR3, GCT3 SLR1, GCT3SLR3
+constexpr unsigned int calomapping[] = {6, 0, 7, 1, 8, 2, 9, 3, 10, 4, 11, 5};
+// regions order:  GCT1 SLR3, GCT1 SLR1, GCT2 SLR3, GCT2 SLR1, GCT3 SLR3, GCT3SLR1
 // phi center:         10         70         130        -170       -110       -50
-// eta:               + -
+// eta:               + -        + -         + -        + -        + -        + -
 
 //--------------------------------------------------------------------------------------------------
 class L1TCorrelatorLayer1Producer : public edm::stream::EDProducer<> {
