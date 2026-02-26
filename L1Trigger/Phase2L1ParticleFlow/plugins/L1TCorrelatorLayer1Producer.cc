@@ -533,7 +533,22 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
     for (unsigned int ic = 0; ic < links.size(); ++ic) {
       const auto &link = links[ic].linkCard();
       for (unsigned int ie = 0; ie < link.size(); ++ie) {
-        addGCTCaloRaw(link, ic, ie);
+        if (ie > 137)
+          addGCTCaloRaw(link, 4 * ic, ie);
+        else if (ie > 113)
+          addGCTCaloRaw(link, 4 * ic + 1, ie);
+        else if (ie > 97)
+          addGCTCaloRaw(link, 4 * ic, ie);
+        else if (ie > 81)
+          addGCTCaloRaw(link, 4 * ic + 1, ie);
+        else if (ie > 56)
+          addGCTCaloRaw(link, 4 * ic + 2, ie);
+        else if (ie > 32)
+          addGCTCaloRaw(link, 4 * ic + 3, ie);
+        else if (ie > 16)
+          addGCTCaloRaw(link, 4 * ic + 2, ie);
+        else if (ie > 0)
+          addGCTCaloRaw(link, 4 * ic + 3, ie);
       }
     }
   }
@@ -860,12 +875,12 @@ void L1TCorrelatorLayer1Producer::initSectorsAndRegions(const edm::ParameterSet 
     if (phiWidth > 2 * l1ct::Scales::maxAbsPhi())
       throw cms::Exception("Configuration", "caloSectors phi range too large for phi_t data type");
     double phiZero = preg.getParameter<double>("phiZero");
-    for (unsigned int ieta = 0, neta = etaBoundaries.size() - 1; ieta < neta; ++ieta) {
-      float etaWidth = etaBoundaries[ieta + 1] - etaBoundaries[ieta];
-      if (etaWidth > 2 * l1ct::Scales::maxAbsEta())
-        throw cms::Exception("Configuration", "caloSectors eta range too large for eta_t data type");
-      for (unsigned int iphi = 0; iphi < phiSlices; ++iphi) {
-        float phiCenter = reco::reducePhiRange(iphi * phiWidth + phiZero);
+    for (unsigned int iphi = 0; iphi < phiSlices; ++iphi) {
+      float phiCenter = reco::reducePhiRange(iphi * phiWidth + phiZero);
+      for (unsigned int ieta = 0, neta = etaBoundaries.size() - 1; ieta < neta; ++ieta) {
+        float etaWidth = etaBoundaries[ieta + 1] - etaBoundaries[ieta];
+        if (etaWidth > 2 * l1ct::Scales::maxAbsEta())
+          throw cms::Exception("Configuration", "caloSectors eta range too large for eta_t data type");
         event_.decoded.hadcalo.emplace_back(etaBoundaries[ieta], etaBoundaries[ieta + 1], phiCenter, phiWidth);
         event_.decoded.emcalo.emplace_back(etaBoundaries[ieta], etaBoundaries[ieta + 1], phiCenter, phiWidth);
         event_.raw.hgcalcluster.emplace_back(etaBoundaries[ieta], etaBoundaries[ieta + 1], phiCenter, phiWidth);
