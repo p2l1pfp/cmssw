@@ -583,7 +583,7 @@ p2L1TablesTask = cms.Task(
     sc4JetTable,
     sc8JetTable,
     sc4ExtJetTable, 
-    sc4NGJetTable,
+    ##sc4NGJetTable,
     histoJetTable,
     caloJetTable,
     # ## sums
