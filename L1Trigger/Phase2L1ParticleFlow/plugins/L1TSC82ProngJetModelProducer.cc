@@ -99,8 +99,6 @@ void L1TSC82ProngJetProducer::fillDescriptions(edm::ConfigurationDescriptions& d
   desc.add<std::string>("l1tSC82ProngJetModelPath", std::string("L1TSC82ProngJetModel_v0"));
   desc.add<int>("maxJets", 16);
   desc.add<int>("nParticles", 8);
-  desc.add<double>("minPt", 10);
-  desc.add<double>("maxEta", 2.4);
   descriptions.add("l1tSC82ProngJetProducer", desc);
 }
 
