@@ -49,7 +49,7 @@ L1TSC82ProngJetProducer::L1TSC82ProngJetProducer(const edm::ParameterSet& cfg)
       fMaxEta_(cfg.getParameter<double>("maxEta")),
       fMaxJets_(cfg.getParameter<int>("maxJets")),
       fNParticles_(cfg.getParameter<int>("nParticles")),
-      loader(hls4mlEmulator::ModelLoader(cfg.getParameter<string>("l1tSC82ProngJetModelPath"))) {
+      loader(hls4mlEmulator::ModelLoader(cfg.getParameter<std::string>("l1tSC82ProngJetModelPath"))) {
   model = loader.load_model();
   fJetId_ = std::make_unique<L1TSC82ProngJetID>(model, fNParticles_);
   produces<l1t::PFJetCollection>("l1tSC82ProngJets");
