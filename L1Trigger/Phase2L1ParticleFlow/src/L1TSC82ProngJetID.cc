@@ -1,5 +1,6 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/L1TSC82ProngJetID.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
+#include <algorithm>
 #include <cmath>
 
 L1TSC82ProngJetID::L1TSC82ProngJetID(const std::shared_ptr<hls4mlEmulator::Model> model, int iNParticles)
