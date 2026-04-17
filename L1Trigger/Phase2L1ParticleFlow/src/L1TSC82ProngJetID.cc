@@ -52,14 +52,24 @@ void L1TSC82ProngJetID::setNNVectorVar() {
 }
 
 std::vector<float> L1TSC82ProngJetID::EvaluateNNFixed() {
-  const int NInputs = 160;
+  const unsigned int NInputs = 160;
+  const unsigned int FeaturesPerParticle = 20;
+
+  if (fNParticles_ * FeaturesPerParticle != NInputs) {
+    throw std::runtime_error(
+      "L1TSC82ProngJetID::EvaluateNNFixed: "
+      "Model expects exactly 8 particles (160 inputs), but fNParticles_ = " +
+      std::to_string(fNParticles_)
+    );
+  }
+
   prong_score prong_scores;
   inputtype fillzero = 0.0;
 
-  inputtype modelInput[NInputs] = {};  // Do something
-  std::fill(modelInput, modelInput + NInputs, fillzero);
+  inputtype modelInput[NInputs];
+  std::fill(std::begin(modelInput),std::end(modelInput), fillzero);
 
-  for (unsigned int i = 0; i < NNvectorVar_.size(); i++) {
+  for (unsigned int i = 0; i < NInputs; i++) {
     modelInput[i] = NNvectorVar_[i];
   }
 
