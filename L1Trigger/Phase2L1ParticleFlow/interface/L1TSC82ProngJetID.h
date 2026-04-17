@@ -2,6 +2,8 @@
 #define L1TRIGGER_PHASE2L1PARTICLEFLOWS_L1TSC82ProngJetID_H
 
 #include "DataFormats/L1TParticleFlow/interface/PFJet.h"
+#include <memory>
+#include <vector>
 
 //HLS4ML compiled emulator modeling
 #include "ap_fixed.h"
@@ -21,21 +23,21 @@ public:
 private:
   std::vector<inputtype> NNvectorVar_;
   int fNParticles_;
-  unique_ptr<float[]> fPt_;
-  unique_ptr<float[]> fPt_rel_;
-  unique_ptr<float[]> fDEta_;
-  unique_ptr<float[]> fDPhi_;
-  unique_ptr<float[]> fPt_log_;
-  unique_ptr<float[]> fMass_;
-  unique_ptr<float[]> fZ0_;
-  unique_ptr<float[]> fDxy_;
-  unique_ptr<int[]> fIs_filled_;
-  unique_ptr<float[]> fPuppi_weight_;
-  unique_ptr<int[]> fEmID_;
-  unique_ptr<float[]> fQuality_;
+  std::unique_ptr<float[]> fPt_;
+  std::unique_ptr<float[]> fPt_rel_;
+  std::unique_ptr<float[]> fDEta_;
+  std::unique_ptr<float[]> fDPhi_;
+  std::unique_ptr<float[]> fPt_log_;
+  std::unique_ptr<float[]> fMass_;
+  std::unique_ptr<float[]> fZ0_;
+  std::unique_ptr<float[]> fDxy_;
+  std::unique_ptr<int[]> fIs_filled_;
+  std::unique_ptr<float[]> fPuppi_weight_;
+  std::unique_ptr<int[]> fEmID_;
+  std::unique_ptr<float[]> fQuality_;
 
-  unique_ptr<int[]> fCharge_;
-  unique_ptr<int[]> fId_;
+  std::unique_ptr<int[]> fCharge_;
+  std::unique_ptr<int[]> fId_;
   std::shared_ptr<hls4mlEmulator::Model> modelRef_;
 
   //bool isDebugEnabled_;
