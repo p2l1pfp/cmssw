@@ -97,6 +97,8 @@ void L1TSC82ProngJetProducer::fillDescriptions(edm::ConfigurationDescriptions& d
   edm::ParameterSetDescription desc;
   desc.add<edm::InputTag>("jets", edm::InputTag("l1tSC8PFL1PuppiEmulator"));
   desc.add<std::string>("l1tSC82ProngJetModelPath", std::string("L1TSC82ProngJetModel_v0"));
+  desc.add<double>("minPt", 0.);
+  desc.add<double>("maxEta", 5.);
   desc.add<int>("maxJets", 16);
   desc.add<int>("nParticles", 8);
   descriptions.add("l1tSC82ProngJetProducer", desc);
