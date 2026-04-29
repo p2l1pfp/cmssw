@@ -195,7 +195,7 @@ namespace l1ct {
       j.v3.phi = CTtoGT_phi(hwPhi);
       j.v3.eta = CTtoGT_eta(hwEta);
       j.z0(l1ct::z0_t::width - 1, 0) = hwZ0(l1ct::z0_t::width - 1, 0);
-      j.hwNProngScore = hwTagScores[0]; // currently only one WideJet tagger
+      j.hwNProngScore = hwTagScores[0];  // currently only one WideJet tagger
       j.hwMassSq = CTtoGT_massSq(hwMassSq);
 
       return j;
