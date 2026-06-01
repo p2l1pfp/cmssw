@@ -25,7 +25,6 @@ private:
   edm::EDGetTokenT<l1t::PFCandidateRegionalOutput> token_;
   std::vector<edm::ParameterSet> linkConfigs_;
   const unsigned int nInputFramesPerBX_;
-  const unsigned int tmuxFactor_;
   l1ct::DeregionizerEmulator emulator_;
   l1ct::DeregionizerInput input_;
   std::vector<uint32_t> boardOrder_, nOutputFramesPerBX_, nPuppiFramesPerRegion_, nLinksPuppi_, nPuppiPerRegion_;
@@ -41,9 +40,8 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
       token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
       linkConfigs_(iConfig.getParameter<std::vector<edm::ParameterSet>>("linkConfigs")),
       nInputFramesPerBX_(iConfig.getParameter<uint32_t>("nInputFramesPerBX")),
-      tmuxFactor_(iConfig.getParameter<uint32_t>("tMuxFactor")),
       emulator_(iConfig),
-      input_(tmuxFactor_, linkConfigs_) {
+      input_(linkConfigs_) {
   produces<l1t::PFCandidateCollection>("Puppi");
   produces<l1t::PFCandidateCollection>("TruncatedPuppi");
 }
@@ -149,7 +147,6 @@ void DeregionizerProducer::fillDescriptions(edm::ConfigurationDescriptions &desc
   desc.add<unsigned int>("nPuppiSecondBuffers", 32);
   desc.add<unsigned int>("nPuppiThirdBuffers", 64);
   desc.add<unsigned int>("nInputFramesPerBX", 9);
-  desc.add<unsigned int>("tMuxFactor", 6);
   edm::ParameterSetDescription linkConfigDummyValidator;
   linkConfigDummyValidator.setAllowAnything();
   desc.addVPSet("linkConfigs", linkConfigDummyValidator);

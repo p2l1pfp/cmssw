@@ -6,6 +6,7 @@ barrelConfig_ = cms.PSet(
     nLinksPuppi = cms.uint32(6),
     nPuppiPerRegion = cms.uint32(18),
     nOutputFramesPerBX = cms.uint32(9),
+    tmuxFactor = cms.uint32(6)
 )
 
 barrelPhiConfigs = [
@@ -24,6 +25,7 @@ hgcalConfig_ = cms.PSet(
     nOutputFramesPerBX = cms.uint32(9),
     outputRegions = cms.vuint32(*[54 + i+9 for i in range(9)]),
     outputBoard = cms.int32(3),
+    tmuxFactor = cms.uint32(6)
 )
 
 hgcalPosConfig = hgcalConfig_.clone(
@@ -41,6 +43,7 @@ hgcalNoTKConfig = cms.PSet(
     nOutputFramesPerBX = cms.uint32(9),
     outputRegions = cms.vuint32(*range(72,72+18)),
     outputBoard = cms.int32(5),
+    tmuxFactor = cms.uint32(6)
 )
 
 hfConfig_ = cms.PSet(
@@ -48,6 +51,7 @@ hfConfig_ = cms.PSet(
     nLinksPuppi = cms.uint32(3),
     nPuppiPerRegion = cms.uint32(18),
     nOutputFramesPerBX = cms.uint32(9),
+    tmuxFactor = cms.uint32(6)
 )
 hfConfigs = [
     hfConfig_.clone(
@@ -82,6 +86,7 @@ barrelConfigTM18 = cms.PSet(
     nOutputFramesPerBX = cms.uint32(9),
     outputBoard = cms.int32(0),
     outputRegions = cms.vuint32(*range(54)),
+    tmuxFactor = cms.uint32(18)
 )
 
 hgcalConfigTM18 = cms.PSet(
@@ -91,6 +96,7 @@ hgcalConfigTM18 = cms.PSet(
     nOutputFramesPerBX = cms.uint32(9),
     outputRegions = cms.vuint32(*range(54,72)),
     outputBoard = cms.int32(1),
+    tmuxFactor = cms.uint32(18)
 )
 
 hgcalNoTKConfigTM18 = cms.PSet(
@@ -100,9 +106,24 @@ hgcalNoTKConfigTM18 = cms.PSet(
     nOutputFramesPerBX = cms.uint32(9),
     outputRegions = cms.vuint32(*range(72,72+18)),
     outputBoard = cms.int32(2),
+    tmuxFactor = cms.uint32(18)
 )
 
 # hfConfigTM18 = ... no HF TM18 config for now
+hfConfigTM18 = cms.PSet(
+    partition = cms.string("HF"),
+    nLinksPuppi = cms.uint32(1),
+    nPuppiPerRegion = cms.uint32(6),
+    nOutputFramesPerBX = cms.uint32(9),
+    tmuxFactor = cms.uint32(6)
+)
 
-linkConfigsTM18 = cms.VPSet(barrelConfigTM18, hgcalConfigTM18, hgcalNoTKConfigTM18)
-l1tDeregionizerProducerTM18 = l1tDeregionizerProducer.clone(linkConfigs = linkConfigsTM18, tMuxFactor = cms.uint32(18))
+hfConfigTM18s = [
+    hfConfigTM18.clone(
+        outputRegions = cms.vuint32(*[90+9*ie+i for i in range(9)]),
+        outputBoard = cms.int32(3 + ie),
+    ) for ie in range(2)
+]
+
+linkConfigsTM18 = cms.VPSet(barrelConfigTM18, hgcalConfigTM18, hgcalNoTKConfigTM18, *hfConfigTM18s)
+l1tDeregionizerProducerTM18 = l1tDeregionizerProducer.clone(linkConfigs = linkConfigsTM18)
