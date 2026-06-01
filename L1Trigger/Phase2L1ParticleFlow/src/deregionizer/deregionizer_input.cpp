@@ -13,7 +13,8 @@ l1ct::DeregionizerInput::DeregionizerInput(const std::vector<edm::ParameterSet> 
     boardInfo.order_ = pset.getParameter<int32_t>("outputBoard");
     boardInfo.regions_ = pset.getParameter<std::vector<uint32_t>>("outputRegions");
     boardInfo.tmuxFactor_ = pset.getParameter<uint32_t>("tmuxFactor");
-    boardInfo.nPuppiFramesPerRegion_ = (boardInfo.nOutputFramesPerBX_ * boardInfo.tmuxFactor_) / boardInfo.regions_.size();
+    boardInfo.nPuppiFramesPerRegion_ =
+        (boardInfo.nOutputFramesPerBX_ * boardInfo.tmuxFactor_) / boardInfo.regions_.size();
     boardInfos_.push_back(boardInfo);
   }
 }
@@ -45,8 +46,10 @@ std::vector<l1ct::DeregionizerInput::PlacedPuppi> l1ct::DeregionizerInput::input
 std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput::orderInputs(
     const std::vector<l1ct::OutputRegion> &inputRegions) const {
   std::vector<PlacedPuppi> linkPlacedPuppis = inputOrderInfo(inputRegions);
-  const uint maxTmux = std::max_element(boardInfos_.begin(), boardInfos_.end(),
-      [](const BoardInfo &a, const BoardInfo &b) { return a.tmuxFactor_ < b.tmuxFactor_; })->tmuxFactor_;
+  const uint maxTmux =
+      std::max_element(boardInfos_.begin(), boardInfos_.end(), [](const BoardInfo &a, const BoardInfo &b) {
+        return a.tmuxFactor_ < b.tmuxFactor_;
+      })->tmuxFactor_;
   std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> layer2inReshape(nInputFramesPerBX_ * maxTmux);
   for (uint iClock = 0; iClock < nInputFramesPerBX_ * maxTmux; iClock++) {
     std::vector<std::vector<l1ct::PuppiObjEmu>> orderedPupsOnClock(boardInfos_.size());
