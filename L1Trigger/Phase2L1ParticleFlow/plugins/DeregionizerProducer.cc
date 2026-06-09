@@ -92,33 +92,31 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
     if (totalLinks == 0)
       throw cms::Exception("Configuration") << "linkConfigs define zero input links";
     if ((maxTmux % inputBoardTMUX_) != 0)
-      throw cms::Exception("Configuration") << "max link tmux " << maxTmux
-                                            << " is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
+      throw cms::Exception("Configuration")
+          << "max link tmux " << maxTmux << " is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
 
     const size_t nTimeSlices = maxTmux / inputBoardTMUX_;
     const auto timeSliceConfigs = iConfig.getParameter<std::vector<edm::ParameterSet>>("inputPatternTimeSlices");
     if (timeSliceConfigs.size() != nTimeSlices)
-      throw cms::Exception("Configuration") << "inputPatternTimeSlices must have " << nTimeSlices
-                                            << " entries, got " << timeSliceConfigs.size();
+      throw cms::Exception("Configuration")
+          << "inputPatternTimeSlices must have " << nTimeSlices << " entries, got " << timeSliceConfigs.size();
 
     std::vector<std::vector<int32_t>> timeSliceLinks;
     timeSliceLinks.reserve(timeSliceConfigs.size());
     for (size_t iSlice = 0; iSlice < timeSliceConfigs.size(); ++iSlice) {
       const auto links = timeSliceConfigs[iSlice].getParameter<std::vector<int32_t>>("puppiInputLinks");
       if (links.size() != totalLinks)
-        throw cms::Exception("Configuration") << "inputPatternTimeSlices[" << iSlice
-                                              << "].puppiInputLinks has size " << links.size() << ", expected "
-                                              << totalLinks;
+        throw cms::Exception("Configuration") << "inputPatternTimeSlices[" << iSlice << "].puppiInputLinks has size "
+                                              << links.size() << ", expected " << totalLinks;
       timeSliceLinks.push_back(links);
     }
 
     size_t globalLink = 0;
     for (const auto &boardInfo : boardInfos) {
       if ((boardInfo.tmuxFactor_ % inputBoardTMUX_) != 0)
-        throw cms::Exception("Configuration") << "Board order " << boardInfo.order_ << " has tmuxFactor="
-                                              << boardInfo.tmuxFactor_
-                                              << " which is not divisible by inputPatternFilePSet.TMUX="
-                                              << inputBoardTMUX_;
+        throw cms::Exception("Configuration")
+            << "Board order " << boardInfo.order_ << " has tmuxFactor=" << boardInfo.tmuxFactor_
+            << " which is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
 
       const size_t tmuxRatio = boardInfo.tmuxFactor_ / inputBoardTMUX_;
       const size_t neededPayloadWords =
@@ -126,15 +124,15 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
       const size_t maxPayloadWords = boardInfo.tmuxFactor_ * nInputFramesPerBX_;
 
       if (inputGapLength_ >= maxPayloadWords)
-        throw cms::Exception("Configuration") << "gapLengthOutput=" << inputGapLength_
-                                              << " is too large for board order " << boardInfo.order_
-                                              << " (max payload=" << maxPayloadWords << ")";
+        throw cms::Exception("Configuration")
+            << "gapLengthOutput=" << inputGapLength_ << " is too large for board order " << boardInfo.order_
+            << " (max payload=" << maxPayloadWords << ")";
 
       const size_t payloadWords = maxPayloadWords - inputGapLength_;
       if (payloadWords < neededPayloadWords)
-        throw cms::Exception("Configuration") << "Configured payload words " << payloadWords << " for board order "
-                                              << boardInfo.order_ << " is smaller than required words "
-                                              << neededPayloadWords;
+        throw cms::Exception("Configuration")
+            << "Configured payload words " << payloadWords << " for board order " << boardInfo.order_
+            << " is smaller than required words " << neededPayloadWords;
 
       const std::string interfaceName = interfaceNameForBoard_(boardInfo.order_);
       channelSpecsInput_[interfaceName] = {boardInfo.tmuxFactor_, inputGapLength_, 0};
@@ -145,8 +143,8 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
         for (size_t iSlice = 0; iSlice < tmuxRatio; ++iSlice) {
           const int32_t channelId = timeSliceLinks[iSlice][globalLink];
           if (channelId < 0)
-            throw cms::Exception("Configuration") << "Negative channel id " << channelId
-                                                  << " for logical link " << globalLink;
+            throw cms::Exception("Configuration")
+                << "Negative channel id " << channelId << " for logical link " << globalLink;
           channelIds.push_back(static_cast<size_t>(channelId));
         }
 
