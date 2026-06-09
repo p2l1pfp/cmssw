@@ -1,18 +1,29 @@
-#include <unordered_map>
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/Framework/interface/stream/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
+#include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Utilities/interface/Exception.h"
 
 #include "DataFormats/L1TParticleFlow/interface/PFCandidate.h"
 #include "DataFormats/L1TParticleFlow/interface/PFCluster.h"
 
 #include "L1Trigger/Phase2L1ParticleFlow/interface/deregionizer/deregionizer_input.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/deregionizer/deregionizer_ref.h"
+
+#include "L1Trigger/DemonstratorTools/interface/BoardDataWriter.h"
+#include "L1Trigger/DemonstratorTools/interface/utilities.h"
 
 class DeregionizerProducer : public edm::stream::EDProducer<> {
 public:
@@ -21,32 +32,147 @@ public:
   static void fillDescriptions(edm::ConfigurationDescriptions &descriptions);
 
 private:
-  edm::ParameterSet config_;
+  struct LinkWriteInfo {
+    l1t::demo::LinkId id;
+    size_t payloadWords;
+  };
+
+  static std::string interfaceNameForBoard_(uint32_t boardOrder) { return "puppi_in_b" + std::to_string(boardOrder); }
+
   edm::EDGetTokenT<l1t::PFCandidateRegionalOutput> token_;
   std::vector<edm::ParameterSet> linkConfigs_;
   const unsigned int nInputFramesPerBX_;
   l1ct::DeregionizerEmulator emulator_;
   l1ct::DeregionizerInput input_;
-  std::vector<uint32_t> boardOrder_, nOutputFramesPerBX_, nPuppiFramesPerRegion_, nLinksPuppi_, nPuppiPerRegion_;
-  std::vector<std::vector<uint32_t>> outputRegions_;
+
+  bool writeInputPatternFiles_;
+  size_t inputBoardTMUX_;
+  size_t inputGapLength_;
+
+  std::map<std::pair<uint32_t, uint32_t>, LinkWriteInfo> boardLinkToWriteInfo_;
+  std::map<l1t::demo::LinkId, size_t> linkPayloadWords_;
+  std::map<l1t::demo::LinkId, std::vector<size_t>> channelIdsInput_;
+  std::map<std::string, l1t::demo::ChannelSpec> channelSpecsInput_;
+  std::unique_ptr<l1t::demo::BoardDataWriter> inputFileWriter_;
 
   void produce(edm::Event &, const edm::EventSetup &) override;
   void hwToEdm_(const std::vector<l1ct::PuppiObjEmu> &hwOut, std::vector<l1t::PFCandidate> &edmOut) const;
-  void setRefs_(l1t::PFCandidate &pf, const l1ct::PuppiObjEmu &p) const;
 };
 
 DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
-    : config_(iConfig),
-      token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
+    : token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
       linkConfigs_(iConfig.getParameter<std::vector<edm::ParameterSet>>("linkConfigs")),
       nInputFramesPerBX_(iConfig.getParameter<uint32_t>("nInputFramesPerBX")),
       emulator_(iConfig),
-      input_(linkConfigs_) {
+      input_(linkConfigs_),
+      writeInputPatternFiles_(iConfig.getParameter<bool>("writeInputPatternFiles")),
+      inputBoardTMUX_(0),
+      inputGapLength_(0) {
   produces<l1t::PFCandidateCollection>("Puppi");
   produces<l1t::PFCandidateCollection>("TruncatedPuppi");
+
+  if (writeInputPatternFiles_) {
+    const auto &pset = iConfig.getParameter<edm::ParameterSet>("inputPatternFilePSet");
+    inputBoardTMUX_ = pset.getParameter<uint32_t>("TMUX");
+    inputGapLength_ = pset.getParameter<uint32_t>("gapLengthOutput");
+
+    if (inputBoardTMUX_ == 0)
+      throw cms::Exception("Configuration") << "inputPatternFilePSet.TMUX must be > 0";
+
+    std::vector<l1ct::DeregionizerInput::BoardInfo> boardInfos = input_.boardInfos_;
+    std::sort(boardInfos.begin(), boardInfos.end(), [](const auto &a, const auto &b) { return a.order_ < b.order_; });
+
+    size_t totalLinks = 0;
+    size_t maxTmux = inputBoardTMUX_;
+    for (const auto &boardInfo : boardInfos) {
+      totalLinks += boardInfo.nLinksPuppi_;
+      maxTmux = std::max(maxTmux, static_cast<size_t>(boardInfo.tmuxFactor_));
+    }
+
+    if (totalLinks == 0)
+      throw cms::Exception("Configuration") << "linkConfigs define zero input links";
+    if ((maxTmux % inputBoardTMUX_) != 0)
+      throw cms::Exception("Configuration") << "max link tmux " << maxTmux
+                                            << " is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
+
+    const size_t nTimeSlices = maxTmux / inputBoardTMUX_;
+    const auto timeSliceConfigs = iConfig.getParameter<std::vector<edm::ParameterSet>>("inputPatternTimeSlices");
+    if (timeSliceConfigs.size() != nTimeSlices)
+      throw cms::Exception("Configuration") << "inputPatternTimeSlices must have " << nTimeSlices
+                                            << " entries, got " << timeSliceConfigs.size();
+
+    std::vector<std::vector<int32_t>> timeSliceLinks;
+    timeSliceLinks.reserve(timeSliceConfigs.size());
+    for (size_t iSlice = 0; iSlice < timeSliceConfigs.size(); ++iSlice) {
+      const auto links = timeSliceConfigs[iSlice].getParameter<std::vector<int32_t>>("puppiInputLinks");
+      if (links.size() != totalLinks)
+        throw cms::Exception("Configuration") << "inputPatternTimeSlices[" << iSlice
+                                              << "].puppiInputLinks has size " << links.size() << ", expected "
+                                              << totalLinks;
+      timeSliceLinks.push_back(links);
+    }
+
+    size_t globalLink = 0;
+    for (const auto &boardInfo : boardInfos) {
+      if ((boardInfo.tmuxFactor_ % inputBoardTMUX_) != 0)
+        throw cms::Exception("Configuration") << "Board order " << boardInfo.order_ << " has tmuxFactor="
+                                              << boardInfo.tmuxFactor_
+                                              << " which is not divisible by inputPatternFilePSet.TMUX="
+                                              << inputBoardTMUX_;
+
+      const size_t tmuxRatio = boardInfo.tmuxFactor_ / inputBoardTMUX_;
+      const size_t neededPayloadWords =
+          (boardInfo.nPuppiPerRegion_ / boardInfo.nLinksPuppi_) * static_cast<size_t>(boardInfo.regions_.size());
+      const size_t maxPayloadWords = boardInfo.tmuxFactor_ * nInputFramesPerBX_;
+
+      if (inputGapLength_ >= maxPayloadWords)
+        throw cms::Exception("Configuration") << "gapLengthOutput=" << inputGapLength_
+                                              << " is too large for board order " << boardInfo.order_
+                                              << " (max payload=" << maxPayloadWords << ")";
+
+      const size_t payloadWords = maxPayloadWords - inputGapLength_;
+      if (payloadWords < neededPayloadWords)
+        throw cms::Exception("Configuration") << "Configured payload words " << payloadWords << " for board order "
+                                              << boardInfo.order_ << " is smaller than required words "
+                                              << neededPayloadWords;
+
+      const std::string interfaceName = interfaceNameForBoard_(boardInfo.order_);
+      channelSpecsInput_[interfaceName] = {boardInfo.tmuxFactor_, inputGapLength_, 0};
+
+      for (uint32_t iLink = 0; iLink < boardInfo.nLinksPuppi_; ++iLink, ++globalLink) {
+        std::vector<size_t> channelIds;
+        channelIds.reserve(tmuxRatio);
+        for (size_t iSlice = 0; iSlice < tmuxRatio; ++iSlice) {
+          const int32_t channelId = timeSliceLinks[iSlice][globalLink];
+          if (channelId < 0)
+            throw cms::Exception("Configuration") << "Negative channel id " << channelId
+                                                  << " for logical link " << globalLink;
+          channelIds.push_back(static_cast<size_t>(channelId));
+        }
+
+        l1t::demo::LinkId id{interfaceName, iLink};
+        channelIdsInput_[id] = channelIds;
+        boardLinkToWriteInfo_[{boardInfo.order_, iLink}] = {id, payloadWords};
+        linkPayloadWords_[id] = payloadWords;
+      }
+    }
+
+    inputFileWriter_ = std::make_unique<l1t::demo::BoardDataWriter>(
+        l1t::demo::parseFileFormat(pset.getParameter<std::string>("format")),
+        pset.getParameter<std::string>("outputFilename"),
+        pset.getParameter<std::string>("outputFileExtension"),
+        nInputFramesPerBX_,
+        inputBoardTMUX_,
+        pset.getParameter<uint32_t>("maxLinesPerFile"),
+        channelIdsInput_,
+        channelSpecsInput_);
+  }
 }
 
-DeregionizerProducer::~DeregionizerProducer() {}
+DeregionizerProducer::~DeregionizerProducer() {
+  if (inputFileWriter_)
+    inputFileWriter_->flush();
+}
 
 void DeregionizerProducer::produce(edm::Event &iEvent, const edm::EventSetup &iSetup) {
   auto deregColl = std::make_unique<l1t::PFCandidateCollection>();
@@ -87,6 +213,29 @@ void DeregionizerProducer::produce(edm::Event &iEvent, const edm::EventSetup &iS
   }
 
   std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> layer2In = input_.orderInputs(outputRegions);
+
+  if (writeInputPatternFiles_) {
+    std::map<l1t::demo::LinkId, std::vector<ap_uint<64>>> links;
+    for (const auto &[id, payloadWords] : linkPayloadWords_)
+      links.emplace(id, std::vector<ap_uint<64>>(payloadWords, ap_uint<64>(0)));
+
+    const auto placed = input_.inputOrderInfo(outputRegions);
+    for (const auto &entry : placed) {
+      const auto &obj = entry.first;
+      const auto &lpi = entry.second;
+      auto it = boardLinkToWriteInfo_.find({lpi.board_, lpi.link_});
+      if (it == boardLinkToWriteInfo_.end())
+        continue;
+      const auto &info = it->second;
+      if (lpi.clock_cycle_ < info.payloadWords)
+        links[info.id][lpi.clock_cycle_] = obj.pack();
+    }
+
+    l1t::demo::EventData eventDataInputs;
+    for (const auto &[id, words] : links)
+      eventDataInputs.add(id, words);
+    inputFileWriter_->addEvent(eventDataInputs);
+  }
 
   emulator_.run(layer2In, hwOut, hwTruncOut);
 
@@ -147,11 +296,25 @@ void DeregionizerProducer::fillDescriptions(edm::ConfigurationDescriptions &desc
   desc.add<unsigned int>("nPuppiSecondBuffers", 32);
   desc.add<unsigned int>("nPuppiThirdBuffers", 64);
   desc.add<unsigned int>("nInputFramesPerBX", 9);
+  desc.add<bool>("writeInputPatternFiles", false);
+
+  edm::ParameterSetDescription inputPatternPSet;
+  inputPatternPSet.add<uint32_t>("gapLengthOutput", 0);
+  inputPatternPSet.add<uint32_t>("TMUX", 6);
+  inputPatternPSet.add<uint32_t>("maxLinesPerFile", 1024);
+  inputPatternPSet.add<std::string>("outputFilename", "L1DeregionizerInput");
+  inputPatternPSet.add<std::string>("format", "EMPv2");
+  inputPatternPSet.add<std::string>("outputFileExtension", "txt.gz");
+  desc.add<edm::ParameterSetDescription>("inputPatternFilePSet", inputPatternPSet);
+
+  edm::ParameterSetDescription inputTimeSlicePSet;
+  inputTimeSlicePSet.add<std::vector<int32_t>>("puppiInputLinks", {});
+  desc.addVPSet("inputPatternTimeSlices", inputTimeSlicePSet, std::vector<edm::ParameterSet>{});
+
   edm::ParameterSetDescription linkConfigDummyValidator;
   linkConfigDummyValidator.setAllowAnything();
   desc.addVPSet("linkConfigs", linkConfigDummyValidator);
   descriptions.add("DeregionizerProducer", desc);
 }
 
-#include "FWCore/Framework/interface/MakerMacros.h"
 DEFINE_FWK_MODULE(DeregionizerProducer);
