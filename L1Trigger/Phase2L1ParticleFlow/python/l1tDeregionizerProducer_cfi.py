@@ -71,6 +71,16 @@ l1tDeregionizerProducer = cms.EDProducer("DeregionizerProducer",
                            nPuppiThirdBuffers  = cms.uint32(64),
                            nInputFramesPerBX   = cms.uint32(9),
                            linkConfigs         = linkConfigs,
+                           writeInputPatternFiles = cms.bool(False),
+                           inputPatternFilePSet = cms.PSet(
+                                            gapLengthOutput = cms.uint32(0),
+                                            TMUX = cms.uint32(6),
+                                            maxLinesPerFile = cms.uint32(1024),
+                                            outputFilename = cms.string("L1DeregionizerInput"),
+                                            format = cms.string("EMPv2"),
+                                            outputFileExtension = cms.string("txt.gz")
+                                                     ),
+                                                     inputPatternTimeSlices = cms.VPSet()
                          )
 
 l1tDeregionizerProducerExtended = l1tDeregionizerProducer.clone(RegionalPuppiCands  = cms.InputTag("l1tLayer1Extended","PuppiRegional"))
