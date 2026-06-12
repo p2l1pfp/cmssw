@@ -103,7 +103,10 @@ l1ctLayer2SCJetsTM18Products = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4PF
                                                   nJets = cms.uint32(12),
                                                   jetEncoding = cms.string("GTWide"))
                                          ])
-process.l1tLayer2SeedConeJetTM18Writer = l1tSeededConeJetFileWriter.clone(outputFilename = cms.string('L1CTSCJetsTM18Patterns'), collections = l1ctLayer2SCJetsTM18Products)
+process.l1tLayer2SeedConeJetTM18Writer = l1tSeededConeJetFileWriter.clone(
+    outputFilename = cms.string('L1CTSCJetsTM18Patterns'),
+    collections = l1ctLayer2SCJetsTM18Products,
+    )
                                                                    
 l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJetProducer","l1tSC4NGJets"),
                                                nJets = cms.uint32(12),
@@ -117,6 +120,19 @@ l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJ
 process.l1tLayer2SeedConeNGJetWriter = l1tSeededConeJetFileWriter.clone(collections = l1ctLayer2SC4NGJetsProducts,
                                                                         outputFilename = 'L1CTSCNGJetsPatterns')
 
+l1ctLayer2SC4NGJetsTM18Products = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJetTM18Producer","l1tSC4NGJets"),
+                                                  nJets = cms.uint32(12),
+                                                  mht  = cms.InputTag("l1tNGMHTPFTM18Producer"),
+                                                  nSums = cms.uint32(2),
+                                                  jetEncoding = cms.string("GT")),
+                                         cms.PSet(jets = cms.InputTag("l1tSC8PFL1PuppiCorrectedTM18Emulator"),
+                                                  nJets = cms.uint32(12),
+                                                  jetEncoding = cms.string("GTWide"))
+                                         ])
+process.l1tLayer2SeedConeJetTM18Writer = l1tSeededConeJetFileWriter.clone(
+    collections = l1ctLayer2SC4NGJetsTM18Products,
+    outputFilename = cms.string('L1CTSCNGJetsTM18Patterns'),
+    )
 
 process.l1tLayer1BarrelTDR = process.l1tLayer1Barrel.clone()
 process.l1tLayer1BarrelTDR.regionizerAlgo = cms.string("TDR")
@@ -216,9 +232,14 @@ process.l1tSC4NGJetProducer.jets = cms.InputTag("l1tSC4PFL1PuppiEmulator")
 process.l1tSC4NGJetProducer.doJEC = cms.bool(True)
 process.l1tSC4NGJetProducer.correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root")
 process.l1tSC4NGJetProducer.correctorDir = cms.string("L1PuppiSC4EmuJets")
+process.l1tSC4NGJetTM18Producer.jets = cms.InputTag("l1tSC4PFL1PuppiTM18Emulator")
+process.l1tSC4NGJetTM18Producer.doJEC = cms.bool(True)
+process.l1tSC4NGJetTM18Producer.correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root")
+process.l1tSC4NGJetTM18Producer.correctorDir = cms.string("L1PuppiSC4EmuJets")
 
 from L1Trigger.Phase2L1ParticleFlow.l1tMHTPFProducer_cfi import l1tMHTPFProducer
 process.l1tNGMHTPFProducer = l1tMHTPFProducer.clone(jets = cms.InputTag("l1tSC4NGJetProducer","l1tSC4NGJets"))
+process.l1tNGMHTPFTM18Producer = l1tMHTPFProducer.clone(jets = cms.InputTag("l1tSC4NGJetTM18Producer","l1tSC4NGJets"))
 
 process.l1tLayer1HGCal.hgcalInputConversionParameters.emulateCorrections = True
 process.l1tLayer1HGCalElliptic.hgcalInputConversionParameters.emulateCorrections = True
@@ -248,7 +269,10 @@ process.runPF = cms.Path(
         process.l1tSC4PFL1PuppiCorrectedEmulatorMHT +
         process.l1tSC8PFL1PuppiCorrectedEmulator +
         process.l1tLayer2DeregionizerTM18 +
+        process.l1tSC4PFL1PuppiTM18Emulator +
         process.l1tSC4PFL1PuppiCorrectedTM18Emulator +
+        process.l1tSC4NGJetTM18Producer +
+        process.l1tNGMHTPFTM18Producer +
         process.l1tSC4PFL1PuppiCorrectedTM18EmulatorMHT +
         process.l1tSC8PFL1PuppiCorrectedTM18Emulator +
         # process.l1tLayer2SeedConeJetWriter +
