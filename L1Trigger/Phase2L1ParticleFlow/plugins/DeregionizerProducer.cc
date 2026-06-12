@@ -46,7 +46,7 @@ private:
   l1ct::DeregionizerInput input_;
 
   bool writeInputPatternFiles_;
-  size_t inputBoardTMUX_;
+  size_t patternFileBoardTMUX;
   size_t inputGapLength_;
 
   std::map<std::pair<uint32_t, uint32_t>, LinkWriteInfo> boardLinkToWriteInfo_;
@@ -66,24 +66,24 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
       emulator_(iConfig),
       input_(linkConfigs_),
       writeInputPatternFiles_(iConfig.getParameter<bool>("writeInputPatternFiles")),
-      inputBoardTMUX_(0),
+      patternFileBoardTMUX(0),
       inputGapLength_(0) {
   produces<l1t::PFCandidateCollection>("Puppi");
   produces<l1t::PFCandidateCollection>("TruncatedPuppi");
 
   if (writeInputPatternFiles_) {
     const auto &pset = iConfig.getParameter<edm::ParameterSet>("inputPatternFilePSet");
-    inputBoardTMUX_ = pset.getParameter<uint32_t>("TMUX");
+    patternFileBoardTMUX = pset.getParameter<uint32_t>("TMUX");
     inputGapLength_ = pset.getParameter<uint32_t>("gapLengthOutput");
 
-    if (inputBoardTMUX_ == 0)
+    if (patternFileBoardTMUX == 0)
       throw cms::Exception("Configuration") << "inputPatternFilePSet.TMUX must be > 0";
 
     std::vector<l1ct::DeregionizerInput::BoardInfo> boardInfos = input_.boardInfos_;
     std::sort(boardInfos.begin(), boardInfos.end(), [](const auto &a, const auto &b) { return a.order_ < b.order_; });
 
     size_t totalLinks = 0;
-    size_t maxTmux = inputBoardTMUX_;
+    size_t maxTmux = patternFileBoardTMUX;
     for (const auto &boardInfo : boardInfos) {
       totalLinks += boardInfo.nLinksPuppi_;
       maxTmux = std::max(maxTmux, static_cast<size_t>(boardInfo.tmuxFactor_));
@@ -91,11 +91,11 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
 
     if (totalLinks == 0)
       throw cms::Exception("Configuration") << "linkConfigs define zero input links";
-    if ((maxTmux % inputBoardTMUX_) != 0)
+    if ((maxTmux % patternFileBoardTMUX) != 0)
       throw cms::Exception("Configuration")
-          << "max link tmux " << maxTmux << " is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
+          << "max link tmux " << maxTmux << " is not divisible by inputPatternFilePSet.TMUX=" << patternFileBoardTMUX;
 
-    const size_t nTimeSlices = maxTmux / inputBoardTMUX_;
+    const size_t nTimeSlices = maxTmux / patternFileBoardTMUX;
     const auto timeSliceConfigs = iConfig.getParameter<std::vector<edm::ParameterSet>>("inputPatternTimeSlices");
     if (timeSliceConfigs.size() != nTimeSlices)
       throw cms::Exception("Configuration")
@@ -113,12 +113,12 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
 
     size_t globalLink = 0;
     for (const auto &boardInfo : boardInfos) {
-      if ((boardInfo.tmuxFactor_ % inputBoardTMUX_) != 0)
+      if ((boardInfo.tmuxFactor_ % patternFileBoardTMUX) != 0)
         throw cms::Exception("Configuration")
             << "Board order " << boardInfo.order_ << " has tmuxFactor=" << boardInfo.tmuxFactor_
-            << " which is not divisible by inputPatternFilePSet.TMUX=" << inputBoardTMUX_;
+            << " which is not divisible by inputPatternFilePSet.TMUX=" << patternFileBoardTMUX;
 
-      const size_t tmuxRatio = boardInfo.tmuxFactor_ / inputBoardTMUX_;
+      const size_t tmuxRatio = boardInfo.tmuxFactor_ / patternFileBoardTMUX;
       const size_t neededPayloadWords =
           (boardInfo.nPuppiPerRegion_ / boardInfo.nLinksPuppi_) * static_cast<size_t>(boardInfo.regions_.size());
       const size_t maxPayloadWords = boardInfo.tmuxFactor_ * nInputFramesPerBX_;
@@ -160,7 +160,7 @@ DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
         pset.getParameter<std::string>("outputFilename"),
         pset.getParameter<std::string>("outputFileExtension"),
         nInputFramesPerBX_,
-        inputBoardTMUX_,
+        patternFileBoardTMUX,
         pset.getParameter<uint32_t>("maxLinesPerFile"),
         channelIdsInput_,
         channelSpecsInput_);
@@ -225,8 +225,9 @@ void DeregionizerProducer::produce(edm::Event &iEvent, const edm::EventSetup &iS
       if (it == boardLinkToWriteInfo_.end())
         continue;
       const auto &info = it->second;
-      if (lpi.clock_cycle_ < info.payloadWords)
+      if (lpi.clock_cycle_ < info.payloadWords) {
         links[info.id][lpi.clock_cycle_] = obj.pack();
+      }
     }
 
     l1t::demo::EventData eventDataInputs;
