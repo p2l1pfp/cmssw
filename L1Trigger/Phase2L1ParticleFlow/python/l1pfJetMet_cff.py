@@ -81,7 +81,7 @@ L1TPFJetsExtendedTask = cms.Task(
 
 L1TPFJetsEmulationTask = cms.Task(
     l1tLayer2Deregionizer, l1tSC4PFL1PuppiEmulator, l1tSC4PFL1PuppiCorrectedEmulator, l1tSC4PFL1PuppiCorrectedEmulatorMHT,
-    l1tSC8PFL1PuppiEmulator, l1tSC8PFL1PuppiCorrectedEmulator, l1tSC82ProngJetProducer
+    l1tSC8PFL1PuppiEmulator, l1tSC8PFL1PuppiCorrectedEmulator, l1tSC82ProngJetProducer,
     # TM 18 configurations with different region-to-link mapping
     l1tLayer2DeregionizerTM18, l1tSC4PFL1PuppiTM18Emulator, l1tSC4PFL1PuppiCorrectedTM18Emulator, l1tSC8PFL1PuppiCorrectedTM18Emulator,
     l1tSC4PFL1PuppiCorrectedTM18EmulatorMHT
