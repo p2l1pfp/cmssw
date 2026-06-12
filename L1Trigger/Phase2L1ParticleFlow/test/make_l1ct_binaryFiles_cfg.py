@@ -132,7 +132,7 @@ l1ctLayer2SC4NGJetsTM18Products = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC
                                                   nJets = cms.uint32(12),
                                                   jetEncoding = cms.string("GTWide"))
                                          ])
-process.l1tLayer2SeedConeJetTM18Writer = l1tSeededConeJetFileWriter.clone(
+process.l1tLayer2SeedConeNGJetTM18Writer = l1tSeededConeJetFileWriter.clone(
     collections = l1ctLayer2SC4NGJetsTM18Products,
     outputFilename = cms.string('L1CTSCNGJetsTM18Patterns'),
     )
@@ -290,6 +290,8 @@ if not args.patternFilesOFF:
     if args.tm18:
         process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedTM18Emulator)+1, process.l1tLayer2SeedConeJetTM18Writer)
         process.l1tLayer2SeedConeJetTM18Writer.maxLinesPerFile = _eventsPerFile*54
+        process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedTM18Emulator)+2, process.l1tLayer2SeedConeNGJetTM18Writer)
+        process.l1tLayer2SeedConeNGJetTM18Writer.maxLinesPerFile = _eventsPerFile*54
 
 
 if not args.dumpFilesOFF:
