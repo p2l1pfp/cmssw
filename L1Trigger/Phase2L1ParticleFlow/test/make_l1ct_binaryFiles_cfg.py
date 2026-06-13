@@ -341,7 +341,7 @@ if not args.patternFilesOFF:
     process.l1tLayer2DeregionizerTM18.inputPatternFilePSet = cms.PSet(
         gapLengthOutput = cms.uint32(0),
         TMUX = cms.uint32(6),
-        maxLinesPerFile = cms.uint32(_eventsPerFile*54),
+        maxLinesPerFile = cms.uint32(_eventsPerFile*54+108),
         outputFilename = cms.string("L1DeregionizerTM18-inputs"),
         format = cms.string("EMPv2"),
         outputFileExtension = cms.string("txt.gz")
