@@ -40,7 +40,6 @@ private:
   static std::string interfaceNameForBoard_(uint32_t boardOrder) { return "puppi_in_b" + std::to_string(boardOrder); }
 
   edm::EDGetTokenT<l1t::PFCandidateRegionalOutput> token_;
-  std::vector<edm::ParameterSet> linkConfigs_;
   const unsigned int nInputFramesPerBX_;
   l1ct::DeregionizerEmulator emulator_;
   l1ct::DeregionizerInput input_;
@@ -61,10 +60,9 @@ private:
 
 DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
     : token_(consumes<l1t::PFCandidateRegionalOutput>(iConfig.getParameter<edm::InputTag>("RegionalPuppiCands"))),
-      linkConfigs_(iConfig.getParameter<std::vector<edm::ParameterSet>>("linkConfigs")),
       nInputFramesPerBX_(iConfig.getParameter<uint32_t>("nInputFramesPerBX")),
       emulator_(iConfig),
-      input_(linkConfigs_),
+      input_(iConfig.getParameter<std::vector<edm::ParameterSet>>("linkConfigs")),
       writeInputPatternFiles_(iConfig.getParameter<bool>("writeInputPatternFiles")),
       patternFileBoardTMUX(0),
       inputGapLength_(0) {
@@ -210,26 +208,37 @@ void DeregionizerProducer::produce(edm::Event &iEvent, const edm::EventSetup &iS
     outputRegions.push_back(tempOutputRegion);
   }
 
-  std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> layer2In = input_.orderInputs(outputRegions);
+  const auto layer2InWithPlacement = input_.orderInputsWithPlacement(outputRegions);
+  std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> layer2In(layer2InWithPlacement.size());
+  for (size_t iClock = 0; iClock < layer2InWithPlacement.size(); ++iClock) {
+    layer2In[iClock].resize(layer2InWithPlacement[iClock].size());
+    for (size_t iBoard = 0; iBoard < layer2InWithPlacement[iClock].size(); ++iBoard) {
+      for (const auto &placedPuppi : layer2InWithPlacement[iClock][iBoard]) {
+        layer2In[iClock][iBoard].push_back(placedPuppi.first);
+      }
+    }
+  }
 
   if (writeInputPatternFiles_) {
     std::map<l1t::demo::LinkId, std::vector<ap_uint<64>>> links;
     for (const auto &[id, payloadWords] : linkPayloadWords_)
       links.emplace(id, std::vector<ap_uint<64>>(payloadWords, ap_uint<64>(0)));
 
-    const auto placed = input_.inputOrderInfo(outputRegions);
-    for (const auto &entry : placed) {
-      const auto &obj = entry.first;
-      const auto &lpi = entry.second;
-      auto it = boardLinkToWriteInfo_.find({lpi.board_, lpi.link_});
-      if (it == boardLinkToWriteInfo_.end())
-        continue;
-      const auto &info = it->second;
-      if (lpi.clock_cycle_ < info.payloadWords) {
-        links[info.id][lpi.clock_cycle_] = obj.pack();
+    for (const auto &clockSlice : layer2InWithPlacement) {
+      for (const auto &boardSlice : clockSlice) {
+        for (const auto &entry : boardSlice) {
+          const auto &obj = entry.first;
+          const auto &lpi = entry.second;
+          auto it = boardLinkToWriteInfo_.find({lpi.board_, lpi.link_});
+          if (it == boardLinkToWriteInfo_.end())
+            continue;
+          const auto &info = it->second;
+          if (lpi.clock_cycle_ < info.payloadWords) {
+            links[info.id][lpi.clock_cycle_] = obj.pack();
+          }
+        }
       }
     }
-
     l1t::demo::EventData eventDataInputs;
     for (const auto &[id, words] : links)
       eventDataInputs.add(id, words);
