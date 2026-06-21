@@ -1486,6 +1486,7 @@ void L1TCorrelatorLayer1Producer::putEgObjects(edm::Event &iEvent,
       tkele.setIdScore(egele.floatIDScore());
       tkele.setCharge(egele.intCharge());
       tkele.setTrkzVtx(egele.floatZ0());
+      tkele.setUserFloats(egele.userFloats);
       tkeles->push_back(tkele);
       nele_obj.push_back(tkeles->size() - 1);
     }

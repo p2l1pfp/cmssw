@@ -76,6 +76,16 @@ CompositeParametersTkEleVec = cms.VPSet(
     )
 )
 
+TkElePtRegressorParametersVec = cms.VPSet(
+    #No regression
+    cms.PSet(
+        model=cms.string(""),
+    ),
+    #Algorithm 0: EB_sigVsBkg_v0
+    cms.PSet(
+        model=cms.string("L1Trigger/Phase2L1ParticleFlow/data/egamma/TkElePtRegr_EB_sigVsBkg_v0_conifer.json"),
+    )
+)
 
 
 tkEgAlgoParameters = cms.PSet(
@@ -128,6 +138,8 @@ tkEgAlgoParameters = cms.PSet(
     algorithm=cms.uint32(0), # 0 = elliptic , 1 = composite EE, 2 = composite EB
     nCompCandPerCluster=cms.uint32(3),
     compositeParametersTkEle=CompositeParametersTkEleVec,
+    TkElePtRegressorParameters=TkElePtRegressorParametersVec,
+    TkElePtRegression_algorithm=cms.uint32(0),  # 0 = null, 1= EB_v0
 )
 
 tkEgSorterParameters = cms.PSet(

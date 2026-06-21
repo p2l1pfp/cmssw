@@ -44,7 +44,13 @@ namespace l1ct {
       compositeEB_v1 = 4
     };
 
+    enum ptRegressorAlgo{
+      null = 0,
+      EB_v0 = 1,
+    };
+
     Algo algorithm;
+    ptRegressorAlgo ptRegression_algorithm;
     unsigned int nCompCandPerCluster;
     bool writeEgSta;
 
@@ -71,6 +77,13 @@ namespace l1ct {
     EGIsoEleObjEmu::IsoType hwIsoTypeTkEle;
     EGIsoObjEmu::IsoType hwIsoTypeTkEm;
 
+    struct PtRegressorParameters {
+      PtRegressorParameters(const edm::ParameterSet &);
+      PtRegressorParameters(const std::string &model);
+      std::string conifer_model_;
+      static edm::ParameterSetDescription getParameterSetDescription();
+    };
+
     struct CompIDParameters {
       CompIDParameters(const edm::ParameterSet &);
       CompIDParameters(const std::vector<double> &loose_wp_bins,
@@ -93,6 +106,7 @@ namespace l1ct {
     };
 
     CompIDParameters compIDparams;
+    PtRegressorParameters ptRegressorParams;
 
     int debug = 0;
 
@@ -115,6 +129,7 @@ namespace l1ct {
         const std::vector<double> &dPhiValues = {0.07, 0.07},      // Delta-phi cuts per region
         float trkQualityPtMin = 10.,                               // Minimum track pt for quality [GeV]
         unsigned int algo = 0,                                     // Algorithm selector (see enum Algo)
+        unsigned int ptRegression_algo = 0,
         unsigned int nCompCandPerCluster = 4,                      // Max composite candidates per cluster
         bool writeEgSta = false,                                   // Write EG standalone objects
         // Track isolation params for tkEle: min-pt, dZ, dRMin, dRMax
@@ -131,6 +146,7 @@ namespace l1ct {
         EGIsoObjEmu::IsoType hwIsoTypeTkEm = EGIsoObjEmu::IsoType::TkIsoPV,       // Isolation type for tkEm
         // Composite ID params: pt-bins, loose-WP, pt-bins tight-WP, model, dPhi_max, dEta_max
         const CompIDParameters &compIDparams = {{0.}, {-4}, {0.}, {0.214844}, "compositeID.json", 0.2, 0.2},
+        const PtRegressorParameters &ptRegressorParams = {""},
         int debug = 0)  // Debug level
         : nTRACK(nTrack),
           nTRACK_EGIN(nTrack_in),
@@ -149,6 +165,7 @@ namespace l1ct {
           dPhiValues(dPhiValues),
           trkQualityPtMin(trkQualityPtMin),
           algorithm(Algo::undefined),
+          ptRegression_algorithm(ptRegressorAlgo::null),
           nCompCandPerCluster(nCompCandPerCluster),
           writeEgSta(writeEgSta),
           tkIsoParams_tkEle(tkIsoParams_tkEle),
@@ -160,6 +177,7 @@ namespace l1ct {
           hwIsoTypeTkEle(hwIsoTypeTkEle),
           hwIsoTypeTkEm(hwIsoTypeTkEm),
           compIDparams(compIDparams),
+          ptRegressorParams(ptRegressorParams),
           debug(debug) {
       if (algo == 0)
         algorithm = Algo::elliptic;
@@ -173,8 +191,15 @@ namespace l1ct {
         algorithm = Algo::compositeEB_v1;
       else
         throw std::invalid_argument("[PFTkEGAlgoEmuConfig]: Unknown algorithm type: " + std::to_string(algo));
-    }
 
+      if (ptRegression_algo == 0)
+        ptRegression_algorithm = ptRegressorAlgo::null;
+      else if (ptRegression_algo == 1)
+        ptRegression_algorithm = ptRegressorAlgo::EB_v0;
+      else
+        throw std::invalid_argument("[PFTkEGAlgoEmuConfig]: Unknown pt regression algorithm type: " +
+                                    std::to_string(ptRegression_algo));
+    }
     static edm::ParameterSetDescription getParameterSetDescription();
   };
 
@@ -182,6 +207,38 @@ namespace l1ct {
     unsigned int cluster_idx;
     unsigned int track_idx;
     double dpt;  // For sorting
+  };
+
+  class TkEGElePtRegressionModel{
+    public:
+      TkEGElePtRegressionModel(const l1ct::PFTkEGAlgoEmuConfig::PtRegressorParameters &params, int debug);
+      virtual ~TkEGElePtRegressionModel() = default;
+
+      virtual pt_t compute_ptCorr(const PFRegionEmu &r,
+                              const CompositeCandidate &cand,
+                              const std::vector<EmCaloObjEmu> &emcalo,
+                              const std::vector<TkObjEmu> &track,
+                              const std::vector<float> &additional_vars) const = 0;
+  };
+
+  class TkElePtRegressor_EB_v0 : public TkEGElePtRegressionModel {
+  public:
+    TkElePtRegressor_EB_v0(const l1ct::PFTkEGAlgoEmuConfig::PtRegressorParameters &params, int debug);
+
+    pt_t compute_ptCorr(const PFRegionEmu &r,
+                      const CompositeCandidate &cand,
+                      const std::vector<EmCaloObjEmu> &emcalo,
+                      const std::vector<TkObjEmu> &track,
+                      const std::vector<float> &additional_vars) const override;
+
+    typedef ap_fixed<10, 1, AP_RND_CONV, AP_SAT> bdt_feature_t;
+    typedef ap_fixed<12, 3, AP_RND_CONV, AP_SAT> bdt_out_t;
+
+  private:
+    std::unique_ptr<conifer::BDT<bdt_feature_t, bdt_out_t, false>> model_;
+    float scale(const float &x, const float &min_x, const int &bitshift, float inf = -1) const {
+      return inf + (x - min_x) / pow(2, bitshift);
+    }
   };
 
   class TkEGEleAssociationModel {
@@ -192,7 +249,8 @@ namespace l1ct {
     virtual id_score_t compute_score(const CompositeCandidate &cand,
                                      const std::vector<EmCaloObjEmu> &emcalo,
                                      const std::vector<TkObjEmu> &track,
-                                     const std::vector<float> additional_vars) const = 0;
+                                     const std::vector<float> additional_vars,
+                                     std::unordered_map<std::string, float> &tkEle_userFloat) const = 0;
 
     bool geometric_match(const EmCaloObjEmu &emcalo, const TkObjEmu &track) const;
 
@@ -288,7 +346,8 @@ namespace l1ct {
     id_score_t compute_score(const CompositeCandidate &cand,
                              const std::vector<EmCaloObjEmu> &emcalo,
                              const std::vector<TkObjEmu> &track,
-                             const std::vector<float> additional_vars) const override;
+                             const std::vector<float> additional_vars,
+                             std::unordered_map<std::string, float> &tkEle_userFloat) const override;
 
     typedef ap_fixed<21, 12, AP_RND_CONV, AP_SAT> bdt_feature_t;
     typedef ap_fixed<12, 3, AP_RND_CONV, AP_SAT> bdt_score_t;
@@ -304,7 +363,8 @@ namespace l1ct {
     id_score_t compute_score(const CompositeCandidate &cand,
                              const std::vector<EmCaloObjEmu> &emcalo,
                              const std::vector<TkObjEmu> &track,
-                             const std::vector<float> additional_vars) const override;
+                             const std::vector<float> additional_vars,
+                             std::unordered_map<std::string, float> &tkEle_userFloat) const override;
 
     typedef ap_fixed<30, 20, AP_RND_CONV, AP_SAT> bdt_feature_t;
     typedef ap_fixed<30, 20, AP_RND_CONV, AP_SAT> bdt_score_t;
@@ -320,7 +380,8 @@ namespace l1ct {
     id_score_t compute_score(const CompositeCandidate &cand,
                              const std::vector<EmCaloObjEmu> &emcalo,
                              const std::vector<TkObjEmu> &track,
-                             const std::vector<float> additional_vars) const override;
+                             const std::vector<float> additional_vars,
+                             std::unordered_map<std::string, float> &tkEle_userFloat) const override;
 
     typedef ap_fixed<24, 9, AP_RND_CONV, AP_SAT> bdt_feature_t;
     typedef ap_fixed<12, 4, AP_RND_CONV, AP_SAT> bdt_score_t;
@@ -334,9 +395,10 @@ namespace l1ct {
     TkEgCID_EB_v1(const l1ct::PFTkEGAlgoEmuConfig::CompIDParameters &params, int debug);
 
     id_score_t compute_score(const CompositeCandidate &cand,
-                             const std::vector<EmCaloObjEmu> &emcalo,
-                             const std::vector<TkObjEmu> &track,
-                             const std::vector<float> additional_vars) const override;
+                              const std::vector<EmCaloObjEmu> &emcalo,
+                              const std::vector<TkObjEmu> &track,
+                              const std::vector<float> additional_vars,
+                              std::unordered_map<std::string, float> &tkEle_userFloat) const override;
 
     typedef ap_fixed<8, 1, AP_RND_CONV, AP_SAT> bdt_feature_t;
     typedef ap_fixed<11, 4, AP_RND_CONV, AP_SAT> bdt_score_t;
@@ -388,7 +450,8 @@ namespace l1ct {
                                         const std::vector<EmCaloObjEmu> &emcalo,
                                         const std::vector<TkObjEmu> &track,
                                         std::vector<int> &emCalo2tk,
-                                        std::vector<id_score_t> &emCaloTkBdtScore) const;
+                                        std::vector<id_score_t> &emCaloTkBdtScore,
+                                        std::vector<std::unordered_map<std::string, float>> &tkEle_userFloats) const;
 
     void sel_emCalo(unsigned int nmax_sel,
                     const std::vector<EmCaloObjEmu> &emcalo,
@@ -402,7 +465,8 @@ namespace l1ct {
                  const std::vector<id_score_t> &emCaloTkBdtScore,
                  std::vector<EGObjEmu> &egstas,
                  std::vector<EGIsoObjEmu> &egobjs,
-                 std::vector<EGIsoEleObjEmu> &egeleobjs) const;
+                 std::vector<EGIsoEleObjEmu> &egeleobjs,
+                 const std::vector<std::unordered_map<std::string, float>> &tkEle_userFloats) const;
 
     void addEgObjsToPF(std::vector<EGObjEmu> &egstas,
                        std::vector<EGIsoObjEmu> &egobjs,
@@ -414,6 +478,7 @@ namespace l1ct {
                        const pt_t ptCorr,
                        const int tk_idx,
                        const id_score_t bdtScore,
+                       const std::unordered_map<std::string, float> &tkEle_userFloat,
                        const std::vector<unsigned int> &components = {}) const;
 
     EGObjEmu &addEGStaToPF(std::vector<EGObjEmu> &egobjs,
@@ -432,7 +497,8 @@ namespace l1ct {
                                     const TkObjEmu &track,
                                     const unsigned int hwQual,
                                     const pt_t ptCorr,
-                                    const id_score_t bdtScore) const;
+                                    const id_score_t bdtScore,
+                                    const std::unordered_map<std::string, float> &tkEle_userFloat) const;
 
     template <typename T>
     void ptsort_ref(int nIn, int nOut, const std::vector<T> &in, std::vector<T> &out) const {
@@ -560,6 +626,7 @@ namespace l1ct {
     PFTkEGAlgoEmuConfig cfg;
     // Could use a std::variant
     std::unique_ptr<TkEGEleAssociationModel> tkEleModel_;
+    std::unique_ptr<TkEGElePtRegressionModel> tkEleCorrector_;
 
 #if defined(BDT_DEBUG)
     mutable std::vector<TkEGEleAssociationModel::BDTDebugData> bdt_debug_datas_;

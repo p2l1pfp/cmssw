@@ -17,6 +17,7 @@
 #include "FWCore/Utilities/interface/Exception.h"
 
 #include <ap_int.h>
+#include <unordered_map>
 
 namespace l1t {
 
@@ -50,6 +51,19 @@ namespace l1t {
     void setPuppiIsol(float puppiIsol) { puppiIsol_ = puppiIsol; }
     void setPuppiIsolPV(float puppiIsolPV) { puppiIsolPV_ = puppiIsolPV; }
     void setEgCaloPtr(const edm::Ptr<L1Candidate>& egPtr) { egCaloPtr_ = egPtr; }
+    void addUserFloat(const std::string& name, float value) { userFloats_[name] = value; }
+    void setUserFloats(const std::unordered_map<std::string, float> &userFloats) {
+      userFloats_ = std::unordered_map<std::string, float>(userFloats);
+    }
+    float userFloat(const std::string& name) const {
+      auto it = userFloats_.find(name);
+      if (it != userFloats_.end()) {
+        return userFloats_.at(name);
+      } else {
+        return -999.;
+      }
+    }
+    std::unordered_map<std::string, float> getUserFloats() const { return userFloats_; }
 
     template <int N>
     void setEgBinaryWord(ap_uint<N> word, HWEncoding encoding) {
@@ -81,6 +95,7 @@ namespace l1t {
     float pfIsolPV_;
     float puppiIsol_;
     float puppiIsolPV_;
+    std::unordered_map<std::string, float> userFloats_;
     uint32_t egBinaryWord0_;
     uint32_t egBinaryWord1_;
     uint32_t egBinaryWord2_;

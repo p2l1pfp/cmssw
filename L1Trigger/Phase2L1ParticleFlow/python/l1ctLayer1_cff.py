@@ -41,7 +41,7 @@ l1tLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
     gctEmInputConversionAlgo = cms.string("Emulator"),
     gctEmInputConversionParameters = cms.PSet(
         # gctEmCorrector = cms.string("L1Trigger/Phase2L1ParticleFlow/data/emcorr_barrel.root"),
-        gctEmCorrector = cms.string(""),
+        gctEmCorrector = cms.string("L1Trigger/Phase2L1ParticleFlow/data/calibs/emcorr_barrel.root"),
         gctEmResol = cms.PSet(
             etaBins = cms.vdouble( 0.700,  1.200,  1.600),
             offset  = cms.vdouble( 0.873,  1.081,  1.563),
@@ -105,6 +105,7 @@ l1tLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
         nEM_EGOUT = 10,
         algorithm = 4,
         trkQualityPtMin = 0.,
+        TkElePtRegression_algorithm=cms.uint32(1)
     ),
     tkEgSorterAlgo = cms.string("Barrel"),
     tkEgSorterParameters = tkEgSorterParameters.clone(
@@ -287,7 +288,7 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         #     tight_wp=cms.double(0.0527344),
         #     model=cms.string("L1Trigger/Phase2L1ParticleFlow/data/egamma/compositeID_EE_v1.json")
         # ),
-        ), 
+        ),
     tkEgSorterAlgo = cms.string("Endcap"),
     tkEgSorterParameters = tkEgSorterParameters.clone(
         nObjToSort = 5

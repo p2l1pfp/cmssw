@@ -1,6 +1,7 @@
 #ifndef DataFormats_L1TParticleFlow_egamma_h
 #define DataFormats_L1TParticleFlow_egamma_h
 
+#include <unordered_map>
 #include "DataFormats/L1TParticleFlow/interface/datatypes.h"
 #include "DataFormats/L1TParticleFlow/interface/gt_datatypes.h"
 #include "DataFormats/L1TParticleFlow/interface/bit_encoding.h"
@@ -13,6 +14,7 @@ namespace l1ct {
     glbphi_t hwPhi;
     egquality_t hwQual;
     iso_t hwIso;
+    std::unordered_map<std::string, float> userFloats;
 
     int intPt() const { return Scales::intPt(hwPt); }
     int intEta() const { return hwEta.to_int(); }
@@ -24,6 +26,14 @@ namespace l1ct {
     float floatEta() const { return Scales::floatEta(hwEta); }
     float floatPhi() const { return Scales::floatPhi(hwPhi); }
     float floatIso() const { return Scales::floatIso(hwIso); }
+    float getUserFloat(const std::string& name) const {
+      auto it = userFloats.find(name);
+      if (it != userFloats.end()) {
+        return userFloats.at(name);
+      } else {
+        return -999.;
+      }
+    }
 
     inline bool operator==(const EGIsoObj &other) const {
       return hwPt == other.hwPt && hwEta == other.hwEta && hwPhi == other.hwPhi && hwQual == other.hwQual &&
@@ -39,6 +49,7 @@ namespace l1ct {
       hwPhi = 0;
       hwQual = 0;
       hwIso = 0;
+      userFloats= std::unordered_map<std::string, float>();
     }
 
     static const int BITWIDTH = pt_t::width + glbeta_t::width + glbphi_t::width + egquality_t::width + iso_t::width;

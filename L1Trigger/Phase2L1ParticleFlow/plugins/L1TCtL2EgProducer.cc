@@ -383,6 +383,7 @@ void L1TCtL2EgProducer::convertToEmu(const l1t::TkElectron &tkele,
 
   constituentsPtrs.push_back(std::make_pair(tkele.egCaloPtr(), tkele.trkPtr()));
   emu.src_idx = constituentsPtrs.size() - 1;
+  emu.userFloats = tkele.getUserFloats();
 
   // NOTE: The emulator and FW data-format stores absolute iso while the CMSSW object stores relative iso
   emu.setHwIso(EGIsoEleObjEmu::IsoType::TkIso, l1ct::Scales::makeIso(tkele.trkIsol() * tkele.pt()));
@@ -435,6 +436,7 @@ l1t::TkEm L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoObjEmu &egiso,
   tkem.setPFIsolPV(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PfIsoPV));
   tkem.setPuppiIsol(egiso.floatRelIso(l1ct::EGIsoObjEmu::IsoType::PuppiIso));
   tkem.setEgBinaryWord(gteg.pack(), l1t::TkEm::HWEncoding::GT);
+  tkem.setUserFloats(egiso.userFloats);
   return tkem;
 }
 
@@ -457,6 +459,7 @@ l1t::TkElectron L1TCtL2EgProducer::convertFromEmu(const l1ct::EGIsoEleObjEmu &eg
   tkele.setIdScore(egele.floatIDScore());
   tkele.setCharge(egele.intCharge());
   tkele.setTrkzVtx(l1gt::Scales::floatZ0(gteg.z0));
+  tkele.setUserFloats(egele.userFloats);
   return tkele;
 }
 
