@@ -347,12 +347,12 @@ if not args.patternFilesOFF:
         outputFileExtension = cms.string("txt.gz")
     )
     process.l1tLayer2DeregionizerTM18.inputPatternTimeSlices = cms.VPSet(
-        # cms.PSet(puppiInputLinks = cms.vint32(*range(0, nTM18Links))),
-        # cms.PSet(puppiInputLinks = cms.vint32(*range(nTM18Links, 2*nTM18Links))),
-        # cms.PSet(puppiInputLinks = cms.vint32(*range(2*nTM18Links, 3*nTM18Links))),
-        cms.PSet(puppiInputLinks = cms.vint32(82, 77, 83, 78, 76, 79, 51, 48, 50, 47, 46, 49)),
-        cms.PSet(puppiInputLinks = cms.vint32(75, 72, 68, 73, 69, 74, 61, 58, 54, 57, -1, -1)),
-        cms.PSet(puppiInputLinks = cms.vint32(70, 65, 71, 66, 64, 67, 63, 60, 62, 59, -1, -1)),
+        cms.PSet(puppiInputLinks = cms.vint32(*range(0, nTM18Links))),
+        cms.PSet(puppiInputLinks = cms.vint32(*range(nTM18Links, 2*nTM18Links-2)) + [98, 99]),
+        cms.PSet(puppiInputLinks = cms.vint32(*range(2*nTM18Links-2, 3*nTM18Links-2))),
+        # cms.PSet(puppiInputLinks = cms.vint32(82, 77, 83, 78, 76, 79, 51, 48, 50, 47, 46, 49)),
+        # cms.PSet(puppiInputLinks = cms.vint32(75, 72, 68, 73, 69, 74, 61, 58, 54, 57, -1, -1)),
+        # cms.PSet(puppiInputLinks = cms.vint32(70, 65, 71, 66, 64, 67, 63, 60, 62, 59, -1, -1)),
     )
 
 process.l1tLayer1HF.puAlgoParameters.ptCut = cms.vdouble(0.5)

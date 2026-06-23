@@ -57,7 +57,7 @@ namespace l1ct {
     std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> orderInputs(
         const std::vector<l1ct::OutputRegion> &inputRegions) const;
     std::vector<std::vector<std::vector<PlacedPuppi>>> orderInputsWithPlacement(
-        const std::vector<l1ct::OutputRegion>& inputRegions) const;
+        const std::vector<l1ct::OutputRegion> &inputRegions) const;
     void setDebug(bool debug = true) { debug_ = debug; }
 
   private:

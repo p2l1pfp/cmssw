@@ -43,9 +43,9 @@ std::vector<l1ct::DeregionizerInput::PlacedPuppi> l1ct::DeregionizerInput::input
   return linkPlacedPuppis;
 }
 
-std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>>  l1ct::DeregionizerInput::orderInputsWithPlacement(
-  const std::vector<l1ct::OutputRegion>& inputRegions) const {
-      std::vector<PlacedPuppi> linkPlacedPuppis = inputOrderInfo(inputRegions);
+std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>>
+l1ct::DeregionizerInput::orderInputsWithPlacement(const std::vector<l1ct::OutputRegion> &inputRegions) const {
+  std::vector<PlacedPuppi> linkPlacedPuppis = inputOrderInfo(inputRegions);
   const uint maxTmux =
       std::max_element(boardInfos_.begin(), boardInfos_.end(), [](const BoardInfo &a, const BoardInfo &b) {
         return a.tmuxFactor_ < b.tmuxFactor_;
@@ -84,22 +84,18 @@ std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>>  l1c
 
 std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput::orderInputs(
     const std::vector<l1ct::OutputRegion> &inputRegions) const {
-      auto placed = orderInputsWithPlacement(inputRegions);
-    std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> result(
-        placed.size());
+  auto placed = orderInputsWithPlacement(inputRegions);
+  std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> result(placed.size());
 
-    for (size_t iClock = 0; iClock < placed.size(); ++iClock) {
+  for (size_t iClock = 0; iClock < placed.size(); ++iClock) {
+    result[iClock].resize(placed[iClock].size());
 
-      result[iClock].resize(placed[iClock].size());
-
-      for (size_t iBoard = 0; iBoard < placed[iClock].size(); ++iBoard) {
-
-        for (const auto& placedPuppi : placed[iClock][iBoard]) {
-          result[iClock][iBoard].push_back(placedPuppi.first);
-        }
+    for (size_t iBoard = 0; iBoard < placed[iClock].size(); ++iBoard) {
+      for (const auto &placedPuppi : placed[iClock][iBoard]) {
+        result[iClock][iBoard].push_back(placedPuppi.first);
       }
     }
+  }
 
-    return result;
+  return result;
 }
-
