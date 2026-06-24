@@ -96,20 +96,6 @@ l1ctLayer2SCJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4PFL1Pu
                                                jetEncoding = cms.string("GTWide"))
                                       ])
 process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(outputFilename = cms.string('L1CTSCJetsPatterns'), collections = l1ctLayer2SCJetsProducts)
-
-l1ctLayer2SCJetsTM18Products = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4PFL1PuppiCorrectedTM18Emulator"),
-                                                  nJets = cms.uint32(12),
-                                                  mht  = cms.InputTag("l1tSC4PFL1PuppiCorrectedTM18EmulatorMHT"),
-                                                  nSums = cms.uint32(2),
-                                                  jetEncoding = cms.string("GT")),
-                                         cms.PSet(jets = cms.InputTag("l1tSC8PFL1PuppiCorrectedTM18Emulator"),
-                                                  nJets = cms.uint32(12),
-                                                  jetEncoding = cms.string("GTWide"))
-                                         ])
-process.l1tLayer2SeedConeJetTM18Writer = l1tSeededConeJetFileWriter.clone(
-    outputFilename = cms.string('L1CTSCJetsTM18Patterns'),
-    collections = l1ctLayer2SCJetsTM18Products,
-    )
                                                                    
 l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJetProducer","l1tSC4NGJets"),
                                                nJets = cms.uint32(12),
@@ -122,20 +108,6 @@ l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJ
                                       ])
 process.l1tLayer2SeedConeNGJetWriter = l1tSeededConeJetFileWriter.clone(collections = l1ctLayer2SC4NGJetsProducts,
                                                                         outputFilename = 'L1CTSCNGJetsPatterns')
-
-l1ctLayer2SC4NGJetsTM18Products = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJetTM18Producer","l1tSC4NGJets"),
-                                                  nJets = cms.uint32(12),
-                                                  mht  = cms.InputTag("l1tNGMHTPFTM18Producer"),
-                                                  nSums = cms.uint32(2),
-                                                  jetEncoding = cms.string("GT")),
-                                         cms.PSet(jets = cms.InputTag("l1tSC8PFL1PuppiCorrectedTM18Emulator"),
-                                                  nJets = cms.uint32(12),
-                                                  jetEncoding = cms.string("GTWide"))
-                                         ])
-process.l1tLayer2SeedConeNGJetTM18Writer = l1tSeededConeJetFileWriter.clone(
-    collections = l1ctLayer2SC4NGJetsTM18Products,
-    outputFilename = cms.string('L1CTSCNGJetsTM18Patterns'),
-    )
 
 ## Realistic barrel emulation
 process.l1tLayer1BarrelTDR = process.l1tLayer1Barrel.clone()
@@ -222,14 +194,9 @@ process.l1tSC4NGJetProducer.jets = cms.InputTag("l1tSC4PFL1PuppiEmulator")
 process.l1tSC4NGJetProducer.doJEC = cms.bool(True)
 process.l1tSC4NGJetProducer.correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root")
 process.l1tSC4NGJetProducer.correctorDir = cms.string("L1PuppiSC4EmuJets")
-process.l1tSC4NGJetTM18Producer.jets = cms.InputTag("l1tSC4PFL1PuppiTM18Emulator")
-process.l1tSC4NGJetTM18Producer.doJEC = cms.bool(True)
-process.l1tSC4NGJetTM18Producer.correctorFile = cms.string("L1Trigger/Phase2L1ParticleFlow/data/jecs/jecs_20220308.root")
-process.l1tSC4NGJetTM18Producer.correctorDir = cms.string("L1PuppiSC4EmuJets")
 
 from L1Trigger.Phase2L1ParticleFlow.l1tMHTPFProducer_cfi import l1tMHTPFProducer
 process.l1tNGMHTPFProducer = l1tMHTPFProducer.clone(jets = cms.InputTag("l1tSC4NGJetProducer","l1tSC4NGJets"))
-process.l1tNGMHTPFTM18Producer = l1tMHTPFProducer.clone(jets = cms.InputTag("l1tSC4NGJetTM18Producer","l1tSC4NGJets"))
 
 process.l1tLayer1HGCal.hgcalInputConversionParameters.emulateCorrections = True
 process.l1tLayer1HGCalElliptic.hgcalInputConversionParameters.emulateCorrections = True
@@ -258,13 +225,6 @@ process.runPF = cms.Path(
         process.l1tNGMHTPFProducer +
         process.l1tSC4PFL1PuppiCorrectedEmulatorMHT +
         process.l1tSC8PFL1PuppiCorrectedEmulator +
-        process.l1tLayer2DeregionizerTM18 +
-        process.l1tSC4PFL1PuppiTM18Emulator +
-        process.l1tSC4PFL1PuppiCorrectedTM18Emulator +
-        process.l1tSC4NGJetTM18Producer +
-        process.l1tNGMHTPFTM18Producer +
-        process.l1tSC4PFL1PuppiCorrectedTM18EmulatorMHT +
-        process.l1tSC8PFL1PuppiCorrectedTM18Emulator +
         # process.l1tLayer2SeedConeJetWriter +
         process.l1tLayer2EG
     )
@@ -283,17 +243,10 @@ if not args.patternFilesOFF:
 #####################################################################################################################
 ## Layer 2 seeded-cone jets
 if not args.patternFilesOFF:
-    process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedTM18Emulator)+1, process.l1tLayer2SeedConeJetWriter)
+    process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedEmulator)+1, process.l1tLayer2SeedConeJetWriter)
     process.l1tLayer2SeedConeJetWriter.maxLinesPerFile = _eventsPerFile*54
     process.runPF.insert(process.runPF.index(process.l1tLayer2SeedConeJetWriter)+1, process.l1tLayer2SeedConeNGJetWriter)
     process.l1tLayer2SeedConeNGJetWriter.maxLinesPerFile = _eventsPerFile*54
-    if args.tm18:
-        process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedTM18Emulator)+1, process.l1tLayer2SeedConeJetTM18Writer)
-        process.l1tLayer2SeedConeJetTM18Writer.maxLinesPerFile = _eventsPerFile*54
-        process.runPF.insert(process.runPF.index(process.l1tSC8PFL1PuppiCorrectedTM18Emulator)+2, process.l1tLayer2SeedConeNGJetTM18Writer)
-        process.l1tLayer2SeedConeNGJetTM18Writer.maxLinesPerFile = _eventsPerFile*54
-
-
 if not args.dumpFilesOFF:
     for det in "Barrel", "BarrelTDR", "BarrelSerenity", "BarrelSerenityElliptic", "HGCal", "HGCalElliptic", "HGCalNoTK", "HF","HGCalNNAssoc":
         l1pf = getattr(process, 'l1tLayer1'+det)
@@ -330,23 +283,20 @@ if args.split18 and not args.patternFilesOFF:
         )        
 
 if not args.patternFilesOFF:
-    nTM18Links = sum(int(ps.nLinksPuppi.value()) for ps in process.l1tLayer2DeregionizerTM18.linkConfigs)
-    process.l1tLayer2DeregionizerTM18.writeInputPatternFiles = True
-    process.l1tLayer2DeregionizerTM18.inputPatternFilePSet = cms.PSet(
+    nCTL2InputLinks = sum(int(ps.nLinksPuppi.value()) for ps in process.l1tLayer2Deregionizer.linkConfigs)
+    process.l1tLayer2Deregionizer.writeInputPatternFiles = True
+    process.l1tLayer2Deregionizer.inputPatternFilePSet = cms.PSet(
         gapLengthOutput = cms.uint32(0),
         TMUX = cms.uint32(6),
         maxLinesPerFile = cms.uint32(_eventsPerFile*54+108),
-        outputFilename = cms.string("L1DeregionizerTM18-inputs"),
+        outputFilename = cms.string("L1Deregionizer-inputs"),
         format = cms.string("EMPv2"),
         outputFileExtension = cms.string("txt.gz")
     )
-    process.l1tLayer2DeregionizerTM18.inputPatternTimeSlices = cms.VPSet(
-        cms.PSet(puppiInputLinks = cms.vint32(*range(0, nTM18Links))),
-        cms.PSet(puppiInputLinks = cms.vint32(*range(nTM18Links, 2*nTM18Links-2)) + [98, 99]),
-        cms.PSet(puppiInputLinks = cms.vint32(*range(2*nTM18Links-2, 3*nTM18Links-2))),
-        # cms.PSet(puppiInputLinks = cms.vint32(82, 77, 83, 78, 76, 79, 51, 48, 50, 47, 46, 49)),
-        # cms.PSet(puppiInputLinks = cms.vint32(75, 72, 68, 73, 69, 74, 61, 58, 54, 57, -1, -1)),
-        # cms.PSet(puppiInputLinks = cms.vint32(70, 65, 71, 66, 64, 67, 63, 60, 62, 59, -1, -1)),
+    process.l1tLayer2Deregionizer.inputPatternTimeSlices = cms.VPSet(
+        cms.PSet(puppiInputLinks = cms.vint32(*range(0, nCTL2InputLinks))),
+        cms.PSet(puppiInputLinks = cms.vint32(*range(nCTL2InputLinks, 2*nCTL2InputLinks-2)) + [98, 99]),
+        cms.PSet(puppiInputLinks = cms.vint32(*range(2*nCTL2InputLinks-2, 3*nCTL2InputLinks-2))),
     )
 
 process.l1tLayer1HF.puAlgoParameters.ptCut = cms.vdouble(0.5)
