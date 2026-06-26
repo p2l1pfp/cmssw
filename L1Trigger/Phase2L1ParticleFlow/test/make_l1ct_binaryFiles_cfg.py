@@ -299,9 +299,7 @@ if not args.patternFilesOFF:
         cms.PSet(puppiInputLinks = cms.vint32(*range(2*nCTL2InputLinks-2, 3*nCTL2InputLinks-2))),
     )
 
-process.l1tLayer1HF.puAlgoParameters.ptCut = cms.vdouble(0.5)
-process.l1tLayer1HF.hadPtCut = cms.double(0.5)
+process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200/inputs140X_1.root' ]
 
-process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/VBFHToBB_PU200/inputs140X_2.root' ]
 
 
