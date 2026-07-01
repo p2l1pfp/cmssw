@@ -68,7 +68,6 @@ l1tDeregionizerProducer = cms.EDProducer("DeregionizerProducer",
                                             format = cms.string("EMPv2"),
                                             outputFileExtension = cms.string("txt.gz")
                                                      ),
-                                                     inputPatternTimeSlices = cms.VPSet()
                          )
 
 l1tDeregionizerProducerExtended = l1tDeregionizerProducer.clone(RegionalPuppiCands  = cms.InputTag("l1tLayer1Extended","PuppiRegional"))
