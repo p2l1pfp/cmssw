@@ -57,7 +57,8 @@ private:
   void produce(edm::Event &, const edm::EventSetup &) override;
   void hwToEdm_(const std::vector<l1ct::PuppiObjEmu> &hwOut, std::vector<l1t::PFCandidate> &edmOut) const;
   void configurePatternFileWrite(const edm::ParameterSet &conf);
-  void writePatternFile(const std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>> &layer2InWithPlacement);
+  void writePatternFile(
+      const std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>> &layer2InWithPlacement);
 };
 
 DeregionizerProducer::DeregionizerProducer(const edm::ParameterSet &iConfig)
@@ -188,18 +189,15 @@ void DeregionizerProducer::configurePatternFileWrite(const edm::ParameterSet &co
   inputGapLength_ = pset.getParameter<uint32_t>("gapLengthOutput");
 
   auto boardInfos = input_.boardInfos_;
-  std::sort(boardInfos.begin(), boardInfos.end(),
-            [](const auto &a, const auto &b) { return a.order_ < b.order_; });
+  std::sort(boardInfos.begin(), boardInfos.end(), [](const auto &a, const auto &b) { return a.order_ < b.order_; });
 
   size_t firstChannel = 0;
   for (const auto &b : boardInfos) {
     // Check to ensure input board tmux factor is divisible by patternFileBoardTMUX
     if (b.tmuxFactor_ % patternFileBoardTMUX != 0)
       throw cms::Exception("Configuration")
-          << "Board order " << b.order_
-          << " has tmuxFactor=" << b.tmuxFactor_
-          << " which is not divisible by inputPatternFilePSet.TMUX="
-          << patternFileBoardTMUX;
+          << "Board order " << b.order_ << " has tmuxFactor=" << b.tmuxFactor_
+          << " which is not divisible by inputPatternFilePSet.TMUX=" << patternFileBoardTMUX;
 
     const size_t tmuxRatio = b.tmuxFactor_ / patternFileBoardTMUX;
     const size_t payloadWords = b.tmuxFactor_ * nInputFramesPerBX_ - inputGapLength_;
@@ -221,21 +219,21 @@ void DeregionizerProducer::configurePatternFileWrite(const edm::ParameterSet &co
       linkPayloadWords_[id] = payloadWords;
     }
     firstChannel += tmuxRatio * b.nLinksPuppi_;
-
   }
 
-  inputFileWriter_ = std::make_unique<l1t::demo::BoardDataWriter>(
-      l1t::demo::parseFileFormat(pset.getParameter<std::string>("format")),
-      pset.getParameter<std::string>("outputFilename"),
-      pset.getParameter<std::string>("outputFileExtension"),
-      nInputFramesPerBX_,
-      patternFileBoardTMUX,
-      pset.getParameter<uint32_t>("maxLinesPerFile"),
-      channelIdsInput_,
-      channelSpecsInput_);
+  inputFileWriter_ =
+      std::make_unique<l1t::demo::BoardDataWriter>(l1t::demo::parseFileFormat(pset.getParameter<std::string>("format")),
+                                                   pset.getParameter<std::string>("outputFilename"),
+                                                   pset.getParameter<std::string>("outputFileExtension"),
+                                                   nInputFramesPerBX_,
+                                                   patternFileBoardTMUX,
+                                                   pset.getParameter<uint32_t>("maxLinesPerFile"),
+                                                   channelIdsInput_,
+                                                   channelSpecsInput_);
 }
 
-void DeregionizerProducer::writePatternFile(const std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>> &layer2InWithPlacement) {
+void DeregionizerProducer::writePatternFile(
+    const std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>> &layer2InWithPlacement) {
   std::map<l1t::demo::LinkId, std::vector<ap_uint<64>>> links;
   for (const auto &[id, payloadWords] : linkPayloadWords_)
     links.emplace(id, std::vector<ap_uint<64>>(payloadWords, ap_uint<64>(0)));
