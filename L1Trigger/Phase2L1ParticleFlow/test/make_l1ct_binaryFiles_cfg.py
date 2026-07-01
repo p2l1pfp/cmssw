@@ -293,11 +293,6 @@ if not args.patternFilesOFF:
         format = cms.string("EMPv2"),
         outputFileExtension = cms.string("txt.gz")
     )
-    process.l1tLayer2Deregionizer.inputPatternTimeSlices = cms.VPSet(
-        cms.PSet(puppiInputLinks = cms.vint32(*range(0, nCTL2InputLinks))),
-        cms.PSet(puppiInputLinks = cms.vint32(*range(nCTL2InputLinks, 2*nCTL2InputLinks-2)) + [98, 99]),
-        cms.PSet(puppiInputLinks = cms.vint32(*range(2*nCTL2InputLinks-2, 3*nCTL2InputLinks-2))),
-    )
 
 process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200/inputs140X_1.root' ]
 
