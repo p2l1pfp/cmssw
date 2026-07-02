@@ -279,10 +279,6 @@ void DeregionizerProducer::fillDescriptions(edm::ConfigurationDescriptions &desc
   inputPatternPSet.add<std::string>("outputFileExtension", "txt.gz");
   desc.add<edm::ParameterSetDescription>("inputPatternFilePSet", inputPatternPSet);
 
-  edm::ParameterSetDescription inputTimeSlicePSet;
-  inputTimeSlicePSet.add<std::vector<int32_t>>("puppiInputLinks", {});
-  desc.addVPSet("inputPatternTimeSlices", inputTimeSlicePSet, std::vector<edm::ParameterSet>{});
-
   edm::ParameterSetDescription linkConfigDummyValidator;
   linkConfigDummyValidator.setAllowAnything();
   desc.addVPSet("linkConfigs", linkConfigDummyValidator);

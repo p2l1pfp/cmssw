@@ -95,8 +95,8 @@ l1ctLayer2SCJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4PFL1Pu
                                                nJets = cms.uint32(12),
                                                jetEncoding = cms.string("GTWide"))
                                       ])
-process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(outputFilename = cms.string('L1CTSCJetsPatterns'), collections = l1ctLayer2SCJetsProducts)
-                                                                   
+process.l1tLayer2SeedConeJetWriter = l1tSeededConeJetFileWriter.clone(collections = l1ctLayer2SCJetsProducts)
+
 l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJetProducer","l1tSC4NGJets"),
                                                nJets = cms.uint32(12),
                                                mht = cms.InputTag("l1tNGMHTPFProducer"),
@@ -108,6 +108,7 @@ l1ctLayer2SC4NGJetsProducts = cms.VPSet([cms.PSet(jets = cms.InputTag("l1tSC4NGJ
                                       ])
 process.l1tLayer2SeedConeNGJetWriter = l1tSeededConeJetFileWriter.clone(collections = l1ctLayer2SC4NGJetsProducts,
                                                                         outputFilename = 'L1CTSCNGJetsPatterns')
+
 
 ## Realistic barrel emulation
 process.l1tLayer1BarrelTDR = process.l1tLayer1Barrel.clone()
@@ -295,6 +296,3 @@ if not args.patternFilesOFF:
     )
 
 process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200/inputs140X_1.root' ]
-
-
-
