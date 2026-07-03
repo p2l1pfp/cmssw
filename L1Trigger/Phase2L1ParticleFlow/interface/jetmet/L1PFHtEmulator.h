@@ -70,28 +70,33 @@ namespace P2L1HTMHTEmu {
   inline ap_fixed<12, 3> atan2_cordic(pxy_t in1, pxy_t in2) {
     static constexpr int W = pxy_t::width;
     static constexpr int I = pxy_t::iwidth;
-    static constexpr int WC = W + 7;
-    static constexpr int NITER = WC - 3;
+    static constexpr int CORDIC_GUARD_BITS = 7;
+    static constexpr int WC = W + CORDIC_GUARD_BITS;  // Larger internal working bitwidth with "enough" guard bits
+    static constexpr int WCI = 3;                     // Number of integer bits in WC
+    static constexpr int NITER =
+        WC -
+        WCI;  // Number of iterations to perform, correspond to number of fractional bits in the working bitwidth representation
 
+    // Fixed constants, in precision used by the HLS implementation
     static const ap_fixed<W + 1, 3> pi_ap = M_PI;
     static const ap_fixed<WC, 3> pi2_ap = M_PI / 2.0;
     static const ap_fixed<W + 1, 3> pi4_ap = M_PI / 4.0;
     static const ap_fixed<W + 1, 3> pi3n_ap = -3.0 * M_PI / 4.0;
 
-    // Construct once. Values are truncated into ap_fixed<WC,3>, matching HLS.
+    // LUT of atan(2^-i) for each iteration 0->NITER-1 in precision of working type WC
     static const auto atan_lut = [] {
-      std::array<ap_fixed<WC, 3>, NITER> lut{};
+      std::array<ap_fixed<WC, WCI>, NITER> lut{};
       for (int i = 0; i < NITER; ++i)
         lut[i] = std::atan(std::ldexp(1.0, -i));  // atan(2^-i)
       return lut;
     }();
 
+    // Encode the sign of the inputs (0=negative, 1=zero, 2=positive)
     const ap_uint<2> signin1 = (in1 > 0) ? 2 : (in1 == 0) ? 1 : 0;
     const ap_uint<2> signin2 = (in2 > 0) ? 2 : (in2 == 0) ? 1 : 0;
 
-    ap_fixed<W, 3> out;
-
     // Special cases (match generic_atan2)
+    // If any inputs are zero, no need to run CORDIC
     if (signin1 == 1 && signin2 == 2)
       return 0;
     if (signin1 == 1 && signin2 == 0)
@@ -100,7 +105,7 @@ namespace P2L1HTMHTEmu {
       return pi2_ap;
     if (signin1 == 0 && signin2 == 1)
       return -pi2_ap;
-
+    // If inputs are equal, return +/- pi/4 or -3pi/4 depending on the signs
     if (in1 == in2) {
       if (signin1 == 2)
         return pi4_ap;
@@ -109,21 +114,28 @@ namespace P2L1HTMHTEmu {
       return pi3n_ap;
     }
 
-    // Absolute values
+    // Absolute values of inputs
+    // Widen by one bit to ensure -in1/2 is representable
     ap_fixed<W + 1, I + 1> in1abs = (signin1 == 0) ? (ap_fixed<W + 1, I + 1>)(-in1) : (ap_fixed<W + 1, I + 1>)(in1);
     ap_fixed<W + 1, I + 1> in2abs = (signin2 == 0) ? (ap_fixed<W + 1, I + 1>)(-in2) : (ap_fixed<W + 1, I + 1>)(in2);
 
-    // Bit reinterpretation (not a numeric conversion!)
+    // Bit reinterpretation
+    // CORDIC prefers working with ~2 integer bits and many fractional bits
     ap_fixed<W + 1, 2> in1abs_sft, in2abs_sft;
     in1abs_sft.range() = in1abs.range();
     in2abs_sft.range() = in2abs.range();
 
+    // Ensure cx >= cy for CORDIC, swap in2 and in1 if necessary
+    // CORDIC then operates in 0-pi/4 range
     const bool swap = (in1abs <= in2abs);
-
     ap_fixed<WC, 3> cx = swap ? in2abs_sft : in1abs_sft;
     ap_fixed<WC, 3> cy = swap ? in1abs_sft : in2abs_sft;
-    ap_fixed<WC, 3> cz = 0;
+    ap_fixed<WC, 3> cz = 0;  // Initial angle accumulator
 
+    // CORDIC iterations
+    // Each iteration rotates the vector (cx, cy) by atan(2^-i) towards the x-axis, accumulating the angle in cz.
+    // Sign check of cy determines the direction of rotation for the current iteration. i.e. if cy<0, the previous iteration overshot the x-axis and the next iteration rotates back towards the x-axis.
+    // After all iterations, cy~0 and cz contains the angle of the original vector (in1, in2) in radians.
     for (int i = 0; i < NITER; ++i) {
       ap_fixed<WC, 3> cx_new, cy_new, cz_new;
 
@@ -142,19 +154,18 @@ namespace P2L1HTMHTEmu {
       cz = cz_new;
     }
 
+    // Map cz back to the original quadrant based on the signs of the inputs and whether they were swapped.
     if (!swap)
       cz = pi2_ap - cz;
 
     if (signin2 == 0 && signin1 == 2)
-      out = pi_ap - cz;
+      return pi_ap - cz;
     else if (signin2 == 0 && signin1 == 0)
-      out = cz - pi_ap;
+      return cz - pi_ap;
     else if (signin2 == 2 && signin1 == 0)
-      out = -cz;
+      return -cz;
     else
-      out = cz;
-
-    return out;
+      return cz;
   }
 
   inline etaphi_t phi_cordic(pxy_t y, pxy_t x) {
