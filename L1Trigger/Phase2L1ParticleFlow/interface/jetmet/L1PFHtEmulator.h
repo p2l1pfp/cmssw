@@ -198,7 +198,7 @@ namespace P2L1HTMHTEmu {
     PtPxPy v_pxpy;
 
     //Initialize table once
-    cossin_t sin_table[N_TABLE];
+    static cossin_t sin_table[N_TABLE];
     init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
 
     cossin_t sinphi;
