@@ -99,6 +99,12 @@ namespace P2L1HTMHTEmu {
     table_t out = sin_table[hwPhi];
     return out;
   }
+  
+  inline void init_atan_table( std::array<ap_ufixed<128, 2>, 23> &atan_lut) {
+    for (int i = 0; i < CORDIC_NITER; ++i) {
+      atan_lut[i] = cordic_working_t(ap_ufixed<128, 2>(std::atan(std::ldexp(1.0, -i))));
+    }
+  }
 
   // Software emulation of hls::atan2(pxy_t, pxy_t) = generic_atan2<W=16,I=13>.
   // Replicates the fixed-point CORDIC arithmetic bit-exactly so that the CMSSW
@@ -152,6 +158,8 @@ namespace P2L1HTMHTEmu {
     for (int i = 0; i < CORDIC_NITER; ++i) {
       cordic_working_t cx_new, cy_new, cz_new;
 
+      static std::array<ap_ufixed<128, 2>, 23> atan_lut;
+      init_atan_table(atan_lut);
       cordic_working_t angle = cordic_working_t(atan_lut[i]);  // convert once
 
       if (cy[CORDIC_WORKING_W - 1] == 0) {
