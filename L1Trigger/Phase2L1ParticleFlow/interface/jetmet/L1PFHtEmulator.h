@@ -103,8 +103,8 @@ namespace P2L1HTMHTEmu {
     table_t out = sin_table[hwPhi];
     return out;
   }
-  
-  inline void init_atan_table( std::array<ap_ufixed<128, 2>, 23> &atan_lut) {
+
+  inline void init_atan_table(std::array<ap_ufixed<128, 2>, 23> &atan_lut) {
     for (int i = 0; i < CORDIC_NITER; ++i) {
       atan_lut[i] = cordic_working_t(ap_ufixed<128, 2>(std::atan(std::ldexp(1.0, -i))));
     }
