@@ -92,13 +92,22 @@ void Phase2L1CaloPFClusterEmulator::produce(edm::Event& iEvent, const edm::Event
 
   float GCTintTowers[nTowerEta][nTowerPhi];
   float GCTintTowersEcal[nTowerEta][nTowerPhi];
+  for (int ieta = 0; ieta < nTowerEta; ieta++) {
+    for (int iphi = 0; iphi < nTowerPhi; iphi++) {
+      GCTintTowers[ieta][iphi] = 0.;
+      GCTintTowersEcal[ieta][iphi] = 0.;
+    }
+  }
+
   float realEta[nTowerEta][nTowerPhi];
   float realPhi[nTowerEta][nTowerPhi];
   for (const l1tp2::CaloTower& i : *caloTowerCollection) {
     int ieta = i.towerIEta();
     int iphi = i.towerIPhi();
-    GCTintTowers[ieta][iphi] = i.ecalTowerEt() + i.hcalTowerEt();
-    GCTintTowersEcal[ieta][iphi] = i.ecalTowerEt();
+    if (i.ecalTowerEt() + i.hcalTowerEt() > 0.) {
+      GCTintTowers[ieta][iphi] = i.ecalTowerEt() + i.hcalTowerEt();
+      GCTintTowersEcal[ieta][iphi] = i.ecalTowerEt();
+    }
     realEta[ieta][iphi] = i.towerEta();
     realPhi[ieta][iphi] = i.towerPhi();
   }
