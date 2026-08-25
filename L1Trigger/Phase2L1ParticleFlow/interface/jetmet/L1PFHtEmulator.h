@@ -198,7 +198,11 @@ namespace P2L1HTMHTEmu {
 
     //Initialize table once
     static cossin_t sin_table[N_TABLE];
-    init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
+    static const bool sin_table_init = []() {
+        init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
+        return true;
+    }();
+    (void)sin_table_init; // Does nothing, just to avoid unused variable warning
 
     cossin_t sinphi;
     cossin_t cosphi;
