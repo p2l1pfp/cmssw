@@ -10,185 +10,63 @@
 #include "hls_math.h"
 #endif
 
-#include <vector>
-#include <numeric>
-#include <algorithm>
-#include "ap_int.h"
-#include "ap_fixed.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/jetmet/L1PFAtan2Cordic.h"
 
 namespace P2L1HTMHTEmu {
-  typedef l1ct::pt_t pt_t;          // Type for pt/ht 1 unit = 0.25 GeV; max = 16 TeV
-  typedef l1ct::glbeta_t etaphi_t;  // Type for eta & phi
+  typedef l1ct::pt_t pt_t;
+  typedef l1ct::glbeta_t etaphi_t;
 
   typedef ap_fixed<12, 3> radians_t;
   typedef ap_fixed<9, 2> cossin_t;
   typedef ap_fixed<16, 13> pxy_t;
-  static constexpr int Fin = 6;  // Number of decimal bits/precision of met squared i.e. 2*16 - 2*13
-  static constexpr int Fout = pt_t::width - pt_t::iwidth;  // Number of decimal bits/precision of output met
 
+  static constexpr int Fin = 6;
+  static constexpr int Fout = pt_t::width - pt_t::iwidth;
   static constexpr int N_TABLE = 2048;
 
-  // Constants for CORDIC atan2 implementation
-  // Based on those used by hls implementation
-  static constexpr int CORDIC_INPUT_W = pxy_t::width;
-  static constexpr int CORDIC_INPUT_I = pxy_t::iwidth;
-  static constexpr int CORDIC_GUARD_BITS = 7;
-  static constexpr int CORDIC_WORKING_W =
-      CORDIC_INPUT_W + CORDIC_GUARD_BITS;                // Larger internal working bitwidth with "enough" guard bits
-  static constexpr int CORDIC_WORKING_I = 3;             // Number of integer bits in CORDIC working representation
-  static constexpr int CORDIC_NITER = CORDIC_WORKING_W;  // Number of iterations to perform
-
-  // Fixed constants, in precision used by the HLS implementation
-  static const ap_fixed<CORDIC_INPUT_W + 1, CORDIC_WORKING_I> pi_ap(M_PI);
-  static const ap_fixed<CORDIC_INPUT_W + 2, CORDIC_WORKING_I> pi2_ap(M_PI_2);
-  static const ap_fixed<CORDIC_INPUT_W + 1, CORDIC_WORKING_I> pi4_ap(M_PI_4);
-  static const ap_fixed<CORDIC_INPUT_W + 1, CORDIC_WORKING_I> pi3n_ap(-3 * M_PI_4);
-
-  // Useful typedefs for CORDIC implementation
-  typedef ap_fixed<CORDIC_INPUT_W + 1, CORDIC_INPUT_I + 1> cordic_abs_t;
-  typedef ap_fixed<CORDIC_INPUT_W + 1, 2> cordic_scaled_input_t;
-  typedef ap_fixed<CORDIC_WORKING_W, CORDIC_WORKING_I> cordic_working_t;
-
   // Class for intermediate variables
-  class PtPxPy {
-  public:
-    pt_t pt = 0.;
-    pxy_t px = 0.;
-    pxy_t py = 0.;
+ class PtPxPy {
+ public:
+   pt_t pt = 0.;
+   pxy_t px = 0.;
+   pxy_t py = 0.;
 
-    PtPxPy operator+(const PtPxPy &b) const {
-      PtPxPy c;
-      c.pt = this->pt + b.pt;
-      c.px = this->px + b.px;
-      c.py = this->py + b.py;
-      return c;
-    }
-  };
+   PtPxPy operator+(const PtPxPy &b) const {
+     PtPxPy c;
+     c.pt = this->pt + b.pt;
+     c.px = this->px + b.px;
+     c.py = this->py + b.py;
+     return c;
+   }
+ };
 
-  namespace Scales {
-    const ap_fixed<12, -4> scale_degToRad = M_PI / 180.;
-  };  // namespace Scales
+ namespace Scales {
+   const ap_fixed<12, -4> scale_degToRad = M_PI / 180.;
+ };  // namespace Scales
 
-  template <class data_T, class table_T, int N>
-  void init_sinphi_table(table_T table_out[N]) {
-    for (int i = 0; i < N; i++) {
-      double x = i * (M_PI / 180.) / 2.;
-      table_T sin_x = std::sin(x);
-      table_out[i] = sin_x;
-    }
-  }
-  template <class in_t, class table_t, int N>
-  table_t sine_with_conversion(etaphi_t hwPhi) {
-    table_t sin_table[N];
-    init_sinphi_table<in_t, table_t, N>(sin_table);
-    table_t out = sin_table[hwPhi];
-    return out;
-  }
-
-  inline void init_atan_table(std::array<ap_ufixed<128, 2>, 23> &atan_lut) {
-    for (int i = 0; i < CORDIC_NITER; ++i) {
-      atan_lut[i] = cordic_working_t(ap_ufixed<128, 2>(std::atan(std::ldexp(1.0, -i))));
-    }
-  }
-
-  // Software emulation of hls::atan2(pxy_t, pxy_t) = generic_atan2<W=16,I=13>.
-  // Replicates the fixed-point CORDIC arithmetic bit-exactly so that the CMSSW
-  // emulator matches the HLS firmware/csim output.
-  inline ap_fixed<12, 3> atan2_cordic(pxy_t in1, pxy_t in2) {
-    // Encode the sign of the inputs (0=negative, 1=zero, 2=positive)
-    const ap_uint<2> signin1 = (in1 > 0) ? 2 : (in1 == 0) ? 1 : 0;
-    const ap_uint<2> signin2 = (in2 > 0) ? 2 : (in2 == 0) ? 1 : 0;
-
-    // Special cases (match generic_atan2)
-    // If any inputs are zero, no need to run CORDIC
-    if (signin1 == 1 && signin2 == 2)
-      return 0;
-    if (signin1 == 1 && signin2 == 0)
-      return pi_ap;
-    if (signin1 == 2 && signin2 == 1)
-      return pi2_ap;
-    if (signin1 == 0 && signin2 == 1)
-      return -pi2_ap;
-    // If inputs are equal, return +/- pi/4 or -3pi/4 depending on the signs
-    if (in1 == in2) {
-      if (signin1 == 2)
-        return pi4_ap;
-      if (signin1 == 1)
-        return 0;
-      return pi3n_ap;
-    }
-
-    // Absolute values of inputs
-    // Widen by one bit to ensure -in1/2 is representable
-    cordic_abs_t in1abs = (signin1 == 0) ? cordic_abs_t(-in1) : cordic_abs_t(in1);
-    cordic_abs_t in2abs = (signin2 == 0) ? cordic_abs_t(-in2) : cordic_abs_t(in2);
-
-    // Bit reinterpretation
-    // CORDIC prefers working with ~2 integer bits and many fractional bits
-    cordic_scaled_input_t in1abs_sft, in2abs_sft;
-    in1abs_sft.range() = in1abs.range();
-    in2abs_sft.range() = in2abs.range();
-
-    // Ensure cx >= cy for CORDIC, swap in2 and in1 if necessary
-    // CORDIC then operates in 0-pi/4 range
-    const bool swap = (in1abs < in2abs);
-    cordic_working_t cx = swap ? in2abs_sft : in1abs_sft;
-    cordic_working_t cy = swap ? in1abs_sft : in2abs_sft;
-    cordic_working_t cz = 0;  // Initial angle accumulator
-
-    // CORDIC iterations
-    // Each iteration rotates the vector (cx, cy) by atan(2^-i) towards the x-axis, accumulating the angle in cz.
-    // Sign check of cy determines the direction of rotation for the current iteration. i.e. if cy<0, the previous iteration overshot the x-axis and the next iteration rotates back towards the x-axis.
-    // After all iterations, cy~0 and cz contains the angle of the original vector (in1, in2) in radians.
-    // Also initialize atan LUT once
-    static std::array<ap_ufixed<128, 2>, 23> atan_lut;
-    static const bool atan_lut_init = []() {
-      init_atan_table(atan_lut);
-      return true;
-    }();
-    (void)atan_lut_init; // Does nothing, just to avoid unused variable warning
-
-    for (int i = 0; i < CORDIC_NITER; ++i) {
-      cordic_working_t cx_new, cy_new, cz_new;
-
-      const cordic_working_t angle = cordic_working_t(atan_lut[i]);  // convert once
-
-      if (cy[CORDIC_WORKING_W - 1] == 0) {
-        cx_new = cx + (cy >> i);
-        cy_new = cy - (cx >> i);
-        cz_new = cz + angle;
-      } else {
-        cx_new = cx - (cy >> i);
-        cy_new = cy + (cx >> i);
-        cz_new = cz - angle;
-      }
-
-      cx = cx_new;
-      cy = cy_new;
-      cz = cz_new;
-    }
-
-    // Map cz back to the original quadrant based on the signs of the inputs and whether they were swapped.
-    if (!swap)
-      cz = pi2_ap - cz;
-
-    if (signin2 == 0 && signin1 == 2)
-      return pi_ap - cz;
-    else if (signin2 == 0 && signin1 == 0)
-      return cz - pi_ap;
-    else if (signin2 == 2 && signin1 == 0)
-      return -cz;
-    else
-      return cz;
-  }
+ template <class data_T, class table_T, int N>
+ void init_sinphi_table(table_T table_out[N]) {
+   for (int i = 0; i < N; i++) {
+     double x = i * (M_PI / 180.) / 2.;
+     table_T sin_x = std::sin(x);
+     table_out[i] = sin_x;
+   }
+ }
+ template <class in_t, class table_t, int N>
+ table_t sine_with_conversion(etaphi_t hwPhi) {
+   table_t sin_table[N];
+   init_sinphi_table<in_t, table_t, N>(sin_table);
+   table_t out = sin_table[hwPhi];
+   return out;
+ }
 
   inline etaphi_t phi_cordic(pxy_t y, pxy_t x) {
 #ifdef CMSSW_GIT_HASH
-    ap_fixed<12, 3> phi = atan2_cordic(y, x);
+    ap_fixed<12, 3> phi = P2L1ATanCordicEmu::atan2_cordic<ap_fixed<12,3>, pxy_t>(y, x);
 #else
     ap_fixed<12, 3> phi = hls::atan2(y, x);
 #endif
-    ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;  // radians to hwPhi
+    ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;
     return phi * etaphiscale;
   }
 
