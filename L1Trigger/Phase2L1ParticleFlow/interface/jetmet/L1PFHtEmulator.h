@@ -61,11 +61,9 @@ namespace P2L1HTMHTEmu {
  }
 
   inline etaphi_t phi_cordic(pxy_t y, pxy_t x) {
-#ifdef CMSSW_GIT_HASH
+    // This emulates the following firmware function, since hls_math.h is not available in CMSSW
+    // ap_fixed<12, 3> phi = hls::atan2(y, x);
     ap_fixed<12, 3> phi = P2L1ATanCordicEmu::atan2_cordic<ap_fixed<12,3>, pxy_t>(y, x);
-#else
-    ap_fixed<12, 3> phi = hls::atan2(y, x);
-#endif
     ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;
     return phi * etaphiscale;
   }
