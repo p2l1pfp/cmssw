@@ -140,11 +140,17 @@ namespace P2L1HTMHTEmu {
     // Each iteration rotates the vector (cx, cy) by atan(2^-i) towards the x-axis, accumulating the angle in cz.
     // Sign check of cy determines the direction of rotation for the current iteration. i.e. if cy<0, the previous iteration overshot the x-axis and the next iteration rotates back towards the x-axis.
     // After all iterations, cy~0 and cz contains the angle of the original vector (in1, in2) in radians.
+    static std::array<ap_ufixed<128, 2>, 23> atan_lut;
+    static const bool atan_lut_init = []() {
+      init_atan_table(atan_lut);
+      return true;
+    }();
+    (void)atan_lut_init;
+
     for (int i = 0; i < CORDIC_NITER; ++i) {
       cordic_working_t cx_new, cy_new, cz_new;
 
-      static std::array<ap_ufixed<128, 2>, 23> atan_lut;
-      init_atan_table(atan_lut);
+      const cordic_working_t angle = cordic_working_t(atan_lut[i]);  // convert once
       cordic_working_t angle = cordic_working_t(atan_lut[i]);  // convert once
 
       if (cy[CORDIC_WORKING_W - 1] == 0) {
