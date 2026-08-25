@@ -22,9 +22,10 @@ namespace P2L1ATanCordicEmu {
     static constexpr int CORDIC_INPUT_W = IN_T::width;
     static constexpr int CORDIC_INPUT_I = IN_T::iwidth;
     static constexpr int CORDIC_GUARD_BITS = 7;
-    static constexpr int CORDIC_WORKING_W = CORDIC_INPUT_W + CORDIC_GUARD_BITS; // Larger internal working bitwidth with "enough" guard bits
-    static constexpr int CORDIC_WORKING_I = 3; // Number of integer bits in CORDIC working representation
-    static constexpr int CORDIC_NITER = CORDIC_WORKING_W; // Number of iterations to perform
+    static constexpr int CORDIC_WORKING_W =
+        CORDIC_INPUT_W + CORDIC_GUARD_BITS;                // Larger internal working bitwidth with "enough" guard bits
+    static constexpr int CORDIC_WORKING_I = 3;             // Number of integer bits in CORDIC working representation
+    static constexpr int CORDIC_NITER = CORDIC_WORKING_W;  // Number of iterations to perform
 
     // Useful typedefs for CORDIC implementation
     typedef ap_fixed<CORDIC_INPUT_W + 1, CORDIC_INPUT_I + 1> cordic_abs_t;
@@ -36,8 +37,7 @@ namespace P2L1ATanCordicEmu {
   template <typename IN_T>
   inline void init_atan_table(typename CordicConfig<IN_T>::cordic_lut_t& atan_lut) {
     for (int i = 0; i < CordicConfig<IN_T>::CORDIC_NITER; ++i) {
-      atan_lut[i] = typename CordicConfig<IN_T>::cordic_working_t(
-          ap_ufixed<128, 2>(std::atan(std::ldexp(1.0, -i))));
+      atan_lut[i] = typename CordicConfig<IN_T>::cordic_working_t(ap_ufixed<128, 2>(std::atan(std::ldexp(1.0, -i))));
     }
   }
 

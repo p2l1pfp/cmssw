@@ -25,45 +25,45 @@ namespace P2L1HTMHTEmu {
   static constexpr int N_TABLE = 2048;
 
   // Class for intermediate variables
- class PtPxPy {
- public:
-   pt_t pt = 0.;
-   pxy_t px = 0.;
-   pxy_t py = 0.;
+  class PtPxPy {
+  public:
+    pt_t pt = 0.;
+    pxy_t px = 0.;
+    pxy_t py = 0.;
 
-   PtPxPy operator+(const PtPxPy &b) const {
-     PtPxPy c;
-     c.pt = this->pt + b.pt;
-     c.px = this->px + b.px;
-     c.py = this->py + b.py;
-     return c;
-   }
- };
+    PtPxPy operator+(const PtPxPy &b) const {
+      PtPxPy c;
+      c.pt = this->pt + b.pt;
+      c.px = this->px + b.px;
+      c.py = this->py + b.py;
+      return c;
+    }
+  };
 
- namespace Scales {
-   const ap_fixed<12, -4> scale_degToRad = M_PI / 180.;
- };  // namespace Scales
+  namespace Scales {
+    const ap_fixed<12, -4> scale_degToRad = M_PI / 180.;
+  };  // namespace Scales
 
- template <class data_T, class table_T, int N>
- void init_sinphi_table(table_T table_out[N]) {
-   for (int i = 0; i < N; i++) {
-     double x = i * (M_PI / 180.) / 2.;
-     table_T sin_x = std::sin(x);
-     table_out[i] = sin_x;
-   }
- }
- template <class in_t, class table_t, int N>
- table_t sine_with_conversion(etaphi_t hwPhi) {
-   table_t sin_table[N];
-   init_sinphi_table<in_t, table_t, N>(sin_table);
-   table_t out = sin_table[hwPhi];
-   return out;
- }
+  template <class data_T, class table_T, int N>
+  void init_sinphi_table(table_T table_out[N]) {
+    for (int i = 0; i < N; i++) {
+      double x = i * (M_PI / 180.) / 2.;
+      table_T sin_x = std::sin(x);
+      table_out[i] = sin_x;
+    }
+  }
+  template <class in_t, class table_t, int N>
+  table_t sine_with_conversion(etaphi_t hwPhi) {
+    table_t sin_table[N];
+    init_sinphi_table<in_t, table_t, N>(sin_table);
+    table_t out = sin_table[hwPhi];
+    return out;
+  }
 
   inline etaphi_t phi_cordic(pxy_t y, pxy_t x) {
     // This emulates the following firmware function, since hls_math.h is not available in CMSSW
     // ap_fixed<12, 3> phi = hls::atan2(y, x);
-    ap_fixed<12, 3> phi = P2L1ATanCordicEmu::atan2_cordic<ap_fixed<12,3>, pxy_t>(y, x);
+    ap_fixed<12, 3> phi = P2L1ATanCordicEmu::atan2_cordic<ap_fixed<12, 3>, pxy_t>(y, x);
     ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;
     return phi * etaphiscale;
   }
@@ -75,10 +75,10 @@ namespace P2L1HTMHTEmu {
     //Initialize table once
     static cossin_t sin_table[N_TABLE];
     static const bool sin_table_init = []() {
-        init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
-        return true;
+      init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
+      return true;
     }();
-    (void)sin_table_init; // Does nothing, just to avoid unused variable warning
+    (void)sin_table_init;  // Does nothing, just to avoid unused variable warning
 
     cossin_t sinphi;
     cossin_t cosphi;
