@@ -20,6 +20,7 @@ namespace l1ct {
       uint nLinksPuppi_;
       uint nPuppiPerRegion_;
       uint order_;
+      uint tmuxFactor_;
       std::vector<uint> regions_;
     };
 
@@ -55,14 +56,14 @@ namespace l1ct {
         const std::vector<l1ct::OutputRegion> &inputRegions) const;
     std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> orderInputs(
         const std::vector<l1ct::OutputRegion> &inputRegions) const;
-
+    std::vector<std::vector<std::vector<PlacedPuppi>>> orderInputsWithPlacement(
+        const std::vector<l1ct::OutputRegion> &inputRegions) const;
     void setDebug(bool debug = true) { debug_ = debug; }
 
   private:
     bool debug_ = false;
     // these are not configurable in current design
     static constexpr uint nInputFramesPerBX_ = 9;
-    static constexpr uint tmuxFactor_ = 6;
   };
 
 }  // namespace l1ct

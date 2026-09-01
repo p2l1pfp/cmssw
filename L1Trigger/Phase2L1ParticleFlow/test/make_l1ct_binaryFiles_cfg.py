@@ -283,4 +283,16 @@ if args.split18 and not args.patternFilesOFF:
             barrelSerenityVU13PTM18WriterConfig.clone(inputFileName = f"l1BarrelSerenityTM18-inputs-vu13p-ts{tmSlice}")
         )        
 
+if not args.patternFilesOFF:
+    nCTL2InputLinks = sum(int(ps.nLinksPuppi.value()) for ps in process.l1tLayer2Deregionizer.linkConfigs)
+    process.l1tLayer2Deregionizer.writeInputPatternFiles = True
+    process.l1tLayer2Deregionizer.inputPatternFilePSet = cms.PSet(
+        gapLengthOutput = cms.uint32(0),
+        TMUX = cms.uint32(6),
+        maxLinesPerFile = cms.uint32(_eventsPerFile*54+108),
+        outputFilename = cms.string("L1Deregionizer-inputs"),
+        format = cms.string("EMPv2"),
+        outputFileExtension = cms.string("txt.gz")
+    )
+
 process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200/inputs140X_1.root' ]

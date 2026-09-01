@@ -12,7 +12,9 @@ l1ct::DeregionizerInput::DeregionizerInput(const std::vector<edm::ParameterSet> 
     boardInfo.nPuppiPerRegion_ = pset.getParameter<uint32_t>("nPuppiPerRegion");
     boardInfo.order_ = pset.getParameter<int32_t>("outputBoard");
     boardInfo.regions_ = pset.getParameter<std::vector<uint32_t>>("outputRegions");
-    boardInfo.nPuppiFramesPerRegion_ = (boardInfo.nOutputFramesPerBX_ * tmuxFactor_) / boardInfo.regions_.size();
+    boardInfo.tmuxFactor_ = pset.getParameter<uint32_t>("tmuxFactor");
+    boardInfo.nPuppiFramesPerRegion_ =
+        (boardInfo.nOutputFramesPerBX_ * boardInfo.tmuxFactor_) / boardInfo.regions_.size();
     boardInfos_.push_back(boardInfo);
   }
 }
@@ -41,16 +43,20 @@ std::vector<l1ct::DeregionizerInput::PlacedPuppi> l1ct::DeregionizerInput::input
   return linkPlacedPuppis;
 }
 
-std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput::orderInputs(
-    const std::vector<l1ct::OutputRegion> &inputRegions) const {
+std::vector<std::vector<std::vector<l1ct::DeregionizerInput::PlacedPuppi>>>
+l1ct::DeregionizerInput::orderInputsWithPlacement(const std::vector<l1ct::OutputRegion> &inputRegions) const {
   std::vector<PlacedPuppi> linkPlacedPuppis = inputOrderInfo(inputRegions);
-  std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> layer2inReshape(nInputFramesPerBX_ * tmuxFactor_);
-  for (uint iClock = 0; iClock < nInputFramesPerBX_ * tmuxFactor_; iClock++) {
-    std::vector<std::vector<l1ct::PuppiObjEmu>> orderedPupsOnClock(boardInfos_.size());
+  const uint maxTmux =
+      std::max_element(boardInfos_.begin(), boardInfos_.end(), [](const BoardInfo &a, const BoardInfo &b) {
+        return a.tmuxFactor_ < b.tmuxFactor_;
+      })->tmuxFactor_;
+  std::vector<std::vector<std::vector<PlacedPuppi>>> layer2inReshape(nInputFramesPerBX_ * maxTmux);
+  for (uint iClock = 0; iClock < nInputFramesPerBX_ * maxTmux; iClock++) {
+    std::vector<std::vector<PlacedPuppi>> orderedPupsOnClock(boardInfos_.size());
     // Find all the puppis on this clock cycle
     for (BoardInfo boardInfo : boardInfos_) {
       // find all puppis on this clock cycle, from this board
-      std::vector<l1ct::PuppiObjEmu> orderedPupsOnClockOnBoard;
+      std::vector<PlacedPuppi> orderedPupsOnClockOnBoard;
       for (uint iLink = 0; iLink < boardInfo.nLinksPuppi_; iLink++) {
         // find all puppis from this clock cycle, from this board, from this link
         auto onClockOnBoardOnLink = [&](PlacedPuppi p) {
@@ -66,7 +72,7 @@ std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput
             std::remove_if(std::begin(linkPlacedPuppis), std::end(linkPlacedPuppis), onClockOnBoardOnLink),
             std::end(linkPlacedPuppis));  // erase already placed pups
         if (!allPupsOnClockOnBoardOnLink.empty()) {
-          orderedPupsOnClockOnBoard.push_back(allPupsOnClockOnBoardOnLink.at(0).first);
+          orderedPupsOnClockOnBoard.push_back(allPupsOnClockOnBoardOnLink.front());
         }
       }
       orderedPupsOnClock.at(boardInfo.order_) = orderedPupsOnClockOnBoard;
@@ -74,4 +80,22 @@ std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput
     layer2inReshape.at(iClock) = orderedPupsOnClock;
   }
   return layer2inReshape;
+}
+
+std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> l1ct::DeregionizerInput::orderInputs(
+    const std::vector<l1ct::OutputRegion> &inputRegions) const {
+  auto placed = orderInputsWithPlacement(inputRegions);
+  std::vector<std::vector<std::vector<l1ct::PuppiObjEmu>>> result(placed.size());
+
+  for (size_t iClock = 0; iClock < placed.size(); ++iClock) {
+    result[iClock].resize(placed[iClock].size());
+
+    for (size_t iBoard = 0; iBoard < placed[iClock].size(); ++iBoard) {
+      for (const auto &placedPuppi : placed[iClock][iBoard]) {
+        result[iClock][iBoard].push_back(placedPuppi.first);
+      }
+    }
+  }
+
+  return result;
 }
