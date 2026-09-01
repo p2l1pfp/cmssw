@@ -166,9 +166,12 @@ associationPSset.associationThreshold = cms.double(-1.0)
 process.l1tLayer1HGCalNNAssoc.puAlgoParameters.useMLAssociation = True
 process.l1tLayer1HGCalNNAssoc.puAlgoParameters.NNVtxAssociation = associationPSset
 
+# To switch off the regression pending FW implementation, uncomment the line below
+# process.l1tLayer2EG.eleRegression.model_types = cms.vuint32(0)
 
 if args.serenity:
     process.l1tLayer1.pfProducers[0] = "l1tLayer1BarrelSerenity"
+
     process.l1tLayer2EG.tkElectrons[1].pfProducer = "l1tLayer1BarrelSerenity:L1TkElePerBoard"
     process.l1tLayer2EG.tkEms[2].pfProducer = "l1tLayer1BarrelSerenity:L1TkEmPerBoard"
 
@@ -238,7 +241,7 @@ process.runPF.associate(process.L1TLayer1TaskInputsTask)
 if not args.patternFilesOFF:
     process.l1tLayer2EG.writeInPattern = True
     process.l1tLayer2EG.writeOutPattern = True
-    process.l1tLayer2EG.inPatternFile.maxLinesPerFile = _eventsPerFile*54
+    process.l1tLayer2EG.inPatternFile.maxLinesPerFile = int(162*_eventsPerFile/3+54*(3-1))
     process.l1tLayer2EG.outPatternFile.maxLinesPerFile = _eventsPerFile*54
 
 #####################################################################################################################
