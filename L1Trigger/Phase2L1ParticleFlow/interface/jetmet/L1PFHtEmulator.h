@@ -10,22 +10,18 @@
 #include "hls_math.h"
 #endif
 
-#include <vector>
-#include <numeric>
-#include <algorithm>
-#include "ap_int.h"
-#include "ap_fixed.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/jetmet/L1PFAtan2Cordic.h"
 
 namespace P2L1HTMHTEmu {
-  typedef l1ct::pt_t pt_t;          // Type for pt/ht 1 unit = 0.25 GeV; max = 16 TeV
-  typedef l1ct::glbeta_t etaphi_t;  // Type for eta & phi
+  typedef l1ct::pt_t pt_t;
+  typedef l1ct::glbeta_t etaphi_t;
 
   typedef ap_fixed<12, 3> radians_t;
   typedef ap_fixed<9, 2> cossin_t;
   typedef ap_fixed<16, 13> pxy_t;
-  static constexpr int Fin = 6;  // Number of decimal bits/precision of met squared i.e. 2*16 - 2*13
-  static constexpr int Fout = pt_t::width - pt_t::iwidth;  // Number of decimal bits/precision of output met
 
+  static constexpr int Fin = 6;
+  static constexpr int Fout = pt_t::width - pt_t::iwidth;
   static constexpr int N_TABLE = 2048;
 
   // Class for intermediate variables
@@ -35,7 +31,7 @@ namespace P2L1HTMHTEmu {
     pxy_t px = 0.;
     pxy_t py = 0.;
 
-    PtPxPy operator+(const PtPxPy& b) const {
+    PtPxPy operator+(const PtPxPy &b) const {
       PtPxPy c;
       c.pt = this->pt + b.pt;
       c.px = this->px + b.px;
@@ -65,12 +61,10 @@ namespace P2L1HTMHTEmu {
   }
 
   inline etaphi_t phi_cordic(pxy_t y, pxy_t x) {
-#ifdef CMSSW_GIT_HASH
-    ap_fixed<12, 3> phi = atan2(y.to_double(), x.to_double());  // hls_math.h not available yet in CMSSW
-#else
-    ap_fixed<12, 3> phi = hls::atan2(y, x);
-#endif
-    ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;  // radians to hwPhi
+    // This emulates the following firmware function, since hls_math.h is not available in CMSSW
+    // ap_fixed<12, 3> phi = hls::atan2(y, x);
+    ap_fixed<12, 3> phi = P2L1ATanCordicEmu::atan2_cordic<ap_fixed<12, 3>, pxy_t>(y, x);
+    ap_fixed<16, 9> etaphiscale = (float)l1ct::Scales::INTPHI_PI / M_PI;
     return phi * etaphiscale;
   }
 
@@ -79,8 +73,12 @@ namespace P2L1HTMHTEmu {
     PtPxPy v_pxpy;
 
     //Initialize table once
-    cossin_t sin_table[N_TABLE];
-    init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
+    static cossin_t sin_table[N_TABLE];
+    static const bool sin_table_init = []() {
+      init_sinphi_table<etaphi_t, cossin_t, N_TABLE>(sin_table);
+      return true;
+    }();
+    (void)sin_table_init;  // Does nothing, just to avoid unused variable warning
 
     cossin_t sinphi;
     cossin_t cosphi;
@@ -112,7 +110,7 @@ inline l1ct::Sum htmht(std::vector<l1ct::Jet> jets) {
   std::vector<P2L1HTMHTEmu::PtPxPy> ptpxpy;
   ptpxpy.resize(jets.size());
   std::transform(
-      jets.begin(), jets.end(), ptpxpy.begin(), [](const l1ct::Jet& jet) { return P2L1HTMHTEmu::mht_compute(jet); });
+      jets.begin(), jets.end(), ptpxpy.begin(), [](const l1ct::Jet &jet) { return P2L1HTMHTEmu::mht_compute(jet); });
 
   // Sum pt, px, py over jets
   P2L1HTMHTEmu::PtPxPy hthxhy = std::accumulate(ptpxpy.begin(), ptpxpy.end(), P2L1HTMHTEmu::PtPxPy());
