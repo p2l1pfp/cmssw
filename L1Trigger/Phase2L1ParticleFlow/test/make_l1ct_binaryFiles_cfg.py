@@ -166,7 +166,6 @@ associationPSset.associationThreshold = cms.double(-1.0)
 process.l1tLayer1HGCalNNAssoc.puAlgoParameters.useMLAssociation = True
 process.l1tLayer1HGCalNNAssoc.puAlgoParameters.NNVtxAssociation = associationPSset
 
-
 if args.serenity:
     process.l1tLayer1.pfProducers[0] = "l1tLayer1BarrelSerenity"
     process.l1tLayer2EG.tkElectrons[1].pfProducer = "l1tLayer1BarrelSerenity:L1TkElePerBoard"
@@ -202,6 +201,7 @@ process.l1tNGMHTPFProducer = l1tMHTPFProducer.clone(jets = cms.InputTag("l1tSC4N
 process.l1tLayer1HGCal.hgcalInputConversionParameters.emulateCorrections = True
 process.l1tLayer1HGCalElliptic.hgcalInputConversionParameters.emulateCorrections = True
 process.l1tLayer1HGCalNoTK.hgcalInputConversionParameters.emulateCorrections = True
+process.l1tLayer1HGCalNNAssoc.hgcalInputConversionParameters.emulateCorrections = True
 
 process.runPF = cms.Path( 
         process.l1tGTTInputProducer +
@@ -212,6 +212,7 @@ process.runPF = cms.Path(
         process.l1tLayer1BarrelSerenity +
         process.l1tLayer1BarrelSerenityElliptic +
         process.l1tLayer1HGCal +
+        process.l1tLayer1HGCalNNAssoc + 
         process.l1tLayer1HGCalElliptic +
         process.l1tLayer1HGCalNoTK +
         process.l1tLayer1HF +

@@ -59,7 +59,7 @@ void NNVtxAssoc::TTTrackNetworkSelector(const l1ct::PFRegionEmu& region,
   fPt_ = t.hwPt;
   fResBin_ = associationNetworkZ0ResBins[resbin];
   fMVA_ = t.hwQuality;
-  fDz_ = t.hwZ0 - v.hwZ0;
+  fDz_ = abs(t.hwZ0 - v.hwZ0);
 
   modelInput[0] = fPt_;           // Obj pT
   modelInput[1] = fMVA_;          // Obj track quality
@@ -134,7 +134,7 @@ void EmuNetworkSelector(const l1ct::TkObj& t, const l1ct::PVObjEmu& v, l1ct::nn_
   nn_inputtype fPt_ = t.hwPt;
   nn_inputtype fResBin_ = associationNetworkZ0ResBins[resbin];
   nn_inputtype fMVA_ = t.hwQuality;
-  nn_inputtype fDz_ = t.hwZ0 - v.hwZ0;
+  nn_inputtype fDz_ = abs(t.hwZ0 - v.hwZ0);
 
   hls4ml_L1TNNVtx_Assoc_Model_v0::input_t association_input[N_NN_ASSOC_FEATURES];
   hls4ml_L1TNNVtx_Assoc_Model_v0::result_t nn_output_score[N_NN_ASSOC_OUTPUTS];
