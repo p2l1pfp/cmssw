@@ -250,6 +250,13 @@ bool l1ct::RegionizerDecodedInputs::read(std::fstream& from) {
   if (!(muon.region.read(from) && readMany(from, muon.obj)))
     return false;
 
+  if (!readVar(from, number))
+    return false;
+  gctcommon.resize(number);
+  for (auto& v : gctcommon) {
+    if (!(v.region.read(from) && readMany(from, v.obj)))
+      return false;
+  }
   return true;
 }
 
@@ -283,6 +290,14 @@ bool l1ct::RegionizerDecodedInputs::write(std::fstream& to) const {
   if (!(muon.region.write(to) && writeMany(muon.obj, to)))
     return false;
 
+  number = gctcommon.size();
+  if (!writeVar(number, to))
+    return false;
+  for (const auto& v : gctcommon) {
+    if (!(v.region.write(to) && writeMany(v.obj, to)))
+      return false;
+  }
+
   return true;
 }
 void l1ct::RegionizerDecodedInputs::clear() {
@@ -293,6 +308,8 @@ void l1ct::RegionizerDecodedInputs::clear() {
   for (auto& r : track)
     r.clear();
   muon.clear();
+  for (auto& r : gctcommon)
+    r.clear();
 }
 
 bool l1ct::PFInputRegion::read(std::fstream& from) {

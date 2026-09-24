@@ -285,6 +285,7 @@ namespace l1ct {
     std::vector<DetectorSector<EmCaloObjEmu>> emcalo;
     std::vector<DetectorSector<TkObjEmu>> track;
     DetectorSector<MuObjEmu> muon;  // muons are global
+    std::vector<DetectorSector<CommonCaloObjEmu>> gctcommon;
 
     bool read(std::fstream &from);
     bool write(std::fstream &to) const;
@@ -354,7 +355,7 @@ namespace l1ct {
   };
 
   struct Event {
-    enum { VERSION = 15 };
+    enum { VERSION = 16 };
     uint32_t run, lumi;
     uint64_t event;
     RawInputs raw;
