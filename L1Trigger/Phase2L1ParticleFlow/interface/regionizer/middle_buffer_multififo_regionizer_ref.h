@@ -96,10 +96,6 @@ namespace l1ct {
       to.src = from.src;
     }
 
-    // void convert_GCTinput_tmux(const RegionizerDecodedInputs& in_tm6, RegionizerDecodedInputs& in_tm18) const;
-    void init_GCT_tmux18sectors(std::vector<l1ct::DetectorSector<l1ct::HadCaloObjEmu>>& gct_tmux18_hadcalo,
-                                std::vector<l1ct::DetectorSector<l1ct::EmCaloObjEmu>>& gct_tmux18_emcalo) const;
-
   protected:
     const unsigned int NTK_SECTORS, NCALO_SECTORS;
     const unsigned int NTK_LINKS, HCAL_LINKS, ECAL_LINKS, NMU_LINKS;
@@ -127,12 +123,6 @@ namespace l1ct {
                         const std::vector<DetectorSector<T>>& in,
                         std::vector<T>& links,
                         std::vector<bool>& valid);
-
-    void fillSharedCaloLinks(unsigned int iclock,
-                             const std::vector<DetectorSector<l1ct::EmCaloObjEmu>>& em_in,
-                             const std::vector<DetectorSector<l1ct::HadCaloObjEmu>>& had_in,
-                             std::vector<l1ct::CommonCaloObjEmu>& links,
-                             std::vector<bool>& valid);
 
     void run_worker(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out);
   };
