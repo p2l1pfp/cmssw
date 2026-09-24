@@ -20,6 +20,7 @@
 
 #include <vector>
 #include <array>
+#include <cassert>
 #include <fstream>
 #include <numeric>
 #include <algorithm>
@@ -146,13 +147,24 @@ namespace L1METEmu {
   }
 
   inline void Sum_Particles(const std::vector<Particle_xy>& particles_xy, Particle_xy& met_xy) {
-    met_xy.hwPx = 0;
-    met_xy.hwPy = 0;
+    std::array<Particle_xy, 128> sums;
+    assert(particles_xy.size() <= sums.size());
 
-    for (unsigned int i = 0; i < particles_xy.size(); ++i) {
-      met_xy.hwPx -= particles_xy[i].hwPx;
-      met_xy.hwPy -= particles_xy[i].hwPy;
+    Particle_xy zero;
+    zero.hwPx = 0;
+    zero.hwPy = 0;
+    sums.fill(zero);
+    std::copy(particles_xy.begin(), particles_xy.end(), sums.begin());
+
+    for (unsigned int size = sums.size(); size > 1; size /= 2) {
+      for (unsigned int i = 0; i < size / 2; ++i) {
+        sums[i].hwPx = sums[2 * i].hwPx + sums[2 * i + 1].hwPx;
+        sums[i].hwPy = sums[2 * i].hwPy + sums[2 * i + 1].hwPy;
+      }
     }
+
+    met_xy.hwPx = -sums[0].hwPx;
+    met_xy.hwPy = -sums[0].hwPy;
   }
 
   inline void pxpy_to_ptphi(const Particle_xy met_xy, l1ct::Sum& hls_met) {

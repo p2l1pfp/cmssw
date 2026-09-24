@@ -1,5 +1,4 @@
 import argparse
-import os
 import sys
 import math
 
@@ -306,9 +305,3 @@ if not args.patternFilesOFF:
     )
 
 process.source.fileNames  = [ '/store/cmst3/group/l1tr/FastPUPPI/14_2_X/fpinputs_140X/v0/TT_PU200/inputs140X_1.root' ]
-process.source.fileNames = ["file:inputs140X_1.root "]
-
-process.l1tSC4NGJetProducer.l1tSC4NGJetModelPath = cms.string(os.environ["CMSSW_BASE"]+"/src/L1TSC4NGJetModel/L1TSC4NGJetModel_v1_0_1")
-process.source.fileNames = ["file:inputs140X_1.root "]
-
-process.l1tSC4NGJetProducer.l1tSC4NGJetModelPath = cms.string(os.environ["CMSSW_BASE"]+"/src/L1TSC4NGJetModel/L1TSC4NGJetModel_v1_0_1")
