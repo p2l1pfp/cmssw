@@ -7,12 +7,16 @@
 
 // TODO: Currently this only works in CMSSW
 l1ct::GctEmClusterDecoderEmulator::GctEmClusterDecoderEmulator(const edm::ParameterSet &iConfig)
-    : corrector_(iConfig.getParameter<std::string>("gctEmCorrector"), -1),
+    : corrector_(iConfig.getParameter<std::string>("gctEmCorrector"),
+                 -1,
+                 false,
+                 iConfig.existsAs<bool>("emulateCorrections") && iConfig.getParameter<bool>("emulateCorrections")),
       resol_(iConfig.getParameter<edm::ParameterSet>("gctEmResol")) {}
 
 edm::ParameterSetDescription l1ct::GctEmClusterDecoderEmulator::getParameterSetDescription() {
   edm::ParameterSetDescription description;
   description.add<std::string>("gctEmCorrector");
+  description.add<bool>("emulateCorrections", false);
   edm::ParameterSetDescription gctEmResolPSD;
   gctEmResolPSD.add<std::vector<double>>("etaBins");
   gctEmResolPSD.add<std::vector<double>>("offset");

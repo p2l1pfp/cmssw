@@ -6,12 +6,16 @@
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 
 l1ct::GctHadClusterDecoderEmulator::GctHadClusterDecoderEmulator(const edm::ParameterSet &iConfig)
-    : corrector_(iConfig.getParameter<std::string>("gctHadCorrector"), -1),
+    : corrector_(iConfig.getParameter<std::string>("gctHadCorrector"),
+                 -1,
+                 false,
+                 iConfig.existsAs<bool>("emulateCorrections") && iConfig.getParameter<bool>("emulateCorrections")),
       resol_(iConfig.getParameter<edm::ParameterSet>("gctHadResol")) {}
 
 edm::ParameterSetDescription l1ct::GctHadClusterDecoderEmulator::getParameterSetDescription() {
   edm::ParameterSetDescription description;
   description.add<std::string>("gctHadCorrector");
+  description.add<bool>("emulateCorrections", false);
   edm::ParameterSetDescription gctHadResolPSD;
   gctHadResolPSD.add<std::vector<double>>("etaBins");
   gctHadResolPSD.add<std::vector<double>>("offset");
