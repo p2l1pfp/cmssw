@@ -59,13 +59,26 @@ l1ct::L2TkEleRegressionEmulator::Model_EB_v0::Model_EB_v0(const std::string& mod
 }
 
 l1ct::pt_t l1ct::L2TkEleRegressionEmulator::Model_EB_v0::compute_ptCorr(const EGIsoEleObjEmu& ele) const {
-  bdt_feature_t scaled_ID = bdt_feature_t(ele.floatIDScore());
-  bdt_feature_t scaled_cl_eta = scale(fabs(ele.floatEta()), 0., 0);
+  bdt_feature_t scaled_ID = bdt_feature_t(ele.hwIDScore.to_float());
+  bdt_feature_t scaled_cl_eta = scale(fabs(ele.hwEta.to_float()), 0., 9);
   bdt_feature_t scaled_cltk_absDphi = scale(ele.hwTkCaloDphi.to_float(), 0., 5);
   bdt_feature_t scaled_tk_chi2RPhi = scale(ele.hwTkRedChi2RPhi.to_float(), 0., 3);
-  bdt_feature_t scaled_cl_pt = scale(ele.floatPt(), 0., 5);
+  bdt_feature_t scaled_cl_pt = scale(ele.hwPt.to_float(), 0., 5);
   bdt_feature_t scaled_cl_ss = scale(ele.hwCaloShowerShape.to_float(), 0., -1);
   bdt_feature_t scaled_cltk_ptRatio = scale(ele.hwCaloTkPtRatio.to_float(), 0., 0);
+
+#ifdef L2TKELEREG_DEBUG
+  if (ele.hwPt > 0) {
+    std::cout << "[EMULATOR] BDT inputs: " << std::endl;
+    std::cout << "  scaled_ID: " << scaled_ID << std::endl;
+    std::cout << "  scaled_cl_eta: " << scaled_cl_eta << std::endl;
+    std::cout << "  scaled_cltk_absDphi: " << scaled_cltk_absDphi << std::endl;
+    std::cout << "  scaled_tk_chi2RPhi: " << scaled_tk_chi2RPhi << std::endl;
+    std::cout << "  scaled_cl_pt: " << scaled_cl_pt << std::endl;
+    std::cout << "  scaled_cl_ss: " << scaled_cl_ss << std::endl;
+    std::cout << "  scaled_cltk_ptRatio: " << scaled_cltk_ptRatio << std::endl;
+  }
+#endif
 
   // Run BDT inference
   std::vector<bdt_feature_t> inputs = {scaled_ID,
@@ -80,6 +93,13 @@ l1ct::pt_t l1ct::L2TkEleRegressionEmulator::Model_EB_v0::compute_ptCorr(const EG
 
   bdt_out_t corr_factor = bdt_out_t(bdt_output[0]);
   float corr_pt = ele.hwPt.to_float() * (1. + corr_factor.to_float());
+
+#ifdef L2TKELEREG_DEBUG
+  if (ele.hwPt > 0) {
+    std::cout << "[EMULATOR] BDT output: " << 1. + corr_factor.to_float() << std::endl;
+  }
+#endif
+
   return pt_t(corr_pt);
 }
 
@@ -90,7 +110,7 @@ void l1ct::L2TkEleRegressionEmulator::run(const std::vector<EGIsoEleObjEmu>& in_
     EGIsoEleObjEmu corrected_ele = ele;
     // find the eta bin the electron falls into and apply the corresponding regression model
     for (size_t i = 0; i < eta_bins_.size(); ++i) {
-      if (std::abs(ele.floatVtxEta()) < eta_bins_[i]) {
+      if (std::abs(ele.floatEta()) < eta_bins_[i]) {
         if (models_[i]) {
           corrected_ele.hwPt = models_[i]->compute_ptCorr(ele);
         }

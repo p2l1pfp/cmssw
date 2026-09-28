@@ -138,9 +138,17 @@ namespace l1ct {
     float floatCaloShowerShape() const { return Scales::floatShoweShape(hwCaloShowerShape); }
     float floatCaloTkPtRatio() const { return Scales::floatCaloTkPtRatio(hwCaloTkPtRatio); }
 
-    static const int BITWIDTH = EGIsoObj::BITWIDTH + tkdeta_t::width + tkdphi_t::width + z0_t::width +
-                                id_score_t::width + 1 + redChi2Bin_t::width + tkdphi_t::width + shower_shape_t::width +
-                                caloTkPtRatio_t::width;
+    static const int BITWIDTH_SLIM =
+        EGIsoObj::BITWIDTH + tkdeta_t::width + tkdphi_t::width + z0_t::width + id_score_t::width + 1;
+
+    static const int BITWIDTH =
+        BITWIDTH_SLIM + redChi2Bin_t::width + tkdphi_t::width + shower_shape_t::width + caloTkPtRatio_t::width;
+
+    static const int BITWIDTH_BARREL =
+        BITWIDTH_SLIM + redChi2Bin_t::width + tkdphi_t::width + shower_shape_t::width + caloTkPtRatio_t::width;
+
+    static const int BITWIDTH_ENDCAP = BITWIDTH_SLIM;
+
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;
       unsigned int start = 0;
@@ -160,9 +168,135 @@ namespace l1ct {
       pack_into_bits(ret, start, hwCaloTkPtRatio);
       return ret;
     }
+
+    inline ap_uint<BITWIDTH_BARREL> pack_barrel() const {
+      ap_uint<BITWIDTH_BARREL> ret;
+      unsigned int start = 0;
+      pack_into_bits(ret, start, hwPt);
+      pack_into_bits(ret, start, hwEta);
+      pack_into_bits(ret, start, hwPhi);
+      pack_into_bits(ret, start, hwQual);
+      pack_into_bits(ret, start, hwIso);
+      pack_into_bits(ret, start, hwDEta);
+      pack_into_bits(ret, start, hwDPhi);
+      pack_into_bits(ret, start, hwZ0);
+      pack_bool_into_bits(ret, start, hwCharge);
+      pack_into_bits(ret, start, hwIDScore);
+      pack_into_bits(ret, start, hwTkRedChi2RPhi);
+      pack_into_bits(ret, start, hwTkCaloDphi);
+      pack_into_bits(ret, start, hwCaloShowerShape);
+      pack_into_bits(ret, start, hwCaloTkPtRatio);
+      return ret;
+    }
+
+    inline ap_uint<BITWIDTH_ENDCAP> pack_endcap() const {
+      ap_uint<BITWIDTH_ENDCAP> ret;
+      unsigned int start = 0;
+      pack_into_bits(ret, start, hwPt);
+      pack_into_bits(ret, start, hwEta);
+      pack_into_bits(ret, start, hwPhi);
+      pack_into_bits(ret, start, hwQual);
+      pack_into_bits(ret, start, hwIso);
+      pack_into_bits(ret, start, hwDEta);
+      pack_into_bits(ret, start, hwDPhi);
+      pack_into_bits(ret, start, hwZ0);
+      pack_bool_into_bits(ret, start, hwCharge);
+      pack_into_bits(ret, start, hwIDScore);
+      return ret;
+    }
+
+    inline ap_uint<BITWIDTH_SLIM> pack_slim() const {
+      ap_uint<BITWIDTH_SLIM> ret;
+      unsigned int start = 0;
+      pack_into_bits(ret, start, hwPt);
+      pack_into_bits(ret, start, hwEta);
+      pack_into_bits(ret, start, hwPhi);
+      pack_into_bits(ret, start, hwQual);
+      pack_into_bits(ret, start, hwIso);
+      pack_into_bits(ret, start, hwDEta);
+      pack_into_bits(ret, start, hwDPhi);
+      pack_into_bits(ret, start, hwZ0);
+      pack_bool_into_bits(ret, start, hwCharge);
+      pack_into_bits(ret, start, hwIDScore);
+      return ret;
+    }
+
     inline static EGIsoEleObj unpack(const ap_uint<BITWIDTH> &src) {
       EGIsoEleObj ret;
-      ret.initFromBits(src);
+      ret.clear();
+      unsigned int start = 0;
+      unpack_from_bits(src, start, ret.hwPt);
+      unpack_from_bits(src, start, ret.hwEta);
+      unpack_from_bits(src, start, ret.hwPhi);
+      unpack_from_bits(src, start, ret.hwQual);
+      unpack_from_bits(src, start, ret.hwIso);
+      unpack_from_bits(src, start, ret.hwDEta);
+      unpack_from_bits(src, start, ret.hwDPhi);
+      unpack_from_bits(src, start, ret.hwZ0);
+      unpack_bool_from_bits(src, start, ret.hwCharge);
+      unpack_from_bits(src, start, ret.hwIDScore);
+      unpack_from_bits(src, start, ret.hwTkRedChi2RPhi);
+      unpack_from_bits(src, start, ret.hwTkCaloDphi);
+      unpack_from_bits(src, start, ret.hwCaloShowerShape);
+      unpack_from_bits(src, start, ret.hwCaloTkPtRatio);
+      return ret;
+    }
+
+    inline static EGIsoEleObj unpack_barrel(const ap_uint<BITWIDTH_BARREL> &src) {
+      EGIsoEleObj ret;
+      ret.clear();
+      unsigned int start = 0;
+      unpack_from_bits(src, start, ret.hwPt);
+      unpack_from_bits(src, start, ret.hwEta);
+      unpack_from_bits(src, start, ret.hwPhi);
+      unpack_from_bits(src, start, ret.hwQual);
+      unpack_from_bits(src, start, ret.hwIso);
+      unpack_from_bits(src, start, ret.hwDEta);
+      unpack_from_bits(src, start, ret.hwDPhi);
+      unpack_from_bits(src, start, ret.hwZ0);
+      unpack_bool_from_bits(src, start, ret.hwCharge);
+      unpack_from_bits(src, start, ret.hwIDScore);
+      unpack_from_bits(src, start, ret.hwTkRedChi2RPhi);
+      unpack_from_bits(src, start, ret.hwTkCaloDphi);
+      unpack_from_bits(src, start, ret.hwCaloShowerShape);
+      unpack_from_bits(src, start, ret.hwCaloTkPtRatio);
+      return ret;
+    }
+
+    inline static EGIsoEleObj unpack_endcap(const ap_uint<BITWIDTH_ENDCAP> &src) {
+      EGIsoEleObj ret;
+      ret.clear();
+      unsigned int start = 0;
+      unpack_from_bits(src, start, ret.hwPt);
+      unpack_from_bits(src, start, ret.hwEta);
+      unpack_from_bits(src, start, ret.hwPhi);
+      unpack_from_bits(src, start, ret.hwQual);
+      unpack_from_bits(src, start, ret.hwIso);
+      unpack_from_bits(src, start, ret.hwDEta);
+      unpack_from_bits(src, start, ret.hwDPhi);
+      unpack_from_bits(src, start, ret.hwZ0);
+      unpack_bool_from_bits(src, start, ret.hwCharge);
+      unpack_from_bits(src, start, ret.hwIDScore);
+      return ret;
+    }
+
+    template <int NBITS>
+    inline static EGIsoEleObj unpack_slim(const ap_uint<NBITS> &src) {
+      static_assert(NBITS == BITWIDTH_SLIM || NBITS == BITWIDTH_ENDCAP || NBITS == BITWIDTH_BARREL || NBITS == BITWIDTH,
+                    "Invalid number of bits for unpacking EGIsoEleObj");
+      EGIsoEleObj ret;
+      ret.clear();
+      unsigned int start = 0;
+      unpack_from_bits(src, start, ret.hwPt);
+      unpack_from_bits(src, start, ret.hwEta);
+      unpack_from_bits(src, start, ret.hwPhi);
+      unpack_from_bits(src, start, ret.hwQual);
+      unpack_from_bits(src, start, ret.hwIso);
+      unpack_from_bits(src, start, ret.hwDEta);
+      unpack_from_bits(src, start, ret.hwDPhi);
+      unpack_from_bits(src, start, ret.hwZ0);
+      unpack_bool_from_bits(src, start, ret.hwCharge);
+      unpack_from_bits(src, start, ret.hwIDScore);
       return ret;
     }
 
