@@ -560,6 +560,14 @@ hpsTauTable = cms.EDProducer(
     )
 )
 
+### Embedding Model
+l1tEmbeddingModelTable = cms.EDProducer(
+    "EmbeddingModelTableProducer",
+    src = cms.InputTag("l1tEmbeddingModelProducer", "L1TEmbeddingModel"),
+    name = cms.string("L1Embedding"),
+    doc = cms.string("Embedding model output, 20-dim float vector"),
+)
+
 ## L1 Objects
 p2L1TablesTask = cms.Task(
     ## Muons
@@ -605,5 +613,7 @@ p2L1TablesTask = cms.Task(
     gttEtSumTable,
     gttHtSumTable,
     gttExtHtSumTable,
+    # Embedding
+    l1tEmbeddingModelTable,
 )
 
