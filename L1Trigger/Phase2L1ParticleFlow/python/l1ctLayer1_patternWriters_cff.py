@@ -221,6 +221,13 @@ barrelSerenityVU13PTM18WriterConfig = _barrelSerenityTM18.clone(
     inputFileName = cms.string("l1BarrelSerenityTM18-inputs-vu13p"),
     gttLatency = cms.uint32(167), # shorter, to fit 6 events in 1024 lines
     maxLinesPerInputFile = cms.uint32(1024+167), # anything beyond 986 will be nulls
+    # FIXME: set gct links!!!
+        #gctNLinksEcal = 1,
+    #gctNLinksHad = 1,
+    # gctSectors = cms.VPSet(*[cms.PSet(
+    #     gctLinksHad = cms.vint32(4*18+1+s),
+    #     gctLinksEcal = cms.vint32(4*18+1+s),
+    # ) for s in range(3)]),
 )
 for ie in range(2):
     for iphi in range(9):
@@ -306,28 +313,33 @@ hgcalWriterVU9PTM18WriterConfig = _hgcalWriterTM18.clone(
    gmtLink = 4*15+2,
    gttLink = 0,
 )
-hgcalWriterVU13PTM18WriterConfig = hgcalWriterVU9PTM18WriterConfig.clone(
-   inputFileName = cms.string("l1HGCalTM18-inputs-vu13p"),
-   gmtLink = 4*18+0,
-   gttLink = 4*28+3,
-)
+
+from L1Trigger.Phase2L1ParticleFlow.serenityHgcalTMUX18_WriterConfig_cfi import writerConfig
+
+hgcalWriterVU13PTM18WriterConfig = writerConfig.clone()
+
+# hgcalWriterVU13PTM18WriterConfig = hgcalWriterVU9PTM18WriterConfig.clone(
+#    inputFileName = cms.string("l1HGCalTM18-inputs-vu13p"),
+#    gmtLink = 4*18+0,
+#    gttLink = 4*28+3,
+# )
 for ie in range(2):
     for iphi in range(9):
         isec, ilink = 9*ie+iphi, 2*iphi+ie
         hgcalWriterVU9PTM18WriterConfig.tfSectors[isec].tfLink = (ilink+2 if ilink < 10 else (4*28+(ilink-10)))
-        hgcalWriterVU13PTM18WriterConfig.tfSectors[isec].tfLink = (ilink if ilink < 12 else (4*30+(ilink-12)))
+        # hgcalWriterVU13PTM18WriterConfig.tfSectors[isec].tfLink = (ilink if ilink < 12 else (4*30+(ilink-12)))
     for iphi in range(3):
         isec, ilink = 3*ie+iphi, 2*iphi+ie
         if ilink < 2:
             hgcalWriterVU9PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(12+ilink),4*(12+ilink)+4)
         else:
             hgcalWriterVU9PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(14+ilink),4*(14+ilink)+4)
-        if ilink < 3:
-            hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(12+ilink),4*(12+ilink)+4)
-        elif ilink < 5:
-            hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(13+ilink),4*(13+ilink)+4)
-        else:
-            hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(14+ilink),4*(14+ilink)+4)
+        # if ilink < 3:
+        #     hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(12+ilink),4*(12+ilink)+4)
+        # elif ilink < 5:
+        #     hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(13+ilink),4*(13+ilink)+4)
+        # else:
+        #     hgcalWriterVU13PTM18WriterConfig.hgcSectors[isec].hgcLinks += range(4*(14+ilink),4*(14+ilink)+4)
 
 hgcalTM18WriterConfigs = [
     hgcalWriterOutputTM18WriterConfig,
