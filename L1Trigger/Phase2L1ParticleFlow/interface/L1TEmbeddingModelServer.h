@@ -11,7 +11,7 @@
 class L1TEmbeddingModelServer {
 public:
   using input_t = ap_fixed<11, 3>;   // model input feature (N_FEATURES=12 per particle)
-  using output_t = ap_fixed<23, 4>;  // model output component (N_OUT=20 per event)
+  using output_t = ap_fixed<12, 2>;  // model output component (N_OUT=20 per event)
 
   explicit L1TEmbeddingModelServer(const std::string &modelName);
 
