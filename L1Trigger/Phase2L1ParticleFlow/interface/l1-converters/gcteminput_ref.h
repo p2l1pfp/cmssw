@@ -27,8 +27,7 @@ namespace l1ct {
                                 std::vector<float> ptMins,
                                 std::vector<float> ptMaxs,
                                 bool emulateCorrections = false)  // true: corrections tabulated as in the firmware
-        : corrector_(corrFile, -1, false, emulateCorrections),
-          resol_(kind, etas, offsets, scales, ptMins, ptMaxs) {}
+        : corrector_(corrFile, -1, false, emulateCorrections), resol_(kind, etas, offsets, scales, ptMins, ptMaxs) {}
 
     ~GctEmClusterDecoderEmulator() = default;
 
