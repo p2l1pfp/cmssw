@@ -75,8 +75,9 @@ l1ct::CommonCaloObjEmu l1ct::GctCommonCaloDecoderEmulator::decode(unsigned int l
   return ret;
 }
 
-void l1ct::GctCommonCaloDecoderEmulator::decode(const std::vector<l1ct::DetectorSector<ap_uint<64>>> &raw,
-                                                std::vector<l1ct::DetectorSector<l1ct::CommonCaloObjEmu>> &gctcommon) const {
+void l1ct::GctCommonCaloDecoderEmulator::decode(
+    const std::vector<l1ct::DetectorSector<ap_uint<64>>> &raw,
+    std::vector<l1ct::DetectorSector<l1ct::CommonCaloObjEmu>> &gctcommon) const {
   assert(raw.size() == NLINKS);
   gctcommon.resize(raw.size());
   for (unsigned int link = 0; link < NLINKS; ++link) {
