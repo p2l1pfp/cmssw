@@ -52,10 +52,10 @@ namespace P2L1ATanCordicEmu {
     typedef typename cfg_t::cordic_working_t cordic_working_t;
 
     // Fixed constants, in precision used by the HLS implementation
-    const cordic_working_t pi_ap(M_PI);
-    const cordic_working_t pi2_ap(M_PI_2);
-    const cordic_working_t pi4_ap(M_PI_4);
-    const cordic_working_t pi3n_ap(-3 * M_PI_4);
+    const ap_fixed<cfg_t::CORDIC_INPUT_W + 1, cfg_t::CORDIC_WORKING_I> pi_ap(M_PI);
+    const ap_fixed<cfg_t::CORDIC_INPUT_W + 2, cfg_t::CORDIC_WORKING_I> pi2_ap(M_PI_2);
+    const ap_fixed<cfg_t::CORDIC_INPUT_W + 1, cfg_t::CORDIC_WORKING_I> pi4_ap(M_PI_4);
+    const ap_fixed<cfg_t::CORDIC_INPUT_W + 1, cfg_t::CORDIC_WORKING_I> pi3n_ap(-3 * M_PI_4);
 
     // Encode the sign of the inputs (0=negative, 1=zero, 2=positive)
     const ap_uint<2> signin1 = (in1 > 0) ? 2 : (in1 == 0) ? 1 : 0;
