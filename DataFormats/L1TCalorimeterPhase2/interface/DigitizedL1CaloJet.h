@@ -20,14 +20,14 @@ namespace l1tp2 {
 
     //Constructor from digitized inputs
     DigitizedL1CaloJet(ap_uint<1> isValid, ap_uint<16> pt, ap_int<13> phi, ap_int<14> eta) {
-      jetData =
-          ((ap_uint<64>)isValid) | (((ap_uint<64>)pt) << 1) | (((ap_int<64>)phi) << 17) | (((ap_uint<64>)eta) << 30);
+      jetData = ((ap_uint<64>)isValid) | (((ap_uint<64>)pt) << 1) | (((ap_int<64>)(phi & 0x1FFF)) << 17) |
+                (((ap_uint<64>)(eta & 0x3FFF)) << 30);
     }
 
     // Constructor from float inputs
     DigitizedL1CaloJet(bool isValid_b, float pt_f, float phi_f, float eta_f) {
       jetData = ((ap_uint<64>)digitizeIsValid(isValid_b)) | ((ap_uint<64>)digitizePt(pt_f) << 1) |
-                ((ap_uint<64>)digitizePhi(phi_f) << 17) | ((ap_uint<64>)digitizeEta(eta_f) << 30);
+                ((ap_uint<64>)(digitizePhi(phi_f) & 0x1FFF) << 17) | ((ap_uint<64>)(digitizeEta(eta_f) & 0x3FFF) << 30);
     }
 
     ap_uint<64> data() const { return jetData; }
@@ -72,26 +72,26 @@ namespace l1tp2 {
       return (ap_uint<16>)(pt_f / LSB_PT);
     }
 
-    ap_uint<13> digitizePhi(float phi_f) const {
+    ap_int<13> digitizePhi(float phi_f) const {
       float maxPhi_f = (std::pow(2.0f, n_bits_phi - 1) - 1) * LSB_PHI;
       // If phi exceeds the maximum (very few values should), saturate the value
       if (phi_f >= maxPhi_f) {
-        return (ap_uint<13>)0xFFF;  // 12 1s in binary = 0xFFF (1 bit for sign)
+        return (ap_int<13>)0xFFF;  // 12 1s in binary = 0xFFF (1 bit for sign)
       } else if (phi_f <= -maxPhi_f) {
-        return (ap_uint<13>)-0xFFF;
+        return (ap_int<13>)(-4096);  // most -ve 13 bit value
       }
-      return (ap_uint<13>)(phi_f / LSB_PHI);
+      return (ap_int<13>)(phi_f / LSB_PHI);
     }
 
-    ap_uint<14> digitizeEta(float eta_f) const {
+    ap_int<14> digitizeEta(float eta_f) const {
       float maxEta_f = (std::pow(2.0f, n_bits_eta - 1) - 1) * LSB_ETA;
       // If eta exceeds the maximum, saturate the value
       if (eta_f >= maxEta_f) {
-        return (ap_uint<14>)0x1FFF;  // 13 1s in binary = 0x1FFF (1 bit for sign)
+        return (ap_int<14>)0x1FFF;  // 13 1s in binary = 0x1FFF (1 bit for sign)
       } else if (eta_f <= -maxEta_f) {
-        return (ap_uint<14>)-0x1FFF;
+        return (ap_int<14>)(-8192);  // most -ve 14 bit value
       }
-      return (ap_uint<14>)(eta_f / LSB_ETA);
+      return (ap_int<14>)(eta_f / LSB_ETA);
     }
 
     ap_uint<1> digitizeIsValid(bool isValid_b) const { return (ap_uint<1>)isValid_b; }
