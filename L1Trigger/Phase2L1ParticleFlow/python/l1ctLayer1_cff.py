@@ -119,7 +119,7 @@ l1tLayer1Barrel = cms.EDProducer("L1TCorrelatorLayer1Producer",
     ),
     tkEgSorterAlgo = cms.string("Barrel"),
     tkEgSorterParameters = tkEgSorterParameters.clone(
-        nObjToSort = 16
+        nObjToSort = 10
     ),
     # these are the sectors for the logical "decoded" clusters; 
     caloSectors = cms.VPSet(

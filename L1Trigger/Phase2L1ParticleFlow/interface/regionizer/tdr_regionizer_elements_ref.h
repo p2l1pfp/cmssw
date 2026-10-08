@@ -107,6 +107,11 @@ namespace l1ct {
       std::vector<std::vector<size_t>> linksForSR(size_t sr) const;
       std::vector<std::vector<size_t>> caloLinksHelper(size_t iphi) const;
       void getNextIndex(size_t sr, const std::vector<size_t>& bundle, size_t& nextIdx) const;
+      /// true if the links within each bundle of this sr are read alternately, like the
+      /// fifo_merge in the firmware, rather than one after another
+      bool alternatingBundles(size_t sr) const;
+      /// the next link in an alternating bundle to read, or bundle.size() if all are empty
+      size_t getNextAlternating(size_t sr, const std::vector<size_t>& bundle, size_t& turn) const;
 
       unsigned int numBuffers() const { return buffers_.size(); }
       unsigned int numEntries(unsigned int bufferIndex) const { return buffers_[bufferIndex].numEntries(); }

@@ -239,8 +239,8 @@ void l1ct::tdr_regionizer::Regionizer<T>::setBuffers(const std::vector<std::vect
       auto glbphi = sectors_[buffer].hwGlbPhiOf(obj).to_int();
       auto glbeta = sectors_[buffer].hwGlbEtaOf(obj).to_int();
       if (debug_) {
-        dbgCout() << "Buffer " << buffer << ": add obj with pt = " << obj.intPt() << ", glb eta = " << glbeta
-                  << ", glb phi = " << glbphi << std::endl;
+        dbgCout() << "Buffer " << buffer << ": add obj with pt = " << std::hex << obj.intPt() << std::dec
+                  << ", glb eta = " << glbeta << ", glb phi = " << glbphi << std::endl;
       }
       // get the SR indices that this object should go into if pt > 0
       auto srs = (obj.intPt() > 0) ? getSmallRegions(glbeta, glbphi) : std::vector<size_t>();
@@ -274,7 +274,7 @@ void l1ct::tdr_regionizer::Regionizer<T>::addToSmallRegion(size_t sr, BufferEntr
   rawObj.hwPhi = locPhi;
 
   if (debug_) {
-    dbgCout() << "smallRegionObjects_ " << sr << " obj with pt = " << rawObj.intPt()
+    dbgCout() << "smallRegionObjects_ " << sr << " obj with pt = " << std::hex << rawObj.intPt() << std::dec
               << ", loc eta = " << rawObj.intEta() << ", loc phi = " << rawObj.intPhi() << std::endl;
   }
 
@@ -304,30 +304,47 @@ inline std::vector<std::vector<size_t>> l1ct::tdr_regionizer::Regionizer<l1ct::T
     auto nom = iphi;
     auto smaller = (nom == 0) ? 8 : nom - 1;
     auto bigger = (nom == 8) ? 0 : nom + 1;
-    retval.emplace_back(1, sectorMapLogToPhys_[nom]);
-    retval.emplace_back(1, sectorMapLogToPhys_[smaller]);
-    retval.emplace_back(1, sectorMapLogToPhys_[bigger]);
     if (ieta == 2) {
-      // also add the other ones
-      retval.emplace_back(1, sectorMapLogToPhys_[nom + 9]);
-      retval.emplace_back(1, sectorMapLogToPhys_[smaller + 9]);
-      retval.emplace_back(1, sectorMapLogToPhys_[bigger + 9]);
+      // also add the other ones, each merged with the same link from this side
+      // (fifo_merge in the firmware); see alternatingBundles
+      retval.push_back({sectorMapLogToPhys_[nom], sectorMapLogToPhys_[nom + 9]});
+      retval.push_back({sectorMapLogToPhys_[smaller], sectorMapLogToPhys_[smaller + 9]});
+      retval.push_back({sectorMapLogToPhys_[bigger], sectorMapLogToPhys_[bigger + 9]});
+    } else {
+      retval.emplace_back(1, sectorMapLogToPhys_[nom]);
+      retval.emplace_back(1, sectorMapLogToPhys_[smaller]);
+      retval.emplace_back(1, sectorMapLogToPhys_[bigger]);
     }
   } else {
     auto nom = iphi + 9;
     auto smaller = (nom == 9) ? 17 : nom - 1;
     auto bigger = (nom == 17) ? 9 : nom + 1;
-    retval.emplace_back(1, sectorMapLogToPhys_[nom]);
-    retval.emplace_back(1, sectorMapLogToPhys_[smaller]);
-    retval.emplace_back(1, sectorMapLogToPhys_[bigger]);
     if (ieta == 3) {
-      // also add the other ones
-      retval.emplace_back(1, sectorMapLogToPhys_[nom - 9]);
-      retval.emplace_back(1, sectorMapLogToPhys_[smaller - 9]);
-      retval.emplace_back(1, sectorMapLogToPhys_[bigger - 9]);
+      // also add the other ones, each merged with the same link from this side
+      // (fifo_merge in the firmware); see alternatingBundles
+      retval.push_back({sectorMapLogToPhys_[nom], sectorMapLogToPhys_[nom - 9]});
+      retval.push_back({sectorMapLogToPhys_[smaller], sectorMapLogToPhys_[smaller - 9]});
+      retval.push_back({sectorMapLogToPhys_[bigger], sectorMapLogToPhys_[bigger - 9]});
+    } else {
+      retval.emplace_back(1, sectorMapLogToPhys_[nom]);
+      retval.emplace_back(1, sectorMapLogToPhys_[smaller]);
+      retval.emplace_back(1, sectorMapLogToPhys_[bigger]);
     }
   }
   return retval;
+}
+
+template <typename T>
+inline bool l1ct::tdr_regionizer::Regionizer<T>::alternatingBundles(size_t) const {
+  return false;
+}
+
+// The tracker SRs that take links from both eta sides merge each pair of links
+// first (fifo_merge in the firmware), alternating between the two
+template <>
+inline bool l1ct::tdr_regionizer::Regionizer<l1ct::TkObjEmu>::alternatingBundles(size_t sr) const {
+  const auto ieta = get_small_region(sr).first;
+  return ieta == 2 || ieta == 3;
 }
 
 // Note that these are phyisical links
@@ -404,6 +421,25 @@ void l1ct::tdr_regionizer::Regionizer<T>::getNextIndex(size_t sr,
   }
 }
 
+// Like fifo_merge in the firmware: read the link whose turn it is if it is not
+// empty, and pass the turn on; otherwise read the next non-empty link, keeping
+// the turn, so that strict alternation resumes when the turn's link has data again.
+template <typename T>
+size_t l1ct::tdr_regionizer::Regionizer<T>::getNextAlternating(size_t sr,
+                                                               const std::vector<size_t>& bundle,
+                                                               size_t& turn) const {
+  for (size_t i = 0; i < bundle.size(); i++) {
+    size_t idx = (turn + i) % bundle.size();
+    if (!buffers_[bundle[idx]].empty(sr)) {
+      if (i == 0) {
+        turn = (turn + 1) % bundle.size();
+      }
+      return idx;
+    }
+  }
+  return bundle.size();
+}
+
 template <typename T>
 void l1ct::tdr_regionizer::Regionizer<T>::run() {
   if (debug_)
@@ -411,17 +447,25 @@ void l1ct::tdr_regionizer::Regionizer<T>::run() {
 
   for (size_t sr = 0; sr < regionmap_.size(); sr++) {
     // iterate over the (logical) SRs
-    auto links = linksForSR(sr);                     // these are the physical links, in bundles
-    std::vector<size_t> nextIndex(links.size(), 0);  // this is per bundle
+    auto links = linksForSR(sr);  // these are the physical links, in bundles
+    // per bundle: the current link, or for alternating bundles, whose turn it is
+    std::vector<size_t> nextIndex(links.size(), 0);
+    const bool alternating = alternatingBundles(sr);
     auto physSR = regionmap_[sr];
     bool allEmpty;
     do {
       allEmpty = true;
       for (size_t bundleIdx = 0; bundleIdx < links.size(); bundleIdx++) {
-        getNextIndex(sr, links[bundleIdx], nextIndex[bundleIdx]);
-        if (nextIndex[bundleIdx] < links[bundleIdx].size()) {
+        size_t linkIdx;
+        if (alternating) {
+          linkIdx = getNextAlternating(sr, links[bundleIdx], nextIndex[bundleIdx]);
+        } else {
+          getNextIndex(sr, links[bundleIdx], nextIndex[bundleIdx]);
+          linkIdx = nextIndex[bundleIdx];
+        }
+        if (linkIdx < links[bundleIdx].size()) {
           // found a non-empty buffer in the bundle
-          auto& buffer = buffers_[links[bundleIdx][nextIndex[bundleIdx]]];
+          auto& buffer = buffers_[links[bundleIdx][linkIdx]];
           allEmpty = false;
           auto entry = buffer.getEntry(sr);
           if (debug_) {
@@ -469,9 +513,9 @@ void l1ct::tdr_regionizer::Regionizer<T>::printDebug(int count) const {
     auto phiC = regions_[physRegIdx].intPhiCenter();
     for (unsigned int j = 0; j < smallRegionObjects_[physRegIdx].size(); j++) {
       dbgCout() << "\t" << region << " (" << etaC << ", " << phiC << ")\t\t" << physRegIdx << "\t" << j << "\t"
-                << smallRegionObjects_[physRegIdx][j].intPt() << "\t" << smallRegionObjects_[physRegIdx][j].intEta()
-                << "\t" << smallRegionObjects_[physRegIdx][j].intPhi() << "\t"
-                << smallRegionObjects_[physRegIdx][j].pack().to_string(16) << std::endl;
+                << std::hex << smallRegionObjects_[physRegIdx][j].intPt() << std::dec << "\t"
+                << smallRegionObjects_[physRegIdx][j].intEta() << "\t" << smallRegionObjects_[physRegIdx][j].intPhi()
+                << "\t" << smallRegionObjects_[physRegIdx][j].pack().to_string(16) << std::endl;
     }
     dbgCout() << "-------------------------------" << std::endl;
   }

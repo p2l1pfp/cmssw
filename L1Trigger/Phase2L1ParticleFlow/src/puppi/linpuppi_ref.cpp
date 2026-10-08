@@ -5,6 +5,7 @@
 
 #include "L1Trigger/Phase2L1ParticleFlow/interface/common/bitonic_hybrid_sort_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/common/bitonic_sort_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/common/bitonic_vhdl_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/dbgPrintf.h"
 
 #ifdef CMSSW_GIT_HASH
@@ -244,26 +245,7 @@ void l1ct::LinPuppiEmulator::puppisort_and_crop_ref(unsigned int nOutMax,
   } else if (sortAlgo == SortAlgo::FoldedHybrid) {
     folded_hybrid_bitonic_sort_and_crop_ref(in.size(), nOut, &in[0], &out[0], true);
   } else if (sortAlgo == SortAlgo::BitonicVHDL) {
-    // The VHDL version always takes power-of-2 inputs
-    // (Nominally it produces the same size output, though things may get optimized away in the implementation)
-
-    // find the po2 that's bigger than the input size
-    unsigned int nextpo2 = 1;
-    while (nextpo2 < in.size()) {
-      nextpo2 <<= 1;
-    }
-    std::vector<l1ct::PuppiObjEmu> inPadded(nextpo2);
-    for (unsigned int i = 0; i < in.size(); i++) {
-      inPadded[i] = in[i];
-    }
-    for (unsigned int i = in.size(); i < nextpo2; i++) {
-      inPadded[i].clear();
-    }
-    std::vector<l1ct::PuppiObjEmu> outPadded(nextpo2);
-    bitonic_sort_and_crop_ref(nextpo2, nextpo2, inPadded.data(), outPadded.data());
-    for (unsigned int i = 0; i < nOut; i++) {
-      out[i] = outPadded[i];
-    }
+    bitonic_vhdl_sort_and_crop_ref(in.size(), nOut, &in[0], &out[0]);
   }
 }
 
