@@ -55,7 +55,7 @@ L1TEmbeddingModelProducer::L1TEmbeddingModelProducer(const edm::ParameterSet &cf
 
 void L1TEmbeddingModelProducer::fillDescriptions(edm::ConfigurationDescriptions &descriptions) {
   edm::ParameterSetDescription desc;
-  desc.add<edm::InputTag>("PuppiCandidates", edm::InputTag("l1tLayer1", "Puppi"));
+  desc.add<edm::InputTag>("PuppiCandidates", edm::InputTag("l1tLayer1Extended", "Puppi"));
   desc.add<std::string>("ModelName", "L1TEmbeddingModel");
   desc.add<bool>("SaveInput", false);
   descriptions.addWithDefaultLabel(desc);
