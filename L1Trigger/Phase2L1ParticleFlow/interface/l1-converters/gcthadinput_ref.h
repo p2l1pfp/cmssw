@@ -24,8 +24,9 @@ namespace l1ct {
                                  std::vector<float> offsets,
                                  std::vector<float> scales,
                                  std::vector<float> ptMins,
-                                 std::vector<float> ptMaxs)
-        : corrector_(corrFile), resol_(kind, etas, offsets, scales, ptMins, ptMaxs) {}
+                                 std::vector<float> ptMaxs,
+                                 bool emulateCorrections = false)  // true: corrections tabulated as in the firmware
+        : corrector_(corrFile, -1, false, emulateCorrections), resol_(kind, etas, offsets, scales, ptMins, ptMaxs) {}
 
     ~GctHadClusterDecoderEmulator() = default;
 

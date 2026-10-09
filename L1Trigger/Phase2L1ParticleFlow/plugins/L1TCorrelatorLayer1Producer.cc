@@ -27,6 +27,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/hgcalinput_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/gcteminput_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/gcthadinput_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/l1-converters/gctcommoninput_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/regionizer_base_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/multififo_regionizer_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/regionizer/buffered_folded_multififo_regionizer_ref.h"
@@ -91,6 +92,7 @@ private:
   std::unique_ptr<l1ct::HgcalClusterDecoderEmulator> hgcalInput_;
   std::unique_ptr<l1ct::GctHadClusterDecoderEmulator> gctHadInput_;
   std::unique_ptr<l1ct::GctEmClusterDecoderEmulator> gctEmInput_;
+  std::unique_ptr<l1ct::GctCommonCaloDecoderEmulator> gctCommonInput_;  // uses gctEmInput_ and gctHadInput_
   std::unique_ptr<l1ct::RegionizerEmulator> regionizer_;
   std::unique_ptr<l1ct::PFAlgoEmulatorBase> l1pfalgo_;
   std::unique_ptr<l1ct::LinPuppiEmulator> l1pualgo_;
@@ -110,6 +112,8 @@ private:
   std::unordered_map<const l1t::L1Candidate *, edm::Ptr<l1t::L1Candidate>> clusterRefMap_;
   std::unordered_map<const l1t::PFTrack *, l1t::PFTrackRef> trackRefMap_;
   std::unordered_map<const l1t::SAMuon *, l1t::PFCandidate::MuonRef> muonRefMap_;
+  // source cluster of each raw GCT word (per link and clock), to be attached to the objects unpacked from them
+  std::vector<std::vector<const l1t::L1Candidate *>> gctRawSrc_;
 
   // main methods
   void beginStream(edm::StreamID) override;
@@ -148,6 +152,7 @@ private:
   void addGCTHadCalo(const l1t::PFCluster &calo, const edm::Ptr<l1t::L1Candidate> &caloPtr);
   // for GCT raw calos as input
   void addGCTCaloRaw(const l1tp2::GCTDigiClusterLink &link, unsigned int linkidx, unsigned int entidx);
+  void setGCTRawSrc(unsigned int linkidx, unsigned int entidx, const l1t::L1Candidate *src);
   // add objects in already-decoded format
   void addDecodedTrack(l1ct::DetectorSector<l1ct::TkObjEmu> &sec, const l1t::PFTrack &t);
   void addDecodedMuon(l1ct::DetectorSector<l1ct::MuObjEmu> &sec, const l1t::SAMuon &t);
@@ -386,6 +391,21 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
   }
 
   initSectorsAndRegions(iConfig);
+
+  if (regalgo == "MiddleBufferMultififo") {
+    // the regionizer takes the raw GCT words unpacked into the common calo objects of the link sectors
+    if (!gctEmInput_ || !gctHadInput_)
+      throw cms::Exception("Configuration",
+                           "The MiddleBufferMultififo regionizer needs gctEmInputConversionAlgo and "
+                           "gctHadInputConversionAlgo set to Emulator");
+    std::vector<l1ct::PFRegionEmu> decodedSectors, linkSectors;
+    for (const auto &sec : event_.decoded.emcalo)
+      decodedSectors.push_back(sec.region);
+    for (const auto &sec : event_.raw.gctcluster)
+      linkSectors.push_back(sec.region);
+    gctCommonInput_ =
+        std::make_unique<l1ct::GctCommonCaloDecoderEmulator>(*gctEmInput_, *gctHadInput_, decodedSectors, linkSectors);
+  }
 }
 
 L1TCorrelatorLayer1Producer::~L1TCorrelatorLayer1Producer() {}
@@ -545,6 +565,15 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
       const auto &link = links[ic].linkCard();
       for (unsigned int ie = 0; ie < link.size(); ++ie) {
         addGCTCaloRaw(link, ic, ie);
+      }
+    }
+  }
+  if (gctCommonInput_) {
+    gctCommonInput_->decode(event_.raw.gctcluster, event_.decoded.gctcommon);
+    // the raw words do not carry the link to the original cluster: get it from the digi that each word was made from
+    for (unsigned int link = 0; link < gctRawSrc_.size(); ++link) {
+      for (unsigned int iclock = 0; iclock < gctRawSrc_[link].size(); ++iclock) {
+        event_.decoded.gctcommon[link].obj[iclock].src = gctRawSrc_[link][iclock];
       }
     }
   }
@@ -940,6 +969,7 @@ void L1TCorrelatorLayer1Producer::initEvent(const edm::Event &iEvent) {
   event_.lumi = iEvent.id().luminosityBlock();
   event_.event = iEvent.id().event();
   clusterRefMap_.clear();
+  gctRawSrc_.clear();
   trackRefMap_.clear();
   muonRefMap_.clear();
 }
@@ -1044,6 +1074,7 @@ void L1TCorrelatorLayer1Producer::addGCTCaloRaw(const l1tp2::GCTDigiClusterLink 
     if (p->pt() > 0) {
       auto decidx = emDecodedIndex(linkidx, entidx);
       addDecodedGCTEmCalo(event_.decoded.emcalo[decidx], *p);
+      setGCTRawSrc(linkidx, entidx, edm::refToPtr(p->clusterRef()).get());
     }
   } else if (auto p = std::get_if<l1tp2::GCTHadDigiCluster>(&link[entidx])) {
     // Only do this if using Emulated GCT input, not Ideal.
@@ -1052,12 +1083,21 @@ void L1TCorrelatorLayer1Producer::addGCTCaloRaw(const l1tp2::GCTDigiClusterLink 
       if (p->pt() > 0) {
         auto decidx = hadDecodedIndex(linkidx, entidx);
         addDecodedGCTHadCalo(event_.decoded.hadcalo[decidx], *p);
+        setGCTRawSrc(linkidx, entidx, edm::refToPtr(p->clusterRef()).get());
       }
     }
   } else {
     // this is the extra data that is neither had nor em
     event_.raw.gctcluster[linkidx].obj.push_back(0);  // the value should not be used
   }
+}
+
+void L1TCorrelatorLayer1Producer::setGCTRawSrc(unsigned int linkidx, unsigned int entidx, const l1t::L1Candidate *src) {
+  if (gctRawSrc_.size() <= linkidx)
+    gctRawSrc_.resize(linkidx + 1);
+  if (gctRawSrc_[linkidx].size() <= entidx)
+    gctRawSrc_[linkidx].resize(entidx + 1, nullptr);
+  gctRawSrc_[linkidx][entidx] = src;
 }
 
 void L1TCorrelatorLayer1Producer::addDecodedTrack(l1ct::DetectorSector<l1ct::TkObjEmu> &sec, const l1t::PFTrack &t) {
