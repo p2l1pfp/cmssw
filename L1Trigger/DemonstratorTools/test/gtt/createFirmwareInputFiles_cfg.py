@@ -11,7 +11,7 @@ options.register('debug',
                  VarParsing.VarParsing.varType.int,
                  "Print out additional debugging information")
 options.register ('format',
-                  'EMP', # default value
+                  'EMPv2', # default value
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,
                   "File format (APx, EMP or X2O)")
@@ -40,9 +40,15 @@ options.register ('readerformat',
                   VarParsing.VarParsing.multiplicity.singleton,
                   VarParsing.VarParsing.varType.string,
                   "File format of loaded tracks and vertices (APx, EMPv2)")
+options.register('vertexAlgo',
+                 'NNEmulation',
+                 VarParsing.VarParsing.multiplicity.singleton,
+                 VarParsing.VarParsing.varType.string,
+                 "Vertex algo: fastHisto / fastHistoEmulation / NNEmulation / ...")
+
 options.parseArguments()
 
-inputFiles = []
+inputFiles = ['/store/mc/Phase2Spring24DIGIRECOMiniAOD/TT_TuneCP5_14TeV-powheg-pythia8/GEN-SIM-DIGI-RAW-MINIAOD/PU200_Trk1GeV_140X_mcRun4_realistic_v4-v2/2560000/a1c0916c-3068-4935-90ad-f2f4da74ab36.root']
 inputBuffers = []
 inputTrackBuffers = []
 for filePath in options.inputFiles:
@@ -67,8 +73,8 @@ for filePath in options.inputFiles:
 
 process = cms.Process("GTTFileWriter")
 
-process.load('Configuration.Geometry.GeometryExtendedRun4D88Reco_cff')
-process.load('Configuration.Geometry.GeometryExtendedRun4D88_cff')
+process.load('Configuration.Geometry.GeometryExtendedRun4D110Reco_cff')
+process.load('Configuration.Geometry.GeometryExtendedRun4D110_cff')
 process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
@@ -88,6 +94,9 @@ process.options = cms.untracked.PSet(
 process.load('L1Trigger.L1TTrackMatch.l1tGTTInputProducer_cfi')
 process.load('L1Trigger.L1TTrackMatch.l1tTrackSelectionProducer_cfi')
 process.load('L1Trigger.VertexFinder.l1tVertexProducer_cfi')
+
+process.l1tVertexFinderEmulator.VertexReconstruction.Algorithm = cms.string(options.vertexAlgo)
+
 process.load('L1Trigger.L1TTrackMatch.l1tTrackVertexAssociationProducer_cfi')
 process.load('L1Trigger.L1TTrackMatch.l1tTrackJetsEmulation_cfi')
 process.load('L1Trigger.L1TTrackMatch.l1tTrackerEmuHTMiss_cfi')
@@ -107,6 +116,19 @@ process.l1tGTTInputProducer.debug = cms.int32(options.debug)
 if (options.tracks in ['overwrite']):
     process.l1tGTTInputProducer.l1TracksInputTag = cms.InputTag("l1tGTTFileReader", "Level1TTTracks")
     process.l1tGTTInputProducer.setTrackWordBits = cms.bool(False)
+
+# Patch only the raw input track word MVA fields, keeping all other raw bits unchanged.
+if options.tracks == 'overwrite':
+    patcherInputTag = cms.InputTag("l1tGTTFileReader", "Level1TTTracks")
+else:
+    patcherInputTag = cms.InputTag("l1tTTTracksFromTrackletEmulation", "Level1TTTracks")
+
+process.l1tGTTRawTrackMVAPatcher = cms.EDProducer(
+    "L1GTTRawTrackMVAPatcher",
+    l1TracksInputTag = patcherInputTag,
+    outputCollectionName = cms.string("Level1TTTracksPatched"),
+    debug = cms.int32(options.debug)
+)
 
 process.l1tTrackSelectionProducer.processSimulatedTracks = cms.bool(False)
 process.l1tVertexFinderEmulator.VertexReconstruction.VxMinTrackPt = cms.double(0.0)
@@ -150,10 +172,9 @@ if options.debug:
     )
 
 process.l1tGTTFileWriter.format = cms.untracked.string(options.format) #FIXME Put all this into the default GTTFileWriter
-if options.tracks == 'overwrite':
-    process.l1tGTTFileWriter.tracks = cms.untracked.InputTag("l1tGTTFileReader", "Level1TTTracks")
-else:
-    process.l1tGTTFileWriter.tracks = cms.untracked.InputTag("l1tTTTracksFromTrackletEmulation", "Level1TTTracks")
+process.l1tGTTFileWriter.tracks = cms.untracked.InputTag(
+    "l1tGTTRawTrackMVAPatcher", "Level1TTTracksPatched"
+)
 process.l1tGTTFileWriter.convertedTracks = cms.untracked.InputTag("l1tGTTInputProducer", "Level1TTTracksConverted")
 process.l1tGTTFileWriter.selectedTracks = cms.untracked.InputTag("l1tTrackSelectionProducer", "Level1TTTracksSelectedEmulation")
 if options.vertices == 'overwrite':
@@ -176,7 +197,8 @@ if options.tracks in ['load', 'overwrite'] or options.vertices in ['load', 'over
     process.p = cms.Path(process.l1tGTTFileReader * process.l1tGTTFileWriter)
 else:
     process.p = cms.Path(process.l1tGTTFileWriter)
-process.p.associate(cms.Task(process.l1tGTTInputProducer, 
+process.p.associate(cms.Task(process.l1tGTTRawTrackMVAPatcher,
+                             process.l1tGTTInputProducer, 
                              process.l1tTrackSelectionProducer,
                              process.l1tVertexFinderEmulator, 
                              process.l1tTrackVertexAssociationProducer,
