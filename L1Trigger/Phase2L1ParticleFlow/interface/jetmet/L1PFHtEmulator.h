@@ -4,6 +4,7 @@
 #include "DataFormats/L1TParticleFlow/interface/jets.h"
 #include "DataFormats/L1TParticleFlow/interface/sums.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/dbgPrintf.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/common/sqrt_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/jetmet/L1SeedConePFJetEmulator.h"
 
 #ifndef CMSSW_GIT_HASH
@@ -23,8 +24,6 @@ namespace P2L1HTMHTEmu {
   typedef ap_fixed<12, 3> radians_t;
   typedef ap_fixed<9, 2> cossin_t;
   typedef ap_fixed<16, 13> pxy_t;
-  static constexpr int Fin = 6;  // Number of decimal bits/precision of met squared i.e. 2*16 - 2*13
-  static constexpr int Fout = pt_t::width - pt_t::iwidth;  // Number of decimal bits/precision of output met
 
   static constexpr int N_TABLE = 2048;
 
@@ -121,15 +120,7 @@ inline l1ct::Sum htmht(std::vector<l1ct::Jet> jets) {
   l1ct::Sum ht;
   ht.hwSumPt = hthxhy.pt;
 
-  // this emulates the following firmware function, since hls_math.h is not available in CMSSW
-  // ht.hwPt = hls::sqrt(((hthxhy.px * hthxhy.px) + (hthxhy.py * hthxhy.py)));
-  double d = std::sqrt(((hthxhy.px * hthxhy.px) + (hthxhy.py * hthxhy.py)).to_double());
-  // emulate hls::sqrt internal rounding
-  double rounded = std::round(d * (1 << P2L1HTMHTEmu::Fin)) / (1 << P2L1HTMHTEmu::Fin);
-  // emulate AP_TRN conversion to output type
-  double truncated = std::floor(rounded * (1 << P2L1HTMHTEmu::Fout)) / (1 << P2L1HTMHTEmu::Fout);
-  P2L1HTMHTEmu::pt_t hwPt_hls = truncated;
-  ht.hwPt = hwPt_hls;
+  ht.hwPt = l1ct::sqrt_ref<P2L1HTMHTEmu::pt_t>(hthxhy.px * hthxhy.px + hthxhy.py * hthxhy.py);
 
   ht.hwPhi = P2L1HTMHTEmu::phi_cordic(hthxhy.py, hthxhy.px);
   return ht;
