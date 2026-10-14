@@ -6,6 +6,7 @@
 #include "DataFormats/L1TParticleFlow/interface/layer1_emulator.h"
 
 #include "L1Trigger/Phase2L1ParticleFlow/interface/dbgPrintf.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/common/sqrt_ref.h"
 
 #include <nlohmann/json.hpp>
 
@@ -175,12 +176,11 @@ namespace L1METEmu {
     // Convert (px, py) -> (pt, phi)
     // INTPHI_PI = 720, so phi_L1 = phi_rad * (INTPHI_PI / M_PI). This maps phi in [-pi, pi] to [-720, 720].
     static const float phi_scale = l1ct::Scales::INTPHI_PI / M_PI;
-#ifdef CMSSW_GIT_HASH
     const ap_ufixed<39, 24> pt2 = met_xy.hwPx * met_xy.hwPx + met_xy.hwPy * met_xy.hwPy;
-    hls_met.hwPt = ap_ufixed<39, 24, AP_RND_ZERO>(std::sqrt(pt2.to_double()));
+    hls_met.hwPt = l1ct::sqrt_ref<pt_t>(pt2);
+#ifdef CMSSW_GIT_HASH
     hls_met.hwPhi =phi_t(ap_fixed<26, 11>(atan2(met_xy.hwPy.to_float(), met_xy.hwPx.to_float())) * ap_fixed<26, 11>(phi_scale));
 #else
-    hls_met.hwPt = hls::sqrt(ap_ufixed<39, 24>(met_xy.hwPx * met_xy.hwPx + met_xy.hwPy * met_xy.hwPy));
     hls_met.hwPhi = phi_t(ap_fixed<26, 11>(hls::atan2(met_xy.hwPy, met_xy.hwPx)) * ap_fixed<26, 11>(phi_scale));
 #endif
   }
