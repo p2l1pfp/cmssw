@@ -618,13 +618,18 @@ void L1TCorrelatorLayer1PatternFileWriter::writeDebugs(const l1ct::Event& event,
   }
 
   if (nEGElectron_) {
+    bool isBarrel = (partition_ == Partition::Barrel);
     std::vector<std::vector<ap_uint<64>>> linksLow(nEGElectron_);   // virtual links -- bits 63:0
     std::vector<std::vector<ap_uint<64>>> linksHigh(nEGElectron_);  // virtual links -- bits MAX_BITWIDTH-1:64
     for (auto ir : outputRegions_) {
       auto egvals = event.out[ir].egelectron;
       unsigned int negvals = egvals.size();
       for (unsigned int i = 0; i < nEGElectron_; ++i) {
-        ap_uint<MAX_BITWIDTH> val = i < negvals ? egvals[i].pack() : ap_uint<l1ct::EGIsoEleObjEmu::BITWIDTH>(0);
+        ap_uint<MAX_BITWIDTH> val =
+            i < negvals ? (isBarrel ? ap_uint<MAX_BITWIDTH>(egvals[i].pack_barrel())
+                                    : ap_uint<MAX_BITWIDTH>(egvals[i].pack_endcap()))
+                        : (isBarrel ? ap_uint<MAX_BITWIDTH>(ap_uint<l1ct::EGIsoEleObjEmu::BITWIDTH_BARREL>(0))
+                                    : ap_uint<MAX_BITWIDTH>(ap_uint<l1ct::EGIsoEleObjEmu::BITWIDTH_ENDCAP>(0)));
         linksHigh[i].push_back(val(MAX_BITWIDTH - 1, 64));
         linksLow[i].push_back(val(63, 0));
       }
@@ -679,8 +684,9 @@ void L1TCorrelatorLayer1PatternFileWriter::writeEgamma(const l1ct::OutputBoard& 
     ret.emplace_back(p.pack());
   }
   ret.resize(s0 + nEgammaObjectsOut_, ap_uint<64>(0));
+  bool isBarrel = (partition_ == Partition::Barrel);
   for (const auto& p : ele) {
-    ap_uint<128> dword = p.pack();
+    ap_uint<128> dword = isBarrel ? ap_uint<128>(p.pack_barrel()) : ap_uint<128>(p.pack_endcap());
     ret.push_back(dword(63, 0));
     ret.push_back(dword(127, 64));
   }
