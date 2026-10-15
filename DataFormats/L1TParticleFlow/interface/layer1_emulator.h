@@ -364,6 +364,7 @@ namespace l1ct {
     std::vector<PVObjEmu> pvs;
     std::vector<ap_uint<64>> pvs_emu;
     std::vector<OutputRegion> out;
+    std::vector<PuppiObjEmu> sortedpf;
     std::vector<OutputBoard> board_out;
 
     Event() : run(0), lumi(0), event(0) {}

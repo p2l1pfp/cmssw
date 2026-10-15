@@ -286,6 +286,15 @@ l1tLayer1HGCal = cms.EDProducer("L1TCorrelatorLayer1Producer",
         useMLAssociation = switchOnNNAssoc, #Enable Association Network
         NNVtxAssociation = NNVtxAssociationPSet,
     ),
+    pfSorterParameters = cms.PSet(
+        nLinksCharged = cms.uint32(4),
+        nLinksNeutral = cms.uint32(3),
+        nObjPerLink = cms.uint32(9),
+        nSlotsCharged = cms.uint32(30),  # PF charged / neutral slots per region, as the
+        nSlotsNeutral = cms.uint32(20),  # firmware links carry them (NTKSORTED, NPFNEUTRAL)
+        nOutputs = cms.uint32(3),
+        nClocks = cms.uint32(200),  # 0 = nObjPerLink * (number of regions)
+    ),
     tkEgAlgoParameters = tkEgAlgoParameters.clone(
         nTRACK = 30,
         nTRACK_EGIN = 10,
