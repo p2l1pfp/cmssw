@@ -475,6 +475,7 @@ void l1ct::Event::clear() {
   pvs_emu.clear();
   for (auto& i : out)
     i.clear();
+  sortedpf.clear();
   for (auto& i : board_out)
     i.clear();
 }

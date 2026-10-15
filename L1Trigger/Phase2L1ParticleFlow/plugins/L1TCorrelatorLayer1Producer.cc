@@ -41,6 +41,7 @@
 #include "L1Trigger/Phase2L1ParticleFlow/interface/pf/pfalgo_common_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/pftkegsorter_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/egamma/pftkegsorter_barrel_ref.h"
+#include "L1Trigger/Phase2L1ParticleFlow/interface/pfsorter/pfsorter_ref.h"
 #include "L1Trigger/Phase2L1ParticleFlow/interface/L1TCorrelatorLayer1PatternFileWriter.h"
 
 #include "DataFormats/L1TCorrelator/interface/TkElectron.h"
@@ -95,6 +96,7 @@ private:
   std::unique_ptr<l1ct::GctCommonCaloDecoderEmulator> gctCommonInput_;  // uses gctEmInput_ and gctHadInput_
   std::unique_ptr<l1ct::RegionizerEmulator> regionizer_;
   std::unique_ptr<l1ct::PFAlgoEmulatorBase> l1pfalgo_;
+  std::unique_ptr<l1ct::PFSorterEmulator> l1pfsorter_;
   std::unique_ptr<l1ct::LinPuppiEmulator> l1pualgo_;
   std::unique_ptr<l1ct::PFTkEGAlgoEmulator> l1tkegalgo_;
   std::unique_ptr<l1ct::PFTkEGSorterEmulator> l1tkegsorter_;
@@ -107,6 +109,7 @@ private:
 
   // region of interest debugging
   float debugEta_, debugPhi_, debugR_;
+  bool isEndcap;
 
   // these are used to link items back
   std::unordered_map<const l1t::L1Candidate *, edm::Ptr<l1t::L1Candidate>> clusterRefMap_;
@@ -175,6 +178,7 @@ private:
   std::unique_ptr<l1t::PFClusterCollection> fetchDecodedEmCalo() const;
   std::unique_ptr<l1t::PFTrackCollection> fetchDecodedTracks() const;
   void putPuppi(edm::Event &iEvent) const;
+  void putSortedPF(edm::Event &iEvent, const std::vector<l1ct::PuppiObjEmu> &pfSortedObjs) const;
 
   void putEgStaObjects(edm::Event &iEvent, const std::string &egLablel) const;
   void putEgObjects(edm::Event &iEvent,
@@ -231,6 +235,7 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
       hadPtCut_(iConfig.getParameter<double>("hadPtCut")),
       regionizer_(nullptr),
       l1pfalgo_(nullptr),
+      l1pfsorter_(nullptr),
       l1pualgo_(nullptr),
       l1tkegalgo_(nullptr),
       l1tkegsorter_(nullptr),
@@ -238,9 +243,11 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
       patternWriterConfigs_(iConfig.getUntrackedParameter<edm::VParameterSet>("patternWriters")),
       debugEta_(iConfig.getUntrackedParameter<double>("debugEta")),
       debugPhi_(iConfig.getUntrackedParameter<double>("debugPhi")),
-      debugR_(iConfig.getUntrackedParameter<double>("debugR")) {
+      debugR_(iConfig.getUntrackedParameter<double>("debugR")),
+      isEndcap(false) {
   produces<l1t::PFCandidateCollection>("PF");
   produces<l1t::PFCandidateCollection>("Puppi");
+  produces<l1t::PFCandidateCollection>("SortedPF");
   produces<l1t::PFCandidateRegionalOutput>("PuppiRegional");
 
   produces<l1t::PFCandidateCollection>("EmCalo");
@@ -332,7 +339,9 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
   if (algo == "PFAlgo3") {
     l1pfalgo_ = std::make_unique<l1ct::PFAlgo3Emulator>(iConfig.getParameter<edm::ParameterSet>("pfAlgoParameters"));
   } else if (algo == "PFAlgo2HGC") {
+    isEndcap = true;
     l1pfalgo_ = std::make_unique<l1ct::PFAlgo2HGCEmulator>(iConfig.getParameter<edm::ParameterSet>("pfAlgoParameters"));
+    l1pfsorter_ = std::make_unique<l1ct::PFSorterEmulator>(iConfig.getParameter<edm::ParameterSet>("pfSorterParameters"));
   } else if (algo == "PFAlgoDummy") {
     l1pfalgo_ =
         std::make_unique<l1ct::PFAlgoDummyEmulator>(iConfig.getParameter<edm::ParameterSet>("pfAlgoParameters"));
@@ -455,6 +464,9 @@ void L1TCorrelatorLayer1Producer::fillDescriptions(edm::ConfigurationDescription
                "PFAlgo3" >> getParDesc<l1ct::PFAlgo3Emulator>("pfAlgo") or
                    "PFAlgo2HGC" >> getParDesc<l1ct::PFAlgo2HGCEmulator>("pfAlgo") or
                    "PFAlgoDummy" >> getParDesc<l1ct::PFAlgoDummyEmulator>("pfAlgo"));
+    // PF sorter (only used by PFAlgo2HGC, but declared as optional so other algos don't need it)
+  desc.addOptional<edm::ParameterSetDescription>("pfSorterParameters",
+                                                 l1ct::PFSorterEmulator::getParameterSetDescription());
   // Puppi
   desc.ifValue(edm::ParameterDescription<std::string>("puAlgo", "LinearizedPuppi", true),
                "LinearizedPuppi" >> getParDesc<l1ct::LinPuppiEmulator>("puAlgo"));
@@ -671,6 +683,10 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
     l1tkegalgo_->runIso(event_.pfinputs[ir], event_.pvs, event_.out[ir]);
   }
 
+  if (isEndcap) {
+    l1pfsorter_->run(event_);
+  }
+
   // Then run puppi (regionally)
   for (unsigned int ir = 0, nr = event_.pfinputs.size(); ir < nr; ++ir) {
     l1pualgo_->run(event_.pfinputs[ir], event_.pvs, event_.out[ir]);
@@ -695,6 +711,9 @@ void L1TCorrelatorLayer1Producer::produce(edm::Event &iEvent, const edm::EventSe
 
   // and save puppi
   putPuppi(iEvent);
+  if (isEndcap) {
+    putSortedPF(iEvent, event_.sortedpf);
+  }
 
   // save the EG objects
   putEgObjects(iEvent, l1tkegalgo_->writeEgSta(), "L1TkEm", "L1TkEmPerBoard", "L1TkEle", "L1TkElePerBoard");
@@ -1481,6 +1500,48 @@ void L1TCorrelatorLayer1Producer::putPuppi(edm::Event &iEvent) const {
   }
   iEvent.put(std::move(coll), "Puppi");
   iEvent.put(std::move(reg), "PuppiRegional");
+}
+
+void L1TCorrelatorLayer1Producer::putSortedPF(edm::Event &iEvent, const std::vector<l1ct::PuppiObjEmu> &pfSortedObjs) const {
+  auto refprod = iEvent.getRefBeforePut<l1t::PFCandidateCollection>("SortedPF");
+  auto coll = std::make_unique<l1t::PFCandidateCollection>();
+  for (const auto &p : pfSortedObjs) {
+    if (p.hwPt == 0)
+      continue;
+    // note: Puppi candidates are already in global coordinates & fiducial-only!
+    l1t::PFCandidate::ParticleType type;
+    float mass = 0.13f;
+    if (p.hwId.charged()) {
+      if (p.hwId.isMuon()) {
+        type = l1t::PFCandidate::Muon;
+        mass = 0.105;
+      } else if (p.hwId.isElectron()) {
+        type = l1t::PFCandidate::Electron;
+        mass = 0.005;
+      } else
+        type = l1t::PFCandidate::ChargedHadron;
+    } else {
+      type = p.hwId.isPhoton() ? l1t::PFCandidate::Photon : l1t::PFCandidate::NeutralHadron;
+      mass = p.hwId.isPhoton() ? 0.0 : 0.5;
+    }
+    reco::Particle::PolarLorentzVector p4(p.floatPt(), p.floatEta(), p.floatPhi(), mass);
+    coll->emplace_back(type, p.intCharge(), p4, p.floatPuppiW(), p.intPt(), p.intEta(), p.intPhi());
+    if (p.hwId.charged()) {
+      coll->back().setZ0(p.floatZ0());
+      coll->back().setDxy(p.floatDxy());
+      coll->back().setHwZ0(p.hwZ0());
+      coll->back().setHwDxy(p.hwDxy());
+      coll->back().setHwTkQuality(p.hwTkQuality());
+      coll->back().setHwAssociationScore(p.AssociationScore);
+    } else {
+      coll->back().setHwPuppiWeight(p.hwPuppiW());
+      coll->back().setHwEmID(p.hwEmID());
+      coll->back().setHwAssociationScore(-1);
+    }
+    coll->back().setEncodedPuppi64(p.pack().to_uint64());
+    setRefs_(coll->back(), p);
+  }
+  iEvent.put(std::move(coll), "SortedPF");
 }
 
 void L1TCorrelatorLayer1Producer::putEgStaObjects(edm::Event &iEvent, const std::string &egLablel) const {
