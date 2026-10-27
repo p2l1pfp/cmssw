@@ -658,6 +658,13 @@ namespace l1ct {
     }
 
     inline ap_uint<BITWIDTH_SLIM> pack_slim() const { return pack_endcap()(BITWIDTH_SLIM - 1, 0); }
+
+    template <int NBITS>
+    inline static TkObj unpack_slim(const ap_uint<NBITS> &src) {
+      static_assert(NBITS >= BITWIDTH_SLIM, "Invalid number of bits for unpacking TkObj");
+      // inverse of pack_slim(): keep the slim bits, zero-pad, unpack as endcap
+      return unpack_endcap(ap_uint<BITWIDTH_ENDCAP>(src(BITWIDTH_SLIM - 1, 0)));
+    }
   };
   inline void clear(TkObj &c) { c.clear(); }
 

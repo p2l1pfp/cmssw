@@ -73,7 +73,7 @@ template <typename T,
           typename std::enable_if<METHOD == PackingStrategy::DEFAULT, int>::type = 0>
 inline auto unpack_slim_helper(const ap_uint<NB>& data) {
   static_assert(T::BITWIDTH_SLIM <= NB, "NB Type is too small for the object");
-  return T::unpack(data);
+  return T::template unpack_slim<NB>(data);
 }
 
 // Specialization for BARREL
