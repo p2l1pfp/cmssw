@@ -264,6 +264,16 @@ namespace l1ct {
       unpack_from_bits(src, start, hwCaloShowerShape);
       unpack_from_bits(src, start, hwCaloTkPtRatio);
     }
+#else
+  private:
+    // Hide the inherited photon pack/unpack and BITWIDTH: they would silently drop the
+    // electron-specific fields. Firmware must use the *_barrel/_endcap/_slim variants.
+    using EGIsoObj::BITWIDTH;
+    using EGIsoObj::initFromBits;
+    using EGIsoObj::pack;
+    using EGIsoObj::unpack;
+
+  public:
 #endif
 
     inline static EGIsoEleObj unpack_barrel(const ap_uint<BITWIDTH_BARREL> &src) {
@@ -306,7 +316,7 @@ namespace l1ct {
 
     template <int NBITS>
     inline static EGIsoEleObj unpack_slim(const ap_uint<NBITS> &src) {
-      static_assert(NBITS == BITWIDTH_SLIM || NBITS == BITWIDTH_ENDCAP || NBITS == BITWIDTH_BARREL || NBITS == BITWIDTH,
+      static_assert(NBITS == BITWIDTH_SLIM || NBITS == BITWIDTH_ENDCAP || NBITS == BITWIDTH_BARREL,
                     "Invalid number of bits for unpacking EGIsoEleObj");
       EGIsoEleObj ret;
       ret.clear();
