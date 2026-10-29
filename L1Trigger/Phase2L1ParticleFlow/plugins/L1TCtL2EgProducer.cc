@@ -37,15 +37,16 @@ public:
 
 private:
   ap_uint<64> encodeLayer1(const EGIsoObjEmu &egiso) const;
-  ap_uint<128> encodeLayer1(const EGIsoEleObjEmu &egiso) const;
+  ap_uint<128> encodeLayer1(const EGIsoEleObjEmu &egiso, bool isBarrel) const;
 
   std::vector<ap_uint<64>> encodeLayer1(const std::vector<EGIsoObjEmu> &photons) const;
-  std::vector<ap_uint<64>> encodeLayer1(const std::vector<EGIsoEleObjEmu> &electrons) const;
+  std::vector<ap_uint<64>> encodeLayer1(const std::vector<EGIsoEleObjEmu> &electrons, bool isBarrel) const;
 
   void encodeLayer1EgObjs(unsigned int nObj,
                           std::vector<ap_uint<64>> &data,
                           const std::vector<EGIsoObjEmu> &photons,
-                          const std::vector<EGIsoEleObjEmu> &electrons) const;
+                          const std::vector<EGIsoEleObjEmu> &electrons,
+                          bool isBarrel) const;
 
   void produce(edm::StreamID, edm::Event &, const edm::EventSetup &) const override;
 
@@ -111,7 +112,7 @@ private:
             // with the same ID
             // # of words = 16 (pho) + 2*16 (ele) = 48
             // no filling words needed
-            region2link_[chId] = RegionLinkMetadata{linkId, 0};
+            region2link_[chId] = RegionLinkMetadata{linkId, 0, interface == "eglayer1Barrel"};
           }
         } else if (inTMUX == 18) {
           if (interface == "eglayer1Barrel") {
@@ -119,16 +120,16 @@ private:
             // one every 6 BX x 9 words = 54 words
             // # of data words = 16 (pho) + 2*16 (ele) = 48
             // # we fill with 54-48 = 6 empty words
-            region2link_[0] = RegionLinkMetadata{linkId, 6};
-            region2link_[1] = RegionLinkMetadata{linkId, 6};
-            region2link_[2] = RegionLinkMetadata{linkId, 0};
+            region2link_[0] = RegionLinkMetadata{linkId, 6, true};
+            region2link_[1] = RegionLinkMetadata{linkId, 6, true};
+            region2link_[2] = RegionLinkMetadata{linkId, 0, true};
           } else if (interface == "eglayer1Endcap") {
             // Layer1 TMUX=18 => 2 endcap regions are mapped to the same link
             // one every 9 BX x 9 words = 81 words
             // # of data words = 16 (pho) + 2*16 (ele) = 48
             // # we fill with 81-48 = 33 empty words
-            region2link_[3] = RegionLinkMetadata{linkId, 33};
-            region2link_[4] = RegionLinkMetadata{linkId, 0};
+            region2link_[3] = RegionLinkMetadata{linkId, 33, false};
+            region2link_[4] = RegionLinkMetadata{linkId, 0, false};
           }
         }
       }
@@ -168,6 +169,7 @@ private:
     struct RegionLinkMetadata {
       l1t::demo::LinkId linkId;
       unsigned int nTrailingWords;
+      bool isBarrel;
     };
 
     void addEvent(const l1t::demo::EventData &eventData) {
@@ -335,9 +337,13 @@ ap_uint<64> L1TCtL2EgProducer::encodeLayer1(const EGIsoObjEmu &egiso) const {
   return ret;
 }
 
-ap_uint<128> L1TCtL2EgProducer::encodeLayer1(const EGIsoEleObjEmu &egiso) const {
+ap_uint<128> L1TCtL2EgProducer::encodeLayer1(const EGIsoEleObjEmu &egiso, bool isBarrel) const {
   ap_uint<128> ret = 0;
-  ret(EGIsoEleObjEmu::BITWIDTH, 0) = egiso.pack();
+  if (isBarrel) {
+    ret(EGIsoEleObjEmu::BITWIDTH_BARREL, 0) = egiso.pack_barrel();
+  } else {
+    ret(EGIsoEleObjEmu::BITWIDTH_ENDCAP, 0) = egiso.pack_endcap();
+  }
   return ret;
 }
 
@@ -350,11 +356,12 @@ std::vector<ap_uint<64>> L1TCtL2EgProducer::encodeLayer1(const std::vector<EGIso
   return ret;
 }
 
-std::vector<ap_uint<64>> L1TCtL2EgProducer::encodeLayer1(const std::vector<EGIsoEleObjEmu> &electrons) const {
+std::vector<ap_uint<64>> L1TCtL2EgProducer::encodeLayer1(const std::vector<EGIsoEleObjEmu> &electrons,
+                                                         bool isBarrel) const {
   std::vector<ap_uint<64>> ret;
   ret.reserve(2 * electrons.size());
   for (const auto &ele : electrons) {
-    auto eleword = encodeLayer1(ele);
+    auto eleword = encodeLayer1(ele, isBarrel);
     ret.push_back(eleword(63, 0));
     ret.push_back(eleword(127, 64));
   }
@@ -364,10 +371,11 @@ std::vector<ap_uint<64>> L1TCtL2EgProducer::encodeLayer1(const std::vector<EGIso
 void L1TCtL2EgProducer::encodeLayer1EgObjs(unsigned int nObj,
                                            std::vector<ap_uint<64>> &data,
                                            const std::vector<EGIsoObjEmu> &photons,
-                                           const std::vector<EGIsoEleObjEmu> &electrons) const {
+                                           const std::vector<EGIsoEleObjEmu> &electrons,
+                                           bool isBarrel) const {
   auto encoded_photons = encodeLayer1(photons);
   encoded_photons.resize(nObj, {0});
-  auto encoded_eles = encodeLayer1(electrons);
+  auto encoded_eles = encodeLayer1(electrons, isBarrel);
   encoded_eles.resize(2 * nObj, {0});
 
   std::copy(encoded_photons.begin(), encoded_photons.end(), std::back_inserter(data));
@@ -396,7 +404,11 @@ void L1TCtL2EgProducer::produce(edm::StreamID, edm::Event &iEvent, const edm::Ev
 
       if (inData.has(linkData.linkId))
         data = inData.at(linkData.linkId);
-      encodeLayer1EgObjs(l2egsorter.nInputObjPerRegion(), data, (*regions)[ireg].egphoton, (*regions)[ireg].egelectron);
+      encodeLayer1EgObjs(l2egsorter.nInputObjPerRegion(),
+                         data,
+                         (*regions)[ireg].egphoton,
+                         (*regions)[ireg].egelectron,
+                         linkData.isBarrel);
       data.resize(data.size() + linkData.nTrailingWords, {0});
       inData.add(linkData.linkId, data);
     }
@@ -447,6 +459,7 @@ void L1TCtL2EgProducer::convertToEmu(const l1t::TkElectron &tkele,
                                      ConstituentPtrVector &constituentsPtrs,
                                      l1ct::OutputBoard &boarOut) const {
   EGIsoEleObjEmu emu;
+  // NOTE: this reads at the generic (barrel-sized) BITWIDTH regardless of the source region.
   emu.initFromBits(tkele.egBinaryWord<EGIsoEleObj::BITWIDTH>());
   emu.srcCluster = nullptr;
   emu.srcTrack = nullptr;
