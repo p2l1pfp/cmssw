@@ -341,7 +341,8 @@ L1TCorrelatorLayer1Producer::L1TCorrelatorLayer1Producer(const edm::ParameterSet
   } else if (algo == "PFAlgo2HGC") {
     isEndcap = true;
     l1pfalgo_ = std::make_unique<l1ct::PFAlgo2HGCEmulator>(iConfig.getParameter<edm::ParameterSet>("pfAlgoParameters"));
-    l1pfsorter_ = std::make_unique<l1ct::PFSorterEmulator>(iConfig.getParameter<edm::ParameterSet>("pfSorterParameters"));
+    l1pfsorter_ =
+        std::make_unique<l1ct::PFSorterEmulator>(iConfig.getParameter<edm::ParameterSet>("pfSorterParameters"));
   } else if (algo == "PFAlgoDummy") {
     l1pfalgo_ =
         std::make_unique<l1ct::PFAlgoDummyEmulator>(iConfig.getParameter<edm::ParameterSet>("pfAlgoParameters"));
@@ -464,7 +465,7 @@ void L1TCorrelatorLayer1Producer::fillDescriptions(edm::ConfigurationDescription
                "PFAlgo3" >> getParDesc<l1ct::PFAlgo3Emulator>("pfAlgo") or
                    "PFAlgo2HGC" >> getParDesc<l1ct::PFAlgo2HGCEmulator>("pfAlgo") or
                    "PFAlgoDummy" >> getParDesc<l1ct::PFAlgoDummyEmulator>("pfAlgo"));
-    // PF sorter (only used by PFAlgo2HGC, but declared as optional so other algos don't need it)
+  // PF sorter (only used by PFAlgo2HGC, but declared as optional so other algos don't need it)
   desc.addOptional<edm::ParameterSetDescription>("pfSorterParameters",
                                                  l1ct::PFSorterEmulator::getParameterSetDescription());
   // Puppi
@@ -1502,7 +1503,8 @@ void L1TCorrelatorLayer1Producer::putPuppi(edm::Event &iEvent) const {
   iEvent.put(std::move(reg), "PuppiRegional");
 }
 
-void L1TCorrelatorLayer1Producer::putSortedPF(edm::Event &iEvent, const std::vector<l1ct::PuppiObjEmu> &pfSortedObjs) const {
+void L1TCorrelatorLayer1Producer::putSortedPF(edm::Event &iEvent,
+                                              const std::vector<l1ct::PuppiObjEmu> &pfSortedObjs) const {
   auto refprod = iEvent.getRefBeforePut<l1t::PFCandidateCollection>("SortedPF");
   auto coll = std::make_unique<l1t::PFCandidateCollection>();
   for (const auto &p : pfSortedObjs) {

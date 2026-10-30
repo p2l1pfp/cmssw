@@ -42,9 +42,13 @@ void l1ct::pfsorter::RegionBuffer<T>::roll() {
   // the link fifos are double buffered: the read and write pointers swap banks, so the
   // new event is written into one bank while the contents of the other survive and drain
   // into the new event; the merge nodes discard their staging areas and queues on roll.
-  // So only the queues are cleared, not the fifos.
+  // the bank that was used to write into the tree is emptied so that it can be filled up
+  // with the candidates from the new event. However, it should have already been emptied
+  // before.
   iread_ = 1 - iread_;
   iwrite_ = 1 - iwrite_;
+  for (auto& f : fifos_[iread_])
+    f.clear();
   for (auto& p : queues_) {
     for (auto& t : p.first)
       t.clear();
@@ -84,8 +88,10 @@ T l1ct::pfsorter::RegionBuffer<T>::pop_next_trivial_() {
   T ret;
   ret.clear();
   for (unsigned int j = 0; j < nfifos_; ++j) {
-    if (!fifos_[iwrite_][j].empty())
+    if (!fifos_[iwrite_][j].empty()) {
       pop_back(fifos_[iwrite_][j], ret);
+      break;
+    }
   }
   return ret;
 }
@@ -175,9 +181,14 @@ void l1ct::pfsorter::RegionBuffer<T>::trace(FILE* f, l1ct::pfsorter::ObjId<T> ob
       if (fifos_[bank][i].size() == 0)
         fprintf(f, " .");
       else if (fifos_[bank][i].size() == 1)
-        fprintf(f, " Size: 1, Front: #%u ", objId ? (*objId)(fifos_[bank][i].back()) : unsigned(fifos_[bank][i].back().intPt()));
+        fprintf(f,
+                " Size: 1, Front: #%u ",
+                objId ? (*objId)(fifos_[bank][i].back()) : unsigned(fifos_[bank][i].back().intPt()));
       else if (fifos_[bank][i].size() >= 2)
-        fprintf(f, " Size: %u, Front: #%u Back: #%u", fifos_[bank][i].size(), objId ? (*objId)(fifos_[bank][i].front()) : unsigned(fifos_[bank][i].front().intPt()),
+        fprintf(f,
+                " Size: %u, Front: #%u Back: #%u",
+                fifos_[bank][i].size(),
+                objId ? (*objId)(fifos_[bank][i].front()) : unsigned(fifos_[bank][i].front().intPt()),
                 objId ? (*objId)(fifos_[bank][i].back()) : unsigned(fifos_[bank][i].back().intPt()));
       fprintf(f, "\n");
     }

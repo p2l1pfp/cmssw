@@ -46,13 +46,12 @@ namespace l1ct {
   class PFSorterEmulatorT {
   public:
     PFSorterEmulatorT() : nevt_(0) {}
-    PFSorterEmulatorT(unsigned int nlinks, unsigned int noutputs = 3, unsigned int nclocks = 162) : nevt_(0), nclocks_(nclocks) {
+    PFSorterEmulatorT(unsigned int nlinks, unsigned int noutputs = 3, unsigned int nclocks = 162)
+        : nevt_(0), nclocks_(nclocks) {
       buffer_.initFifos(nlinks, noutputs);
     }
 
-    void initFifos(unsigned int nlinks, unsigned int noutputs = 3) {
-      buffer_.initFifos(nlinks, noutputs);
-    }
+    void initFifos(unsigned int nlinks, unsigned int noutputs = 3) { buffer_.initFifos(nlinks, noutputs); }
 
     void reset() {
       buffer_.reset();
@@ -63,7 +62,7 @@ namespace l1ct {
     // 'inputs' must have one (possibly empty, i.e. hwPt == 0) object per link, and they go
     // into the fifo with the same index. 'out' is the object leaving the tree in this clock
     // cycle; the return value says whether it is a valid one.
-    bool step(bool newEvent, const std::vector<T>& inputs, T& out) {
+    bool step(bool newEvent, const std::vector<T> &inputs, T &out) {
       if (newEvent) {
         buffer_.roll();
         nevt_++;
@@ -76,21 +75,8 @@ namespace l1ct {
       return out.hwPt != 0;
     }
 
-    // keep clocking with no new inputs until the tree is empty, appending to 'out'
-    // everything that comes out. Returns the number of clock cycles used.
-    unsigned int drain(std::vector<T>& out, unsigned int maxclocks = 10000) {
-      unsigned int nclocks = 0;
-      while (buffer_.inFlight() != 0 && nclocks < maxclocks) {
-        T obj = buffer_.pop();
-        nclocks++;
-        if (obj.hwPt != 0)
-          out.push_back(obj);
-      }
-      return nclocks;
-    }
-
-    const l1ct::pfsorter::RegionBuffer<T>& buffer() const { return buffer_; }
-    l1ct::pfsorter::RegionBuffer<T>& buffer() { return buffer_; }
+    const l1ct::pfsorter::RegionBuffer<T> &buffer() const { return buffer_; }
+    l1ct::pfsorter::RegionBuffer<T> &buffer() { return buffer_; }
     unsigned int nEvents() const { return nevt_; }
     unsigned int nClocks() const { return nclocks_; }
     // continuous = true runs events back to back as the firmware does, the read and write
@@ -135,7 +121,7 @@ namespace l1ct {
           nSlotsNeutral_(nslotsNeutral) {}
 
 #ifdef CMSSW_GIT_HASH
-    PFSorterEmulator(const edm::ParameterSet& iConfig)
+    PFSorterEmulator(const edm::ParameterSet &iConfig)
         : PFSorterEmulator(iConfig.getParameter<uint32_t>("nLinksCharged"),
                            iConfig.getParameter<uint32_t>("nLinksNeutral"),
                            iConfig.getParameter<uint32_t>("nOutputs"),
@@ -185,6 +171,10 @@ namespace l1ct {
                                                             unsigned int nwrite240 = l1ct::pfsorter::nWrite240) {
       // stream_compress_9to6 is hard wired for 6 cycles in and 9 out
       assert(nwrite240 == 6 && nobjperlink == 9);
+      // Due to how the streams are assigned, we require at least 10 slots,
+      // so that at least 2 links are instantiated.
+      // For the endcap this is not an issue, to be checked in the barrel.m
+      assert(nslots > 9);
       const unsigned int nstream240 = (nslots + nwrite240 - 1) / nwrite240;
       auto in = [&](unsigned int stream, unsigned int cycle) -> int {
         unsigned int slot = stream * nwrite240 + cycle;
@@ -221,9 +211,9 @@ namespace l1ct {
     // its output), so what is pushed into the fifos in this clock cycle is what was
     // converted in the previous one, and newEvent is delayed by the same cycle.
     bool step(bool newEvent,
-              const std::vector<l1ct::PFRegionEmu>& regions,
-              const std::vector<PFParticle>& inputs,
-              l1ct::PuppiObjEmu& out) {
+              const std::vector<l1ct::PFRegionEmu> &regions,
+              const std::vector<PFParticle> &inputs,
+              l1ct::PuppiObjEmu &out) {
       assert(regions.size() == inputs.size());
       std::vector<l1ct::PuppiObjEmu> converted(inputs.size());
       for (unsigned int i = 0, n = inputs.size(); i < n; ++i) {
@@ -241,24 +231,10 @@ namespace l1ct {
 
     // same, when all the links carry particles of the same region
     bool step(bool newEvent,
-              const l1ct::PFRegionEmu& region,
-              const std::vector<PFParticle>& inputs,
-              l1ct::PuppiObjEmu& out) {
+              const l1ct::PFRegionEmu &region,
+              const std::vector<PFParticle> &inputs,
+              l1ct::PuppiObjEmu &out) {
       return step(newEvent, std::vector<l1ct::PFRegionEmu>(inputs.size(), region), inputs, out);
-    }
-
-    // keep clocking with no new inputs until the tree is empty. The first of those clock
-    // cycles is the one that lets the last converted particles into the fifos.
-    unsigned int drain(std::vector<l1ct::PuppiObjEmu>& out, unsigned int maxclocks = 10000) {
-      unsigned int nclocks = 0;
-      if (!converted_.empty()) {
-        l1ct::PuppiObjEmu obj;
-        if (PFSorterEmulatorT<l1ct::PuppiObjEmu>::step(convertedNewEvent_, converted_, obj))
-          out.push_back(obj);
-        clearConverted_();
-        nclocks++;
-      }
-      return nclocks + PFSorterEmulatorT<l1ct::PuppiObjEmu>::drain(out, maxclocks);
     }
 
     struct PFLinkItem {
@@ -519,14 +495,12 @@ namespace l1ct {
 
 #ifdef CMSSW_GIT_HASH
     // writes the sorted candidates into event.sortedpf, so 'event' can't be const here
-    void run(l1ct::Event &event) {
-      run(event.pfinputs, event.out, event.sortedpf);
-    }
+    void run(l1ct::Event &event) { run(event.pfinputs, event.out, event.sortedpf); }
 #else
     // standalone version: run from raw links (one vector of particles per link)
-    void run(const std::vector<l1ct::PFRegionEmu>& regions,
-             const std::vector<std::vector<PFParticle>>& links,
-             std::vector<l1ct::PuppiObjEmu>& out) {
+    void run(const std::vector<l1ct::PFRegionEmu> &regions,
+             const std::vector<std::vector<PFParticle>> &links,
+             std::vector<l1ct::PuppiObjEmu> &out) {
       l1ct::PuppiObjEmu outObj;
       for (unsigned int iclock = 0; iclock < nClocks(); ++iclock) {
         bool newevt = (iclock == 0);
@@ -560,7 +534,7 @@ namespace l1ct {
       const unsigned int nlinks = nLinks();
       std::vector<std::vector<PFLinkItem>> links;
       makePFLinks(pfinputs, pfouts, links);
-      const unsigned int nclk = nClocks();
+      const unsigned int nclk = std::max<unsigned int>(nClocks(), links.empty() ? 0 : links[0].size());
       // an event longer than the period would overlap the next one
       assert(links.empty() || links[0].size() <= nclk);
       stream.clear();
@@ -586,7 +560,7 @@ namespace l1ct {
     bool convertedNewEvent_ = false;
 
     void clearConverted_() {
-      for (auto& o : converted_)
+      for (auto &o : converted_)
         o.clear();
       convertedNewEvent_ = false;
     }

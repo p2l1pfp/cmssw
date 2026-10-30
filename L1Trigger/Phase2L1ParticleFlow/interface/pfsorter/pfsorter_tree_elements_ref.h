@@ -76,7 +76,7 @@ namespace l1ct {
     template <typename T>
     class RegionBuffer {
     public:
-      RegionBuffer() : nfifos_(0), noutputs_(0)  {}
+      RegionBuffer() : nfifos_(0), noutputs_(0) {}
       // one fifo per link in each of the two banks, merged down to 'noutputs' output
       // nodes (at most 3)
       void initFifos(unsigned int nfifos, unsigned int noutputs = 3);
