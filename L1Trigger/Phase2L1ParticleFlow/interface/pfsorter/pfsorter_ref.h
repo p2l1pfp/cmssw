@@ -424,17 +424,15 @@ namespace l1ct {
     // empty (hwPt == 0) in the cycles where nothing leaves the tree; run() above is this
     // one with the empty cycles dropped.
     //
-    // By default each event is self contained: the tree starts empty and is drained at the
-    // end, so 'stream' has the event's clock cycles plus however many it took to empty the
-    // tree. That is what CMSSW needs, where nothing may outlive the event it came from.
-    // The read and write pointers are kept on the same set of fifos, so the objects of
-    // the event are read out of the very fifos they were written into.
-    //
     // With 'continuous' the sorter runs as the firmware does, events back to back: no
     // reset and no drain, exactly nClocks() entries per event with newEvent on the first
     // one, the read and write pointers swapping to opposite fifo sets on every new event,
     // and whatever is still in the tree at the end of an event handled by the next one.
     // Use it to write pattern files that line up frame by frame with the firmware.
+    //
+    // Without 'continuous' (i.e. inside CMSSW), a set of memory banks is first filled and,
+    // during the "next event" (not really, we are in the same event, but we restart the clock count)
+    // the candidates from that memory bank are output.
     void runStream(const std::vector<l1ct::PFInputRegion> &pfinputs,
                    const std::vector<l1ct::OutputRegion> &pfouts,
                    std::vector<l1ct::PuppiObjEmu> &stream,
@@ -447,19 +445,11 @@ namespace l1ct {
         runContinuous_(pfinputs, pfouts, stream);
         return;
       }
-      // Start from an empty tree AND an empty conversion register. The newEvent flag alone
-      // is not enough: it only reaches the tree one clock cycle later, because it travels
-      // with the particles through the conversion, so without this reset the objects left
-      // in the conversion register by the previous event would be pushed into the fifos in
-      // the first clock cycle of this one and could be read out before the flush.
+
+
       reset();
-      // event-by-event mode: the read and write pointers point to the same set of fifos,
-      // so that the event is read out of the same fifos it is being written into
-      buffer().setWriteToRead();
       std::vector<std::vector<PFLinkItem>> links;
       makePFLinks(pfinputs, pfouts, links);
-      // the links are nObjPerLink clock cycles per region long; nClocks() is only a floor,
-      // so that a pattern file can be padded to a fixed frame count
       const unsigned int nclk = std::max<unsigned int>(nClocks(), links.empty() ? 0 : links[0].size());
       stream.clear();
       stream.reserve(nclk);
@@ -475,20 +465,13 @@ namespace l1ct {
           }
         }
         step(newevt, pfregions, pfin, outObj);
-        stream.push_back(outObj);
       }
-      // The links are over, but the conversion register and the tree still hold objects:
-      // keep clocking with empty links until they are all out, so that nothing of this
-      // event is lost. These cycles are appended to the stream like any other, one entry
-      // per clock cycle, empty where nothing came out.
-      const std::vector<l1ct::pfsorter::PFParticleEmu> nopf(nlinks);
-      const std::vector<l1ct::PFRegionEmu> noregions(nlinks);
-      // the first of these cycles is the one that lets the last converted particles into
-      // the fifos, so it always has to be run
-      step(false, noregions, nopf, outObj);
-      stream.push_back(outObj);
-      while (buffer().inFlight() != 0) {
-        step(false, noregions, nopf, outObj);
+      // "new event": restarting the clock to output the candidates
+      for (unsigned int iclock = 0; iclock < nclk; ++iclock) {
+        bool newevt = (iclock == 0);
+        std::vector<l1ct::pfsorter::PFParticleEmu> pfin(nlinks);
+        std::vector<l1ct::PFRegionEmu> pfregions(nlinks);
+        step(newevt, pfregions, pfin, outObj);
         stream.push_back(outObj);
       }
     }

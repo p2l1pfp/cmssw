@@ -91,7 +91,6 @@ namespace l1ct {
       // point the write pointer at the bank the read pointer is on, so that pushes and
       // pops share the same set of fifos. This is the event-by-event mode CMSSW uses;
       // the firmware instead keeps the two on opposite banks (see roll()).
-      void setWriteToRead() { iwrite_ = iread_; }
       void maybe_push(int fifo, const T& t);
       T pop();
 
