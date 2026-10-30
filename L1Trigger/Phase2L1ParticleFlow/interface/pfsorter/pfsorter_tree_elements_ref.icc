@@ -1,0 +1,206 @@
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::initFifos(unsigned int nfifos, unsigned int noutputs) {
+  assert(nfifos_ == 0);
+  assert(nfifos > 0);
+  assert(noutputs >= 1 && noutputs <= 3);  // at most 3 output nodes, as in the regionizer
+  nfifos_ = nfifos;
+  noutputs_ = std::min(nfifos, noutputs);
+  fifos_[0].resize(nfifos);
+  fifos_[1].resize(nfifos);
+  iread_ = 0;
+  iwrite_ = 1;
+  unsigned int nmerged = nfifos;
+  while (nmerged > noutputs_) {
+    // the regionizer only merges pairs (and asserts nmerged % 2 == 0); rounding up lets a
+    // layer with an odd number of nodes carry its last node through
+    nmerged = (nmerged + 1) / 2;
+    if (nmerged < noutputs_)
+      nmerged = noutputs_;
+    queues_.emplace_back(std::vector<T>(nmerged), std::vector<T>(nmerged));
+    for (auto& t : queues_.back().first)
+      t.clear();
+    for (auto& t : queues_.back().second)
+      t.clear();
+  }
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::flush() {
+  for (auto& bank : fifos_)
+    for (auto& f : bank)
+      f.clear();
+  for (auto& p : queues_) {
+    for (auto& t : p.first)
+      t.clear();
+    for (auto& t : p.second)
+      t.clear();
+  }
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::roll() {
+  // the link fifos are double buffered: the read and write pointers swap banks, so the
+  // new event is written into one bank while the contents of the other survive and drain
+  // into the new event; the merge nodes discard their staging areas and queues on roll.
+  // the bank that was used to write into the tree is emptied so that it can be filled up
+  // with the candidates from the new event. However, it should have already been emptied
+  // before.
+  iread_ = 1 - iread_;
+  iwrite_ = 1 - iwrite_;
+  for (auto& f : fifos_[iread_])
+    f.clear();
+  for (auto& p : queues_) {
+    for (auto& t : p.first)
+      t.clear();
+    for (auto& t : p.second)
+      t.clear();
+  }
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::reset() {
+  flush();
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::maybe_push(int fifo, const T& t) {
+  if (t.hwPt == 0)
+    return;
+  l1ct::pfsorter::maybe_push<T>(t, fifos_[iread_][fifo]);
+}
+
+template <typename T>
+T l1ct::pfsorter::RegionBuffer<T>::pop() {
+  if (queues_.empty())
+    return pop_next_trivial_();
+  for (unsigned int istep = 0, nsteps = queues_.size(); istep < nsteps; ++istep) {
+    if (istep == 0)
+      fifos_to_stage_(queues_.front().first);
+    else
+      queue_to_stage_(queues_[istep - 1].second, queues_[istep].first);
+    stage_to_queue_(queues_[istep].first, queues_[istep].second);
+  }
+  return pop_queue_(queues_.back().second);
+}
+
+template <typename T>
+T l1ct::pfsorter::RegionBuffer<T>::pop_next_trivial_() {
+  T ret;
+  ret.clear();
+  for (unsigned int j = 0; j < nfifos_; ++j) {
+    if (!fifos_[iwrite_][j].empty()) {
+      pop_back(fifos_[iwrite_][j], ret);
+      break;
+    }
+  }
+  return ret;
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::fifos_to_stage_(std::vector<T>& staging_area) {
+  const unsigned int n = staging_area.size();
+  assert(n <= nfifos_ && 2 * n >= nfifos_);
+  // shift data from each group of fifos to the staging area
+  for (unsigned int j = 0; j < n; ++j) {
+    if (staging_area[j].hwPt != 0)
+      continue;
+    for (unsigned int i = src_first_(j, nfifos_, n), last = src_last_(j, nfifos_, n); i <= last; ++i) {
+      if (!fifos_[iwrite_][i].empty()) {
+        pop_back(fifos_[iwrite_][i], staging_area[j]);
+        break;
+      }
+    }
+  }
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::queue_to_stage_(std::vector<T>& queue, std::vector<T>& staging_area) {
+  const unsigned int n = staging_area.size(), nin = queue.size();
+  assert(n <= nin && 2 * n >= nin);
+  // shift data from each group of queue slots to the staging area of the next layer
+  for (unsigned int j = 0; j < n; ++j) {
+    if (staging_area[j].hwPt != 0)
+      continue;
+    for (unsigned int i = src_first_(j, nin, n), last = src_last_(j, nin, n); i <= last; ++i) {
+      if (queue[i].hwPt != 0) {
+        shift(queue[i], staging_area[j]);
+        break;
+      }
+    }
+  }
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::stage_to_queue_(std::vector<T>& staging_area, std::vector<T>& queue) {
+  assert(staging_area.size() == queue.size());
+  // then from staging area to queue
+  for (unsigned int j = 0, n = staging_area.size(); j < n; ++j) {
+    if (staging_area[j].hwPt != 0 && queue[j].hwPt == 0) {
+      shift(staging_area[j], queue[j]);
+    }
+  }
+}
+
+template <typename T>
+T l1ct::pfsorter::RegionBuffer<T>::pop_queue_(std::vector<T>& queue) {
+  T ret;
+  ret.clear();
+  for (T& t : queue) {
+    if (t.hwPt == 0)
+      continue;
+    ret = t;
+    t.clear();
+    break;
+  }
+  return ret;
+}
+
+template <typename T>
+unsigned int l1ct::pfsorter::RegionBuffer<T>::inFlight() const {
+  unsigned int ret = 0;
+  for (const auto& bank : fifos_)
+    for (const auto& f : bank)
+      ret += f.size();
+  for (const auto& p : queues_) {
+    for (const auto& t : p.first)
+      ret += (t.hwPt != 0);
+    for (const auto& t : p.second)
+      ret += (t.hwPt != 0);
+  }
+  return ret;
+}
+
+template <typename T>
+void l1ct::pfsorter::RegionBuffer<T>::trace(FILE* f, l1ct::pfsorter::ObjId<T> objId) const {
+  // occupancy of each fifo of both banks, and the barcode of the object at its head
+  fprintf(f, "\n");
+  for (unsigned int bank = 0; bank < 2; ++bank) {
+    fprintf(f, "Fifo set %u (%s):\n", bank, bank == iread_ ? (bank == iwrite_ ? "read+write" : "read") : "write");
+    for (unsigned int i = 0; i < nfifos_; ++i) {
+      fprintf(f, "Buffer %u content ->", i);
+      if (fifos_[bank][i].size() == 0)
+        fprintf(f, " .");
+      else if (fifos_[bank][i].size() == 1)
+        fprintf(f,
+                " Size: 1, Front: #%u ",
+                objId ? (*objId)(fifos_[bank][i].back()) : unsigned(fifos_[bank][i].back().intPt()));
+      else if (fifos_[bank][i].size() >= 2)
+        fprintf(f,
+                " Size: %u, Front: #%u Back: #%u",
+                fifos_[bank][i].size(),
+                objId ? (*objId)(fifos_[bank][i].front()) : unsigned(fifos_[bank][i].front().intPt()),
+                objId ? (*objId)(fifos_[bank][i].back()) : unsigned(fifos_[bank][i].back().intPt()));
+      fprintf(f, "\n");
+    }
+  }
+  // then the merge stages: staging area and queue of each of them
+  for (unsigned int i = 0, n = queues_.size(); i < n; ++i) {
+    fprintf(f, " | queue[%u].first=[", i);
+    for (const auto& t : queues_[i].first)
+      trace_cell(f, t, objId);
+    fprintf(f, "] queue[%u].second=[", i);
+    for (const auto& t : queues_[i].second)
+      trace_cell(f, t, objId);
+    fprintf(f, "]\n");
+  }
+}
